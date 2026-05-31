@@ -5,13 +5,12 @@ class Triple<A, B, C>(
     val b: B?,
     val c: C?,
 ) {
-    override fun equals(obj: Any?): Boolean {
-        if (obj === this) {
+    override fun equals(other: Any?): Boolean {
+        if (other === this) {
             return true
-        } else if (obj !is Triple<*, *, *>) {
+        } else if (other !is Triple<*, *, *>) {
             return false
         }
-        val other = obj
         return AnyEqualityComparator.INSTANCE.equals(a, other.a) &&
             AnyEqualityComparator.INSTANCE.equals(b, other.b) &&
             AnyEqualityComparator.INSTANCE.equals(c, other.c)

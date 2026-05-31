@@ -54,7 +54,7 @@ class LexerSkipAction
         }
 
         @Suppress("EqualsWhichDoesntCallSuperMethod")
-        override fun equals(obj: Any?): Boolean = obj === this
+        override fun equals(other: Any?): Boolean = other === this
 
         override fun toString(): String = "skip"
 

@@ -87,14 +87,13 @@ class LexerCustomAction
         return MurmurHash.finish(hash, 3)
     }
 
-    override fun equals(obj: Any?): Boolean {
-        if (obj === this) {
+    override fun equals(other: Any?): Boolean {
+        if (other === this) {
             return true
-        } else if (obj !is LexerCustomAction) {
+        } else if (other !is LexerCustomAction) {
             return false
         }
 
-        val other = obj
         return ruleIndex == other.ruleIndex &&
             actionIndex == other.actionIndex
     }

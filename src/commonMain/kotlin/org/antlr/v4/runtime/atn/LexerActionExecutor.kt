@@ -155,14 +155,13 @@ class LexerActionExecutor(
 
     override fun hashCode(): Int = this.hashCode
 
-    override fun equals(obj: Any?): Boolean {
-        if (obj === this) {
+    override fun equals(other: Any?): Boolean {
+        if (other === this) {
             return true
-        } else if (obj !is LexerActionExecutor) {
+        } else if (other !is LexerActionExecutor) {
             return false
         }
 
-        val other = obj
         return hashCode == other.hashCode &&
             lexerActions.contentEquals(other.lexerActions)
     }
