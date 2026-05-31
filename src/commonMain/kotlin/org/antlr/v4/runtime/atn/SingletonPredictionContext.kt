@@ -34,19 +34,19 @@ open class SingletonPredictionContext internal constructor(
         return returnState
     }
 
-    override fun equals(o: Any?): Boolean {
-        if (this === o) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) {
             return true
-        } else if (o !is SingletonPredictionContext) {
+        } else if (other !is SingletonPredictionContext) {
             return false
         }
 
-        if (this.hashCode() != o.hashCode()) {
+        if (this.hashCode() != other.hashCode()) {
             return false // can't be same if hash is different
         }
 
-        return returnState == o.returnState &&
-            (parent != null && parent == o.parent)
+        return returnState == other.returnState &&
+            (parent != null && parent == other.parent)
     }
 
     override fun toString(): String {

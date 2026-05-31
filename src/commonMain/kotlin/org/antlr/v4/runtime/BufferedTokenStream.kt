@@ -158,11 +158,11 @@ open class BufferedTokenStream(
         return n
     }
 
-    override fun get(i: Int): Token {
-        if (i < 0 || i >= tokens.size) {
-            throw IndexOutOfBoundsException("token index " + i + " out of range 0.." + (tokens.size - 1))
+    override fun get(index: Int): Token {
+        if (index < 0 || index >= tokens.size) {
+            throw IndexOutOfBoundsException("token index " + index + " out of range 0.." + (tokens.size - 1))
         }
-        return tokens.get(i)!!
+        return tokens.get(index)!!
     }
 
     /** Get all tokens from start..stop inclusively  */

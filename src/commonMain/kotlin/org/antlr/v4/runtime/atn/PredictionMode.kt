@@ -22,10 +22,10 @@ enum class PredictionMode {
     internal class AltAndContextMap : FlexibleHashMap<ATNConfig, BitSet>(AltAndContextConfigEqualityComparator.INSTANCE)
 
     private class AltAndContextConfigEqualityComparator : AbstractEqualityComparator<ATNConfig>() {
-        override fun hashCode(o: ATNConfig): Int {
+        override fun hashCode(obj: ATNConfig): Int {
             var hashCode = MurmurHash.initialize(7)
-            hashCode = MurmurHash.update(hashCode, o.state.stateNumber)
-            hashCode = MurmurHash.update(hashCode, o.context)
+            hashCode = MurmurHash.update(hashCode, obj.state.stateNumber)
+            hashCode = MurmurHash.update(hashCode, obj.context)
             hashCode = MurmurHash.finish(hashCode, 2)
             return hashCode
         }

@@ -421,8 +421,8 @@ abstract class Parser(
         get() = _input?.tokenSource?.tokenFactory
 
     /** Tell our token source and error strategy about a new way to create tokens.  */
-    override fun setTokenFactory(factory: TokenFactory<*>?) {
-        _input?.tokenSource?.setTokenFactory(factory)
+    override fun setTokenFactory(input: TokenFactory<*>?) {
+        _input?.tokenSource?.setTokenFactory(input)
     }
 
     override fun setInputStream(input: IntStream?) {

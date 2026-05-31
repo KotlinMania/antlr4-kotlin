@@ -227,11 +227,10 @@ class IntervalSet : IntSet {
         return hash
     }
 
-    override fun equals(obj: Any?): Boolean {
-        if (obj == null || obj !is IntervalSet) {
+    override fun equals(other: Any?): Boolean {
+        if (other == null || other !is IntervalSet) {
             return false
         }
-        val other = obj
         return this.intervals == other.intervals
     }
 

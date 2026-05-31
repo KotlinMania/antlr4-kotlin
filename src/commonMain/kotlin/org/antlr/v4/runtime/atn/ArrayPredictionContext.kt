@@ -44,19 +44,19 @@ class ArrayPredictionContext(
 
     override fun getReturnState(index: Int): Int = returnStates[index]
 
-    override fun equals(o: Any?): Boolean {
-        if (this === o) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) {
             return true
-        } else if (o !is ArrayPredictionContext) {
+        } else if (other !is ArrayPredictionContext) {
             return false
         }
 
-        if (this.hashCode() != o.hashCode()) {
+        if (this.hashCode() != other.hashCode()) {
             return false // can't be same if hash is different
         }
 
-        return returnStates.contentEquals(o.returnStates) &&
-            parents.contentEquals(o.parents)
+        return returnStates.contentEquals(other.returnStates) &&
+            parents.contentEquals(other.parents)
     }
 
     override fun toString(): String {

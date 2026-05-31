@@ -174,16 +174,15 @@ open class IntList {
      * @param o the object to be compared for equality with this list
      * @return `true` if the specified object is equal to this list
      */
-    override fun equals(o: Any?): Boolean {
-        if (o === this) {
+    override fun equals(other: Any?): Boolean {
+        if (other === this) {
             return true
         }
 
-        if (o !is IntList) {
+        if (other !is IntList) {
             return false
         }
 
-        val other = o
         if (_size != other._size) {
             return false
         }

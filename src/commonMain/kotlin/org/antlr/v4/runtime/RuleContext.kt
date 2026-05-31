@@ -167,7 +167,7 @@ open class RuleContext : RuleNode {
      * (root child1 .. childN). Print just a node if this is a leaf.
      * We have to know the recognizer so we can get rule names.
      */
-    override fun toStringTree(recog: Parser?): String = Trees.toStringTree(this, recog)!!
+    override fun toStringTree(parser: Parser?): String = Trees.toStringTree(this, parser)!!
 
     /** Print out a whole tree, not just a node, in LISP format
      * (root child1 .. childN). Print just a node if this is a leaf.
