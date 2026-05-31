@@ -90,7 +90,7 @@ class DFA(
     @Deprecated("Use toString(Vocabulary) instead.")
     fun toString(tokenNames: Array<String?>?): String {
         if (s0 == null) return ""
-        return DFASerializer(this, tokenNames).toString()
+        return toString(VocabularyImpl.fromTokenNames(tokenNames))
     }
 
     fun toString(vocabulary: Vocabulary): String {

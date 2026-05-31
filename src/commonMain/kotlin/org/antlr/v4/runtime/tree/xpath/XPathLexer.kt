@@ -20,12 +20,9 @@ open class XPathLexer(
     override val ruleNames: Array<String>
         get() = Companion.ruleNames
 
-    @Suppress("DEPRECATION")
-    @get:Deprecated("Use vocabulary instead")
     override val tokenNames: Array<String?>?
-        get() = Companion.tokenNames as Array<String?>?
+        get() = Array(Companion.tokenNames.size) { Companion.tokenNames[it] }
 
-    @Suppress("DEPRECATION")
     override val vocabulary: Vocabulary
         get() = Companion.VOCABULARY
 

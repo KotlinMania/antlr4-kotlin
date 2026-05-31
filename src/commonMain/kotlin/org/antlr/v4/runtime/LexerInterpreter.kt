@@ -23,9 +23,6 @@ class LexerInterpreter(
     override val grammarFileName: String
     override val atn: ATN
 
-    @get:Deprecated("Use vocabulary instead.")
-    @Deprecated("Use vocabulary instead.")
-    @Suppress("CAST_NEVER_SUCCEEDS")
     override val tokenNames: Array<String?>?
     override val ruleNames: Array<String>?
     val interpreterChannelNames: Array<String?>?
@@ -69,11 +66,11 @@ class LexerInterpreter(
 
         this.grammarFileName = grammarFileName!!
         this.atn = atn
-        val tokenNamesArr = Array(atn.maxTokenType) { "" }
+        val tokenNamesArr = Array<String?>(atn.maxTokenType) { "" }
         for (i in tokenNamesArr.indices) {
             tokenNamesArr[i] = vocabulary.getDisplayName(i) ?: ""
         }
-        this.tokenNames = tokenNamesArr as Array<String?>?
+        this.tokenNames = tokenNamesArr
 
         this.ruleNames = ruleNames.map { it ?: "" }.toTypedArray()
         this.interpreterChannelNames = channelNames.map { it ?: "" }.toTypedArray()

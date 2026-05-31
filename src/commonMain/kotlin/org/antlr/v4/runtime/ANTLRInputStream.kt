@@ -4,7 +4,9 @@ package org.antlr.v4.runtime
 
 import org.antlr.v4.runtime.misc.Interval
 
-@Deprecated("as of 4.7 Please use CharStreams interface.")
+// Upstream deprecates this in favor of the CharStreams factory, but CharStreams
+// is JVM-only (java.io/nio-backed); in this Kotlin Multiplatform port the
+// char-array-backed ANTLRInputStream is the supported commonMain CharStream.
 open class ANTLRInputStream : CharStream {
     protected var data: CharArray
     protected var n: Int = 0

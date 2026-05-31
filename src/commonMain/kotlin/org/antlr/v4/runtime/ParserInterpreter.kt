@@ -45,7 +45,6 @@ class ParserInterpreter(
     protected var decisionToDFA: Array<DFA?> // not shared like it is for generated parsers
     protected val sharedContextCache: PredictionContextCache = PredictionContextCache()
 
-    @Deprecated("")
     override var tokenNames: Array<String?>? = null
     override var ruleNames: Array<String>? = null
 
@@ -103,7 +102,7 @@ class ParserInterpreter(
             tokenNames!![i] = vocabulary.getDisplayName(i) ?: ""
         }
 
-        this.ruleNames = ruleNames.map { it }.toTypedArray() as Array<String>?
+        this.ruleNames = ruleNames.map { it ?: "" }.toTypedArray()
 
         // init decision DFA
         val numberOfDecisions: Int = atn.numberOfDecisions
@@ -373,7 +372,7 @@ class ParserInterpreter(
                 var expectedTokenType: Int = Token.INVALID_TYPE
                 val et = ime!!.expectedTokens
                 if (et?.isNil == false) {
-                    expectedTokenType = et.minElement ?: Token.INVALID_TYPE
+                    expectedTokenType = et.minElement
                 }
                 val errToken: Token? =
                     tokenFactory?.create(

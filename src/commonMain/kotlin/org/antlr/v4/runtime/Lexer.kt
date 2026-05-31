@@ -294,8 +294,6 @@ abstract class Lexer :
     val modeNames: Array<String?>?
         get() = null
 
-    @Suppress("DEPRECATION")
-    @get:Deprecated("Use vocabulary instead.", ReplaceWith("vocabulary"))
     override val tokenNames: Array<String?>?
         /** Used to print out token names like ID during debugging and
          * error reporting.  The generated parsers implement a method

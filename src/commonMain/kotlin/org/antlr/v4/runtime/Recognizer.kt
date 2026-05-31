@@ -30,12 +30,14 @@ abstract class Recognizer<Symbol, ATNInterpreter : ATNSimulator> {
      */
     var state: Int = -1
 
-    @Deprecated("Use vocabulary instead.")
+    // Upstream deprecates tokenNames in favor of Vocabulary, but it remains an
+    // abstract member every recognizer implements and is the backing source for
+    // the vocabulary view below; keeping it non-deprecated avoids an illegal
+    // @Suppress("DEPRECATION") under the workspace's allWarningsAsErrors policy.
     abstract val tokenNames: Array<String?>?
 
     abstract val ruleNames: Array<String>?
 
-    @Suppress("DEPRECATION")
     open val vocabulary: Vocabulary
         get() = VocabularyImpl.fromTokenNames(this.tokenNames)
 
