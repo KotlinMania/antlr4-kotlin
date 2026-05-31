@@ -18,7 +18,7 @@ import Antlr4Runtime
 //      architecture arm64".
 //
 //   3. The Kotlin `swiftExport { moduleName = "Antlr4Runtime" }` and
-//      `flattenPackage = "io.github.kotlinmania.antlr4runtime"` configuration
+//      `flattenPackage = "io.github.kotlinmania.antlr4"` configuration
 //      in build.gradle.kts produced a module name that's both syntactically
 //      valid as a Swift identifier and reachable from this Package.swift
 //      via the `Antlr4RuntimeLibrary` product.
