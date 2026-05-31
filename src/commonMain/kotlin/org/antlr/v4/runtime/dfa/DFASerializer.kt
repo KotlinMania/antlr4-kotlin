@@ -61,9 +61,9 @@ open class DFASerializer(
         val baseStateStr = (if (s.isAcceptState) ":" else "") + "s" + n + (if (s.requiresFullContext) "^" else "")
         if (s.isAcceptState) {
             if (s.predicates != null) {
-                return baseStateStr.toString() + "=>" + s.predicates.contentToString()
+                return baseStateStr + "=>" + s.predicates.contentToString()
             } else {
-                return baseStateStr.toString() + "=>" + s.prediction
+                return baseStateStr + "=>" + s.prediction
             }
         } else {
             return baseStateStr

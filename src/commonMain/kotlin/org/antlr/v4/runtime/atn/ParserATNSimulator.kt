@@ -463,7 +463,7 @@ open class ParserATNSimulator(
         var t: Int = input.LA(1)
 
         while (true) { // while more work
-            var D: DFAState = getExistingTargetState(previousD!!, t) ?: computeTargetState(dfa, previousD!!, t)
+            var D: DFAState = getExistingTargetState(previousD!!, t) ?: computeTargetState(dfa, previousD, t)
 
             if (D === ERROR) {
                 // if any configs in previous dipped into outer context, that
@@ -475,9 +475,9 @@ open class ParserATNSimulator(
                 // ATN states in SLL implies LL will also get nowhere.
                 // If conflict in states that dip out, choose min since we
                 // will get error no matter what.
-                val e: NoViableAltException = noViableAlt(input, outerContext, previousD?.configs, startIndex)
+                val e: NoViableAltException = noViableAlt(input, outerContext, previousD.configs, startIndex)
                 input.seek(startIndex)
-                val alt = getSynValidOrSemInvalidAltThatFinishedDecisionEntryRule(previousD!!.configs, outerContext)
+                val alt = getSynValidOrSemInvalidAltThatFinishedDecisionEntryRule(previousD.configs, outerContext)
                 if (alt != ATN.INVALID_ALT_NUMBER) {
                     return alt
                 }
@@ -1279,7 +1279,7 @@ val D_predicates = D.predicates!!
         var altToPred: Array<SemanticContext?>? = arrayOfNulls<SemanticContext?>(nalts + 1)
         for (c in configs) {
             if (ambigAlts.get(c.alt)) {
-                altToPred!![c.alt] = SemanticContext.or(altToPred!![c.alt], c.semanticContext)
+                altToPred!![c.alt] = SemanticContext.or(altToPred[c.alt], c.semanticContext)
             }
         }
 
@@ -2156,7 +2156,7 @@ val D_predicates = D.predicates!!
             return displayName
         }
 
-        return displayName.toString() + "<" + t + ">"
+        return displayName + "<" + t + ">"
     }
 
     fun getLookaheadName(input: TokenStream): String? = getTokenName(input.LA(1))

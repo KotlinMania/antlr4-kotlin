@@ -132,11 +132,11 @@ open class DefaultErrorStrategy : ANTLRErrorStrategy {
         }
         beginErrorCondition(recognizer)
         if (e is NoViableAltException) {
-            reportNoViableAlternative(recognizer, e as NoViableAltException)
+            reportNoViableAlternative(recognizer, e)
         } else if (e is InputMismatchException) {
-            reportInputMismatch(recognizer, e as InputMismatchException)
+            reportInputMismatch(recognizer, e)
         } else if (e is FailedPredicateException) {
-            reportFailedPredicate(recognizer, e as FailedPredicateException)
+            reportFailedPredicate(recognizer, e)
         } else {
             println("unknown recognition error type: " + e::class.simpleName)
             recognizer.notifyErrorListeners(e.offendingToken, e.message, e)
