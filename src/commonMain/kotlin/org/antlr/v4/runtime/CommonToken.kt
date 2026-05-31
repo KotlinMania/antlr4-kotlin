@@ -57,8 +57,8 @@ class CommonToken : WritableToken {
         this.startIndex = start
         this.stopIndex = stop
         if (source.a != null) {
-            this.line = source.a?.line ?: 0
-            this.charPositionInLine = source.a?.charPositionInLine ?: -1
+            this.line = source.a.line
+            this.charPositionInLine = source.a.charPositionInLine
         }
     }
 

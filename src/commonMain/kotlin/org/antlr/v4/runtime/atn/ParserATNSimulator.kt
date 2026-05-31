@@ -604,7 +604,7 @@ val D_predicates = D.predicates!!
         dfa: DFA,
         previousD: DFAState,
         t: Int,
-    ): DFAState? {
+    ): DFAState {
         val reach: ATNConfigSet? = computeReachSet(previousD.configs, t, false)
         if (reach == null) {
             addDFAEdge(dfa, previousD, t, ERROR)

@@ -385,7 +385,8 @@ class ParserInterpreter(
                         -1, // invalid start/stop
                         tok.line,
                         tok.charPositionInLine,
-                    )                _ctx!!.addErrorNode(createErrorNode(_ctx!!, errToken!!))
+                    )
+                _ctx!!.addErrorNode(createErrorNode(_ctx!!, errToken!!))
             } else { // NoViableAlt
                 val tok: Token = e.offendingToken!!
                 val errToken: Token? =
@@ -398,7 +399,8 @@ class ParserInterpreter(
                         -1, // invalid start/stop
                         tok.line,
                         tok.charPositionInLine,
-                    )                _ctx!!.addErrorNode(createErrorNode(_ctx!!, errToken!!))
+                    )
+                _ctx!!.addErrorNode(createErrorNode(_ctx!!, errToken!!))
             }
         }
     }

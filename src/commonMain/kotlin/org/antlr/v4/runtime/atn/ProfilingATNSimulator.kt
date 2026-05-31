@@ -127,8 +127,8 @@ class ProfilingATNSimulator(
         dfa: DFA,
         previousD: DFAState,
         t: Int,
-    ): DFAState? {
-        val state: DFAState? = super.computeTargetState(dfa, previousD, t)
+    ): DFAState {
+        val state: DFAState = super.computeTargetState(dfa, previousD, t)
         currentState = state
         return state
     }

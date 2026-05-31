@@ -569,7 +569,7 @@ abstract class PredictionContext protected constructor(
                     val a_: PredictionContext? =
                         SingletonPredictionContext.create(
                             mergedParents[0],
-                            mergedReturnStates?.get(0) ?: 0,
+                            mergedReturnStates[0],
                         )
                     if (mergeCache != null) mergeCache.put(a, b, a_!!)
                     return a_
@@ -666,11 +666,11 @@ abstract class PredictionContext protected constructor(
                 if (current === EmptyPredictionContext.Instance) continue
                 for (i in 0..<(current?.size() ?: 0)) {
                     if (current?.getParent(i) == null) continue
-                    val s: String? = current?.id.toString()
+                    val s: String? = current.id.toString()
                     buf.append("  s").append(s)
                     buf.append("->")
                     buf.append("s")
-                    buf.append(current?.getParent(i)?.id ?: -1)
+                    buf.append(current.getParent(i)?.id ?: -1)
                     if (current?.size() ?: 0 > 1) {
                         buf.append(" [label=\"parent[" + i + "]\"];\n")
                     } else {
