@@ -373,7 +373,7 @@ class ParserInterpreter(
                 var expectedTokenType: Int = Token.INVALID_TYPE
                 val et = ime!!.expectedTokens
                 if (et?.isNil == false) {
-                    expectedTokenType = et?.minElement ?: Token.INVALID_TYPE
+                    expectedTokenType = et.minElement ?: Token.INVALID_TYPE
                 }
                 val errToken: Token? =
                     tokenFactory?.create(

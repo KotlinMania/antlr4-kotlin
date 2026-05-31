@@ -19,6 +19,6 @@ class InputMismatchException : RecognitionException {
         ctx,
     ) {
         this.offendingState = state
-        recognizer?.let { this.offendingToken = it.currentToken }
+        this.offendingToken = recognizer.currentToken
     }
 }

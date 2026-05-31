@@ -60,7 +60,7 @@ abstract class Parser(
 
         override fun exitEveryRule(ctx: ParserRuleContext?) {
             if (ctx?.children is ArrayList) {
-                (ctx?.children as? ArrayList<*>)?.trimToSize()
+                (ctx.children as? ArrayList<*>)?.trimToSize()
             }
         }
 

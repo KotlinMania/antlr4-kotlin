@@ -15,7 +15,7 @@ class EmptyPredictionContext private constructor() : SingletonPredictionContext(
 
     override fun getReturnState(index: Int): Int = returnState
 
-    override fun equals(o: Any?): Boolean = this === o
+    override fun equals(other: Any?): Boolean = this === other
 
     override fun toString(): String = "$"
 

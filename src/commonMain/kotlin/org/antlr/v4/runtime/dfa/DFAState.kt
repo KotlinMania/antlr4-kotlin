@@ -54,7 +54,7 @@ class DFAState {
 
     override fun hashCode(): Int {
         var hash = MurmurHash.initialize(7)
-        hash = MurmurHash.update(hash, configs?.hashCode() ?: 0)
+        hash = MurmurHash.update(hash, configs.hashCode())
         hash = MurmurHash.finish(hash, 1)
         return hash
     }
