@@ -27,7 +27,7 @@ open class Array2DHashSet<T>
 
         init {
             this.comparator =
-                if (comparator is AnyEqualityComparator && this !is AnyEqualityComparator) {
+                if (comparator is AnyEqualityComparator) {
                     AnyEqualityComparator.INSTANCE as AbstractEqualityComparator<in T>
                 } else {
                     comparator

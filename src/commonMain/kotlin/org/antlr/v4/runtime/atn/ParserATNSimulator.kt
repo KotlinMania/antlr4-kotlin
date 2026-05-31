@@ -702,7 +702,7 @@ val D_predicates = D.predicates!!
 // 			println("LL REACH "+getLookaheadName(input)+
 // 							   " from configs.size="+previous.size+
 // 							   " line "+input.LT(1)!!.line+":"+input.LT(1)!!.charPositionInLine);
-            reach = computeReachSet(previous!!, t, fullCtx)!!
+            reach = computeReachSet(previous!!, t, fullCtx)
             if (reach == null) {
                 // if any configs in previous dipped into outer context, that
                 // means that input up to t actually finished entry rule

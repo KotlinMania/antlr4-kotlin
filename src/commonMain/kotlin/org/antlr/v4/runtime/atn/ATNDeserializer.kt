@@ -560,10 +560,6 @@ class ATNDeserializer
                 LexerActionType.SKIP -> return LexerSkipAction.INSTANCE
 
                 LexerActionType.TYPE -> return LexerTypeAction(data1)
-
-                else -> throw IllegalArgumentException(
-                    "The specified lexer action type $type is not valid.",
-                )
             }
         }
 

@@ -584,7 +584,7 @@ class TokenStreamRewriter(
                     if (prevIop is InsertAfterOp) {
                         iop.text = catOpText(prevIop.text, iop.text)
                         rewrites[prevIop.instructionIndex] = null
-                    } else if (prevIop is InsertBeforeOp) {
+                    } else {
                         iop.text = catOpText(iop.text, prevIop.text)
                         rewrites[prevIop.instructionIndex] = null
                     }

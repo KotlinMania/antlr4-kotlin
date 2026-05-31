@@ -138,12 +138,6 @@ class ATNSerializer(
                         data.add(type)
                         data.add(0)
                     }
-
-                    else -> {
-                        val message: String =
-                            "The specified lexer action type ${action.actionType} is not valid."
-                        throw IllegalArgumentException(message)
-                    }
                 }
             }
         }
