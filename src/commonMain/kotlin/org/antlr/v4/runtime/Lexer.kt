@@ -176,8 +176,8 @@ abstract class Lexer :
         return _mode
     }
 
-    override fun setTokenFactory(input: TokenFactory<*>?) {
-        this._factory = input ?: CommonTokenFactory.DEFAULT
+    override fun setTokenFactory(factory: TokenFactory<*>?) {
+        this._factory = factory ?: CommonTokenFactory.DEFAULT
     }
 
     override val tokenFactory: TokenFactory<*>?

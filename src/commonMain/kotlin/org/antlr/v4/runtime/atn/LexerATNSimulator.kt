@@ -132,9 +132,7 @@ class LexerATNSimulator(
     }
 
     protected fun matchATN(input: CharStream): Int {
-        val startState: ATNState =
-            atn.modeToStartState?.get(mode)
-                ?: throw IllegalStateException("No/Invalid ATN state for mode $mode")
+        val startState: ATNState = atn.modeToStartState[mode]
 
         if (org.antlr.v4.runtime.atn.LexerATNSimulator.Companion.debug) {
             println("matchATN mode $mode start: $startState")
@@ -478,7 +476,7 @@ class LexerATNSimulator(
                 for (i in 0..<config.context!!.size()) {
                     if (config.context!!.getReturnState(i) != PredictionContext.EMPTY_RETURN_STATE) {
                         val newContext: PredictionContext? = config.context!!.getParent(i) // "pop" return state
-                        val returnState: ATNState? = atn.states?.get(config.context!!.getReturnState(i))
+                        val returnState: ATNState? = atn.states.get(config.context!!.getReturnState(i))
                         val c: LexerATNConfig = LexerATNConfig(config, returnState, newContext)
                         currentAltReachedAcceptState =
                             closure(input, c, configs, currentAltReachedAcceptState, speculative, treatEofAsEpsilon)
@@ -576,7 +574,7 @@ class LexerATNSimulator(
                     val lexerActionExecutor: LexerActionExecutor? =
                         LexerActionExecutor.append(
                             config.getLexerActionExecutor(),
-                            atn.lexerActions?.get((t as ActionTransition).actionIndex),
+                            atn.lexerActions.get((t as ActionTransition).actionIndex),
                         )
                     c = LexerATNConfig(config, t.target, lexerActionExecutor)
                 } else {
@@ -745,7 +743,7 @@ class LexerATNSimulator(
         if (firstConfigWithRuleStopState != null) {
             proposed.isAcceptState = true
             proposed.lexerActionExecutor = (firstConfigWithRuleStopState as LexerATNConfig).getLexerActionExecutor()
-            proposed.prediction = atn.ruleToTokenType[firstConfigWithRuleStopState.state.ruleIndex]!!
+            proposed.prediction = atn.ruleToTokenType[firstConfigWithRuleStopState.state.ruleIndex]
         }
 
         val dfa: DFA = decisionToDFA[mode]

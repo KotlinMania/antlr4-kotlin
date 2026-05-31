@@ -156,7 +156,7 @@ abstract class Recognizer<Symbol, ATNInterpreter : ATNSimulator> {
 
     abstract val tokenFactory: TokenFactory<*>?
 
-    abstract fun setTokenFactory(input: TokenFactory<*>?)
+    abstract fun setTokenFactory(factory: TokenFactory<*>?)
 
     companion object {
         val EOF: Int = -1
