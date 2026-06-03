@@ -174,6 +174,7 @@ Source trees inspected:
 - `/Volumes/stuff/Projects/kotlinmania/syn-kotlin/tmp/syn`
 - `/Volumes/stuff/Projects/kotlinmania/serde-kotlin/tmp/serde`
 - `/Volumes/stuff/Projects/kotlinmania/unicode-ident-kotlin/tmp/unicode-ident`
+- `/Volumes/stuff/Projects/kotlinmania/toport/kotlin-spec`
 
 Upstream dependency shape:
 
@@ -508,6 +509,61 @@ source text
 
 The all-target fixture path should start with `ANTLRInputStream(String)`.
 `CharStreams` is currently JVM-specific and belongs in JVM-only stream tests.
+
+### Kotlin Grammar Source Path
+
+The Kotlin ANTLR grammar source is in:
+
+```text
+/Volumes/stuff/Projects/kotlinmania/toport/kotlin-spec
+```
+
+Files:
+
+- `KotlinLexer.g4`
+- `KotlinParser.g4`
+- `UnicodeClasses.g4`
+- `KotlinLexer.tokens`
+- `UnicodeClasses.tokens`
+- `build.gradle`
+- `KotlinParser_main.kt`
+
+`KotlinParser.g4` is a parser grammar with `tokenVocab = KotlinLexer`.
+`KotlinLexer.g4` imports `UnicodeClasses`. The lexer has Kotlin-specific mode
+actions, including brace mode handling around `LCURL` and `RCURL`; generation
+for Kotlin output must translate those actions into Kotlin runtime code rather
+than preserving Java action text.
+
+`build.gradle` and `KotlinParser_main.kt` in that folder currently contain
+`404: Not Found`; they are placeholders in this checkout, not generation
+inputs. The grammar inputs are the `.g4` files plus token metadata.
+
+Generation path to prove:
+
+```text
+../toport/kotlin-spec/KotlinLexer.g4
+../toport/kotlin-spec/KotlinParser.g4
+../toport/kotlin-spec/UnicodeClasses.g4
+  -> ANTLR Kotlin target generation
+  -> generated KotlinLexer : io.github.kotlinmania.antlr4.Lexer
+  -> generated KotlinParser : io.github.kotlinmania.antlr4.Parser
+  -> common parser fixture using ANTLRInputStream
+  -> CommonTokenStream
+  -> parser entry points: kotlinFile and script
+  -> proc-macro-kotlin AntlrTokenAdapter when token normalization is needed
+```
+
+The current JetBrains KMP parser and lexer sources remain useful comparison
+inputs:
+
+```text
+/Volumes/stuff/Projects/kotlinmania/toport/kmp-parser/common/src/org/jetbrains/kotlin/kmp/lexer/KotlinLexer.kt
+/Volumes/stuff/Projects/kotlinmania/toport/kmp-parser/common/src/org/jetbrains/kotlin/kmp/parser/KotlinParser.kt
+```
+
+The ANTLR-generated grammar path and the JetBrains KMP lexer path should be
+compared by normalized token/tree behavior, not by matching implementation
+classes.
 
 ### proc-macro2 Compiler Variant Path
 
