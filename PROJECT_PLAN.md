@@ -23,7 +23,7 @@ The workspace-level chain is:
 antlr4-kotlin runtime publishable
   -> proc-macro-kotlin v0.1.0 publishable
      -> proc-macro2-kotlin compiler variant wired
-        -> serde_derive can be ported
+        -> serde_derive can compile and run
            -> serde downstream crates can progress
 ```
 
@@ -161,6 +161,253 @@ editing that checkout.
 
 ---
 
+## Rust Ecosystem Graph
+
+The upstream Rust crates are not independent pieces. They form one token
+pipeline.
+
+Source trees inspected:
+
+- `/Volumes/stuff/Projects/kotlinmania/proc-macro-kotlin/tmp/proc-macro`
+- `/Volumes/stuff/Projects/kotlinmania/proc-macro2-kotlin/tmp/proc-macro2`
+- `/Volumes/stuff/Projects/kotlinmania/quote-kotlin/tmp/quote`
+- `/Volumes/stuff/Projects/kotlinmania/syn-kotlin/tmp/syn`
+- `/Volumes/stuff/Projects/kotlinmania/serde-kotlin/tmp/serde`
+- `/Volumes/stuff/Projects/kotlinmania/unicode-ident-kotlin/tmp/unicode-ident`
+
+Upstream dependency shape:
+
+```text
+proc_macro
+  compiler-provided TokenStream, TokenTree, Span, Diagnostic bridge
+
+proc-macro2
+  depends on unicode-ident
+  wraps proc_macro when compiler proc_macro is available
+  uses fallback TokenStream parser everywhere else
+
+quote
+  depends on proc-macro2
+  quote! and ToTokens produce proc_macro2::TokenStream
+
+syn
+  depends on proc-macro2
+  optionally depends on quote for printing
+  depends on unicode-ident
+  parses proc_macro/proc_macro2 streams into Rust syntax trees
+
+serde_derive
+  depends on proc-macro2, quote, syn
+  takes proc_macro::TokenStream at derive entry
+  parses into syn::DeriveInput
+  generates proc_macro2::TokenStream
+  converts back into proc_macro::TokenStream
+
+serde / serde_core
+  runtime traits and helper APIs consumed by generated code
+```
+
+KotlinMania dependency shape should mirror the same direction:
+
+```text
+antlr4-kotlin
+  -> no proc macro dependency
+
+proc-macro-kotlin
+  -> antlr4-kotlin
+
+proc-macro2-kotlin
+  -> proc-macro-kotlin
+  -> unicode-ident-kotlin if the fallback parser needs the sibling artifact
+
+quote-kotlin
+  -> proc-macro2-kotlin
+
+syn-kotlin
+  -> proc-macro2-kotlin
+  -> quote-kotlin for printing and compile-error output
+  -> unicode-ident-kotlin if identifier tables are not vendored locally
+
+serde-kotlin
+  -> proc-macro2-kotlin
+  -> quote-kotlin
+  -> syn-kotlin
+```
+
+Do not make `quote-kotlin` depend on `syn-kotlin`. Upstream quote mentions Syn
+as a caller, not as a dependency.
+
+### Upstream proc_macro
+
+Rust source: `proc-macro-kotlin/tmp/proc-macro/src/lib.rs`.
+
+`proc_macro` is the compiler-facing API:
+
+- procedural macro entry functions accept and return `proc_macro::TokenStream`
+- `TokenStream` is a shallow iterable sequence of `TokenTree`
+- `TokenTree` has `Group`, `Ident`, `Punct`, and `Literal`
+- `Span` carries byte range, line, column, file, source text, and hygiene
+- the real implementation talks to rustc through `bridge::client::Methods`
+
+Kotlin source: `proc-macro-kotlin/src/commonMain/.../procmacro`.
+
+The Kotlin port already provides the Rust-shaped surface and a
+`TokenStream.fromString` parser backed by JetBrains Kotlin lexer tokens. The
+missing architectural piece is not another public token API. It is source and
+span fidelity plus an ANTLR-backed adapter path when generated Kotlin grammar
+output is ready.
+
+### Upstream proc-macro2
+
+Rust sources:
+
+- `proc-macro2-kotlin/tmp/proc-macro2/src/lib.rs`
+- `proc-macro2-kotlin/tmp/proc-macro2/src/wrapper.rs`
+- `proc-macro2-kotlin/tmp/proc-macro2/src/fallback.rs`
+- `proc-macro2-kotlin/tmp/proc-macro2/src/parse.rs`
+- `proc-macro2-kotlin/tmp/proc-macro2/src/detection.rs`
+
+The key Rust design is `wrapper.rs`:
+
+```text
+imp::TokenStream
+  -> Compiler(DeferredTokenStream(proc_macro::TokenStream))
+  -> Fallback(fallback::TokenStream)
+```
+
+Every public type in `lib.rs` stores `imp::*`, not the fallback type directly.
+`Detection.inside_proc_macro()` decides whether constructors create compiler or
+fallback values. Mixed compiler/fallback values intentionally fail through the
+`mismatch` path because a single token stream must not silently combine
+different backends.
+
+The Kotlin port currently stores fallback internals directly in public types.
+That shape is enough for tests and non-macro parsing, but it cannot serve
+serde derive as a compiler-backed bridge. The Kotlin target shape is:
+
+```text
+public proc-macro2 TokenStream
+  -> WrapperTokenStream.Compiler(proc-macro-kotlin TokenStream)
+  -> WrapperTokenStream.Fallback(FallbackTokenStream)
+```
+
+The same wrapper split applies to `Span`, `Group`, `Ident`, `Punct`,
+`Literal`, iterators, `LexError`, and conversion functions.
+
+### Upstream quote
+
+Rust sources:
+
+- `quote-kotlin/tmp/quote/src/lib.rs`
+- `quote-kotlin/tmp/quote/src/to_tokens.rs`
+- `quote-kotlin/tmp/quote/src/ext.rs`
+- `quote-kotlin/tmp/quote/src/runtime.rs`
+
+`quote!` produces `proc_macro2::TokenStream`. Interpolation is driven by the
+`ToTokens` trait. Rust derive code relies on:
+
+- `ToTokens.to_tokens(&mut TokenStream)`
+- `TokenStreamExt.append`
+- `append_all`
+- `append_separated`
+- `append_terminated`
+- `quote_spanned!` for span-preserving output
+
+Kotlin cannot reuse Rust macro expansion syntax directly. The Kotlin code
+shape should keep the trait layer and write expansions as explicit builders:
+
+```text
+val tokens = TokenStream.new()
+staticFragment.toTokens(tokens)
+fieldIdent.toTokens(tokens)
+Comma.default().toTokens(tokens)
+```
+
+Static fragments can use `TokenStream.fromString` where the fragment is small
+and stable. Interpolated derive output should prefer builder calls so spans,
+groups, and punctuation are controlled directly.
+
+### Upstream syn
+
+Rust sources:
+
+- `syn-kotlin/tmp/syn/src/lib.rs`
+- `syn-kotlin/tmp/syn/src/parse_macro_input.rs`
+- `syn-kotlin/tmp/syn/src/parse.rs`
+- `syn-kotlin/tmp/syn/src/buffer.rs`
+- `syn-kotlin/tmp/syn/src/error.rs`
+- `syn-kotlin/tmp/syn/src/derive.rs`
+- `syn-kotlin/tmp/syn/src/attr.rs`
+
+Syn consumes `proc_macro2::TokenStream` and produces Rust syntax trees. Its
+critical internal shape is:
+
+```text
+TokenStream
+  -> TokenBuffer::new2
+  -> Cursor
+  -> ParseBuffer / ParseStream
+  -> Parse implementations
+  -> syntax tree
+```
+
+For derive macros, the important public entry is:
+
+```text
+proc_macro::TokenStream
+  -> parse_macro_input!(input as DeriveInput)
+  -> syn::DeriveInput
+```
+
+On parse failure, `syn::Error.to_compile_error()` produces a token stream that
+invokes `compile_error!` in Rust. In Kotlin, `SynError.toCompileError()` is the
+same responsibility. This makes span quality a functional requirement, because
+serde reports attribute and derive-shape errors through Syn spans.
+
+### Upstream serde_derive
+
+Rust sources:
+
+- `serde-kotlin/tmp/serde/serde_derive/src/lib.rs`
+- `serde-kotlin/tmp/serde/serde_derive/src/ser.rs`
+- `serde-kotlin/tmp/serde/serde_derive/src/de.rs`
+- `serde-kotlin/tmp/serde/serde_derive/src/fragment.rs`
+- `serde-kotlin/tmp/serde/serde_derive/src/internals/*.rs`
+
+The Rust derive entry points are compact:
+
+```text
+derive_serialize(input: proc_macro::TokenStream)
+  -> parse_macro_input!(input as syn::DeriveInput)
+  -> ser::expand_derive_serialize(&mut input)
+  -> Result<proc_macro2::TokenStream, syn::Error>
+  -> unwrap_or_else(syn::Error::into_compile_error)
+  -> into proc_macro::TokenStream
+
+derive_deserialize(input: proc_macro::TokenStream)
+  -> parse_macro_input!(input as syn::DeriveInput)
+  -> de::expand_derive_deserialize(&mut input)
+  -> Result<proc_macro2::TokenStream, syn::Error>
+  -> unwrap_or_else(syn::Error::into_compile_error)
+  -> into proc_macro::TokenStream
+```
+
+The translated Kotlin serde derive code already exists under
+`serde-kotlin/src/commonMain/kotlin/io/github/kotlinmania/serde/serdederive`.
+It uses:
+
+- `io.github.kotlinmania.procmacro2.TokenStream`
+- `io.github.kotlinmania.quote.ToTokens`
+- `io.github.kotlinmania.syn.*`
+- `Ctxt` to collect `SynError`
+- `Container.fromAst` to lower Syn AST into serde's internal AST
+- `Fragment` wrappers for expression/block generated fragments
+
+That partial port should be treated as an existing caller, not as future
+scratch work.
+
+---
+
 ## Caller Maps
 
 ### Existing JetBrains Lexer Path
@@ -253,6 +500,30 @@ proc-macro2 TokenTree.Literal
 The fallback parser stays valuable. It is the compatibility path for callers
 outside compiler mode and for Rust-token text where Kotlin grammar input is
 not the active source of truth.
+
+### serde Derive End-To-End Path
+
+The end-to-end Kotlin shape should follow the Rust derive entry points:
+
+```text
+deriveSerialize(input: proc-macro-kotlin TokenStream)
+  -> proc-macro2-kotlin TokenStream.fromProcMacro(input)
+  -> syn-kotlin parseMacroInput(tokens, DeriveInput.parser)
+     -> Success(DeriveInput)
+     -> CompileError(TokenStream)
+  -> serde-kotlin serdederive expandDeriveSerialize(DeriveInput)
+     -> SynResult<TokenStream>
+  -> quote-kotlin ToTokens builders
+  -> proc-macro2-kotlin TokenStream
+  -> proc-macro2-kotlin TokenStream.toProcMacro()
+  -> proc-macro-kotlin TokenStream
+
+deriveDeserialize follows the same shape.
+```
+
+The macro-entry functions should be thin. Real serde logic stays in functions
+that accept `syn-kotlin` AST values and return `SynResult<proc-macro2
+TokenStream>` so the same code can be unit-tested through the fallback path.
 
 ---
 
@@ -563,12 +834,71 @@ Enum mapping:
 | `Spacing.Joint` | `Spacing.JOINT` |
 | `Spacing.Alone` | `Spacing.ALONE` |
 
-### 6. Enable serde_derive work
+Required conversion APIs:
+
+```text
+TokenStream.fromProcMacro(input: proc-macro-kotlin TokenStream)
+TokenStream.toProcMacro(): proc-macro-kotlin TokenStream
+Span.fromProcMacro(input: proc-macro-kotlin Span)
+Span.toProcMacro(): proc-macro-kotlin Span
+```
+
+These can be internal at first if macro entry functions live in the same
+module, but the conversion shape needs to exist. `quote-kotlin`, `syn-kotlin`,
+and `serde-kotlin` should continue to talk primarily to `proc-macro2-kotlin`.
+
+### 6. Revalidate quote-kotlin against wrapper tokens
+
+Expected change shape:
+
+- keep `ToTokens` and `TokenStreamExt` as the public construction layer
+- ensure `append`, `appendAll`, `appendSeparated`, and `appendTerminated`
+  preserve wrapper backend consistency
+- keep static string parsing through `proc-macro2 TokenStream.fromString`
+- add tests that quote-style builders produce the same token tree shape in
+  fallback mode and compiler mode
+
+### 7. Revalidate syn-kotlin against wrapper tokens
+
+Expected change shape:
+
+- `TokenBuffer.new2` must buffer either wrapper backend without dropping spans
+- `Cursor.ident`, `punct`, `literal`, `group`, `anyGroup`, and `tokenTree`
+  must preserve group delimiter spans
+- `parseMacroInput` should keep returning `ParseMacroSynResult`
+- `SynError.toCompileError()` must emit tokens that can convert back through
+  `proc-macro2-kotlin` into `proc-macro-kotlin`
+- `DeriveInput`, `Attribute`, `Meta`, `Generics`, `Fields`, `Variant`, and
+  `Type` are the first serde-facing Syn nodes to validate
+
+### 8. Finish serde_derive entry points
 
 When `proc-macro2-kotlin` can select the compiler variant and still preserve
-fallback behavior, serde macro porting can use the Rust-shaped public API
-without knowing whether a token stream came from fallback parsing or the
-compiler-backed proc-macro path.
+fallback behavior, serde macro code can use the Rust-shaped public API without
+knowing whether a token stream came from fallback parsing or the compiler-backed
+proc-macro path.
+
+Expected change shape:
+
+- keep serde runtime traits in `serde-kotlin`
+- keep translated derive internals under `serdederive`
+- add thin macro entry functions that accept and return `proc-macro-kotlin
+  TokenStream`
+- parse through `syn-kotlin`
+- lower through `Container.fromAst`
+- generate through `quote-kotlin` builders
+- return `SynError.intoCompileError()` on failure
+
+First serde derive tests:
+
+- named struct `Serialize`
+- tuple struct `Serialize`
+- unit struct `Serialize`
+- named struct `Deserialize`
+- `#[serde(rename = "...")]`
+- duplicate serde attribute error
+- unsupported union error
+- span on a malformed serde attribute
 
 ---
 
