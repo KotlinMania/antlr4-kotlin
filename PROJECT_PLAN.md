@@ -1,13 +1,14 @@
 # Project Plan - antlr4-kotlin
 
-Stage: Runtime validation and Swift Export publish gate.
+Stage: Architecture map, runtime validation, Swift Export gate, and downstream
+publish wiring.
 
 This repository is the Kotlin Multiplatform ANTLR runtime used by generated
 ANTLR Kotlin lexers and parsers. It is a support project for
-`proc-macro-kotlin`, but it is not a Rust API port and it should not be shaped
-like Rust. The public surface here stays close to ANTLR's Java runtime:
-`CharStream`, `Token`, `TokenSource`, `Lexer`, `Parser`, `CommonTokenStream`,
-ATN/DFA simulation, parse trees, and runtime helpers.
+`proc-macro-kotlin`, but it is not a Rust API port. Its public shape should
+stay close to ANTLR's Java runtime: `CharStream`, `Token`, `TokenSource`,
+`Lexer`, `Parser`, `CommonTokenStream`, ATN/DFA simulation, parse trees, and
+runtime helpers.
 
 The Maven artifact is `antlr4-kotlin`; the root namespace is
 `io.github.kotlinmania.antlr4`.
@@ -26,159 +27,29 @@ antlr4-kotlin runtime publishable
            -> serde downstream crates can progress
 ```
 
-`antlr4-kotlin` is needed when Kotlin grammar output is generated against an
-ANTLR runtime. It is not the only lexer path in `proc-macro-kotlin`.
-`proc-macro-kotlin` currently has a JetBrains `KotlinLexer` path, and that path
-already converts Kotlin lexer tokens into Rust-shaped `proc_macro` token trees.
+`antlr4-kotlin` is the runtime dependency for Kotlin grammar output generated
+against an ANTLR runtime. It is not the only lexer path in
+`proc-macro-kotlin`. `proc-macro-kotlin` already has a JetBrains
+`KotlinLexer` path that converts Kotlin lexer tokens into Rust-shaped
+`proc_macro` token trees.
 
-This repository's immediate job is narrower and concrete:
+This repository has a focused release job:
 
-1. Every configured KotlinMania target must compile with the generated build
-   template.
-2. The runtime test suite must validate the mechanically translated Java
-   runtime behavior.
-3. Generated or ANTLR-compatible token sources must be able to feed
-   `CommonTokenStream` reliably.
-4. Swift Export must succeed without shrinking targets or excluding the runtime
-   surface from the build gate.
-5. A published artifact must be safe for `proc-macro-kotlin` to depend on.
-
----
-
-## Caller Map
-
-There are two tokenization paths that meet at a normalization boundary.
-
-### Current proc-macro-kotlin path
-
-```text
-TokenStream.fromString(source)
-  -> org.jetbrains.kotlin.kmp.lexer.KotlinLexer
-  -> proc-macro-kotlin KtTokenAdapter
-  -> proc-macro-kotlin TokenTree list
-  -> proc-macro-kotlin TokenStream
-```
-
-This path owns the Rust-like public API:
-
-- `TokenStream`
-- `TokenTree`
-- `Group`
-- `Ident`
-- `Punct`
-- `Literal`
-- `Span`
-
-ANTLR runtime types do not appear in that public API.
-
-### ANTLR-generated path
-
-```text
-source text
-  -> antlr4-kotlin CharStreams
-  -> generated Kotlin lexer : io.github.kotlinmania.antlr4.Lexer
-  -> io.github.kotlinmania.antlr4.CommonTokenStream
-  -> generated Kotlin parser : io.github.kotlinmania.antlr4.Parser
-  -> parser output and/or token stream
-  -> proc-macro-kotlin AntlrTokenAdapter
-  -> proc-macro-kotlin TokenTree list
-  -> proc-macro-kotlin TokenStream
-```
-
-The adapter belongs above this runtime, most likely in `proc-macro-kotlin`,
-because its output type is `proc-macro-kotlin.TokenStream`. This repository
-must not depend on `proc-macro-kotlin`.
-
-Allowed dependency direction:
-
-```text
-proc-macro-kotlin -> antlr4-kotlin
-antlr4-kotlin -/-> proc-macro-kotlin
-```
+1. Preserve every configured KotlinMania target in the generated build gate.
+2. Prove the translated runtime against ANTLR runtime tests.
+3. Prove generated or ANTLR-compatible token sources can feed
+   `CommonTokenStream` and `Parser` consistently.
+4. Make Swift Export pass by changing API shape where needed, not by shrinking
+   targets.
+5. Publish an artifact that `proc-macro-kotlin` can consume safely.
 
 ---
 
-## Architecture Boundary
+## Generated Build Rules
 
-`antlr4-kotlin` is responsible for:
-
-- Character input: `CharStream`, `CodePointCharStream`, `CharStreams`,
-  `UnbufferedCharStream`.
-- Token production and buffering: `Token`, `WritableToken`, `CommonToken`,
-  `TokenSource`, `Lexer`, `BufferedTokenStream`, `CommonTokenStream`,
-  `UnbufferedTokenStream`.
-- Runtime simulation: ATN, DFA, prediction contexts, lexer actions, parser
-  interpreter behavior.
-- Parse tree runtime: contexts, terminal nodes, listeners, visitors, tree
-  walking, pattern and XPath helpers where the runtime needs them.
-- Generated parser compatibility across all KotlinMania targets.
-
-`proc-macro-kotlin` is responsible for:
-
-- Rust-shaped `proc_macro` API.
-- Mapping source tokens into `TokenTree`.
-- Span semantics presented to proc macro callers.
-- `proc-macro2-kotlin` compiler/fallback dispatch.
-
-The adapter boundary is responsible for:
-
-- Skipping hidden-channel ANTLR tokens such as whitespace/comments.
-- Mapping ANTLR token type + token text to `Ident`, `Literal`, `Punct`, or
-  delimiter `Group`.
-- Preserving token source offsets and line/column data as `Span` input.
-- Keeping ANTLR token constants private to the adapter implementation.
-
-No ANTLR runtime type should become part of the public `proc_macro` API.
-
----
-
-## Current State
-
-Build structure:
-
-- `build.gradle.kts` is generated from the `proc-macro-kotlin` template shape
-  and should stay byte-for-byte synchronized with the parent template source
-  when the workspace blasts it out.
-- `.github/workflows/*.yml` files are generated workflow material and should be
-  copied from `proc-macro-kotlin` without hand edits.
-- `gradle.properties` and `gradle/libs.versions.toml` carry repo-specific
-  identity values and dependency bundle names.
-
-Runtime source:
-
-- The main runtime source is present under
-  `src/commonMain/kotlin/io/github/kotlinmania/antlr4`.
-- JVM-specific stream and I/O helpers are under
-  `src/jvmMain/kotlin/io/github/kotlinmania/antlr4`.
-- Mechanically translated source and tests also exist under
-  `/Volumes/stuff/Projects/kotlinmania/toport/antlr4`.
-
-Testing:
-
-- Initial runtime tests are now present for `IntegerList` and
-  `CodePointCharStream`.
-- `IntegerList` was corrected to expose the upstream-shaped public class name
-  and to encode supplementary Unicode code points as UTF-16 surrogate pairs.
-- Broad runtime test parity is still thin compared with the translated Java
-  test material.
-
-Current full build gate:
-
-- Android, Android Native, JVM, JS, Wasm, Apple, Linux, Windows compilation and
-  framework assembly reach the Swift Export section locally.
-- `swiftExportSmokeTest` currently fails at `macosArm64DebugSwiftExport` with
-  Kotlin Swift Export optional-wrapper handling (`KT-66875`).
-- The same Swift Export path also reports a Kotlin worker classpath failure for
-  `kotlinx/coroutines/internal/intellij/IntellijCoroutines`.
-
----
-
-## Execution Plan
-
-### 1. Keep the generated build surface synchronized
-
-The build and workflow files are generated inputs. Do not edit them for local
-preference.
+`build.gradle.kts` and `.github/workflows/*.yml` are generated material. Treat
+them as blasted-out files copied from `proc-macro-kotlin`, not as handwritten
+project configuration.
 
 Validation commands:
 
@@ -189,59 +60,215 @@ for f in .github/workflows/*.yml; do
 done
 ```
 
-Expected repo-specific differences live in:
+Repo-specific configuration belongs in:
 
 - `gradle.properties`
 - `gradle/libs.versions.toml`
-- source and tests
+- source files
+- test files
 
-### 2. Prove runtime behavior before expanding tool integration
+When the generated parent changes property names or version-catalog bundle
+names, synchronize the properties and TOML files. Do not patch the generated
+Gradle script to compensate.
 
-Port tests from the translated ANTLR runtime test suite in layers:
+Current identity facts:
 
-1. Pure common runtime tests:
-   - `misc/IntegerList`
-   - intervals and interval sets
-   - prediction context value behavior
-   - ATN serializer/deserializer helpers that do not require generated grammar
-     fixtures
-2. JVM stream tests:
-   - `CharStreams`
-   - `CodePointCharStream`
-   - `UnbufferedCharStream`
-   - encoding and invalid-input behavior
-3. Token stream tests:
-   - `ListTokenSource`
-   - `BufferedTokenStream`
-   - `CommonTokenStream`
-   - `UnbufferedTokenStream`
-   - `TokenStreamRewriter`
-4. Lexer/parser runtime tests:
-   - hand-built token sources first
-   - generated lexer fixtures second
-   - generated parser fixtures third
-5. Tool-backed grammar tests:
-   - only after the runtime can execute generated fixtures consistently
+- Maven artifact: `antlr4-kotlin`
+- Root namespace: `io.github.kotlinmania.antlr4`
+- Runtime classes package: `io.github.kotlinmania.antlr4`
 
-The first goal is not line count. The goal is to create tests that expose
-mechanical translation defects in runtime behavior.
+---
 
-### 3. Establish the ANTLR-to-proc-macro adapter contract
+## Repository Roles
 
-Add a small fixture that models what `proc-macro-kotlin` will consume:
+### antlr4-kotlin
+
+Owns the ANTLR runtime contract:
+
+- Character input: `IntStream`, `CharStream`, `ANTLRInputStream`,
+  `CodePointCharStream`, JVM `CharStreams`, `UnbufferedCharStream`.
+- Token production: `Token`, `WritableToken`, `CommonToken`, `TokenSource`,
+  `TokenFactory`, `CommonTokenFactory`, `Lexer`.
+- Token buffering: `TokenStream`, `BufferedTokenStream`,
+  `CommonTokenStream`, `UnbufferedTokenStream`, `ListTokenSource`,
+  `TokenStreamRewriter`.
+- Parser runtime: `Recognizer`, `Parser`, `ParserRuleContext`,
+  `RuleContext`, error strategy/listener support.
+- Prediction runtime: ATN, DFA, prediction contexts, semantic predicates,
+  lexer actions, parser interpreter behavior.
+- Parse tree runtime: contexts, terminal nodes, listeners, visitors, tree
+  walking, pattern helpers where the runtime requires them.
+
+This repo should not expose any `proc-macro-kotlin` type and should not depend
+on `proc-macro-kotlin`.
+
+### proc-macro-kotlin
+
+Owns the Rust-shaped `proc_macro` API:
+
+- `TokenStream`
+- `TokenTree`
+- `Group`
+- `Ident`
+- `Punct`
+- `Literal`
+- `Span`
+- parse/expand outcomes and diagnostics
+
+It also owns source-token normalization. Its existing internal
+`KtTokenAdapter` is the blueprint for an `AntlrTokenAdapter` because both
+produce the same `TokenTree` list and both need access to internal helpers
+such as `TokenStreamData` and `Literal.fromKotlinString`.
+
+Allowed dependency direction:
 
 ```text
-ANTLR TokenSource
-  -> CommonTokenStream
-  -> adapter input contract
-  -> expected normalized token sequence
+proc-macro-kotlin -> antlr4-kotlin
+antlr4-kotlin -/-> proc-macro-kotlin
 ```
 
-The fixture can start in this repository as runtime validation, but the actual
-adapter implementation should live in `proc-macro-kotlin` because it returns
-`proc-macro-kotlin.TokenStream`.
+### proc-macro2-kotlin
 
-Minimum adapter input contract:
+Owns compiler/fallback dispatch for callers that want a Rust `proc_macro2`
+style API.
+
+Current code shape is fallback-only:
+
+- `Detection.insideProcMacro()` always resolves to false.
+- Public `TokenStream` wraps `FallbackTokenStream`.
+- Public `Span`, `Group`, `Ident`, `Punct`, and `Literal` wrap fallback
+  internals.
+- `Wrapper.kt` is a placeholder layer rather than an active compiler/fallback
+  union.
+
+Target code shape:
+
+- Restore a real wrapper layer.
+- Public proc-macro2 types store wrapper internals, not fallback internals
+  directly.
+- Wrapper internals can represent either fallback values or
+  `proc-macro-kotlin` compiler values.
+- `Detection.forceFallback()` still pins fallback mode.
+- `Detection.unforceFallback()` re-runs detection.
+- Detection can select compiler mode once `proc-macro-kotlin v0.1.0` is a
+  usable dependency.
+
+The local `proc-macro2-kotlin` branch already has an uncommitted
+`implementation("io.github.kotlinmania:proc-macro-kotlin:0.1.0")` dependency
+in `build.gradle.kts`; that is the intended downstream dependency edge. That
+repo has local dirty files, so this plan records the connection without
+editing that checkout.
+
+---
+
+## Caller Maps
+
+### Existing JetBrains Lexer Path
+
+This path is already implemented in `proc-macro-kotlin`:
+
+```text
+TokenStream.fromString(source)
+  -> org.jetbrains.kotlin.kmp.lexer.KotlinLexer
+  -> proc-macro-kotlin KtTokenAdapter
+  -> TokenTree list
+  -> TokenStream(TokenStreamData)
+```
+
+The normalization algorithm in `KtTokenAdapter` is the contract to preserve:
+
+1. Lex raw Kotlin tokens.
+2. Filter whitespace and comments.
+3. Collapse string-template token runs into a synthetic string literal.
+4. Group delimiters recursively.
+5. Convert flat tokens into `Ident`, `Literal`, `Punct`, and `Group`.
+
+Important existing behavior:
+
+- Keywords and identifiers become `Ident` values.
+- String, char, integer, and float tokens use internal `Literal.fromKotlin*`
+  helpers.
+- Single-character punctuation becomes one `Punct` with `Spacing.ALONE`.
+- Multi-character operators decompose into `Punct` chains with
+  `Spacing.JOINT` except for the final `Spacing.ALONE` item.
+- Compound Kotlin tokens such as safe casts and negated `in`/`is` become the
+  Rust-shaped token sequence expected by callers.
+- Spans currently use `Span.callSite()` for lexed tokens.
+
+### ANTLR Runtime Path
+
+This is the path `antlr4-kotlin` needs to make possible:
+
+```text
+source text
+  -> common input: ANTLRInputStream(source)
+     or JVM input: CharStreams.fromString(source)
+  -> generated Kotlin lexer : io.github.kotlinmania.antlr4.Lexer
+  -> CommonTokenStream(lexer)
+  -> generated Kotlin parser : io.github.kotlinmania.antlr4.Parser
+  -> parser result and/or token stream
+  -> proc-macro-kotlin AntlrTokenAdapter
+  -> TokenTree list
+  -> TokenStream(TokenStreamData)
+```
+
+The all-target fixture path should start with `ANTLRInputStream(String)`.
+`CharStreams` is currently JVM-specific and belongs in JVM-only stream tests.
+
+### proc-macro2 Compiler Variant Path
+
+Once `proc-macro-kotlin` is published and wired:
+
+```text
+proc-macro2-kotlin TokenStream.fromString(source)
+  -> Detection.insideProcMacro()
+  -> wrapper selection
+     -> fallback parser path:
+          FallbackTokenStream.fromStrChecked(source)
+     -> compiler path:
+          proc-macro-kotlin TokenStream.fromString(source)
+  -> proc-macro2 public TokenStream
+```
+
+Token construction should follow the same wrapper split:
+
+```text
+proc-macro2 TokenTree.Group
+  -> WrapperGroup.Fallback(FallbackGroup)
+  -> WrapperGroup.Compiler(proc-macro-kotlin Group)
+
+proc-macro2 TokenTree.Ident
+  -> WrapperIdent.Fallback(FallbackIdent)
+  -> WrapperIdent.Compiler(proc-macro-kotlin Ident)
+
+proc-macro2 TokenTree.Punct
+  -> WrapperPunct.Fallback(FallbackPunct)
+  -> WrapperPunct.Compiler(proc-macro-kotlin Punct)
+
+proc-macro2 TokenTree.Literal
+  -> WrapperLiteral.Fallback(FallbackLiteral)
+  -> WrapperLiteral.Compiler(proc-macro-kotlin Literal)
+```
+
+The fallback parser stays valuable. It is the compatibility path for callers
+outside compiler mode and for Rust-token text where Kotlin grammar input is
+not the active source of truth.
+
+---
+
+## Adapter Contract
+
+`AntlrTokenAdapter` should live in `proc-macro-kotlin`, beside
+`KtTokenAdapter`.
+
+Input:
+
+- `CommonTokenStream` or a filled `TokenStream`
+- generated token vocabulary when available
+- source name or source identity
+- original source text when available
+
+Required ANTLR token fields:
 
 - `Token.type`
 - `Token.text`
@@ -250,92 +277,313 @@ Minimum adapter input contract:
 - `Token.stopIndex`
 - `Token.line`
 - `Token.charPositionInLine`
-- optional token vocabulary supplied by the generated lexer/parser
+- `Token.tokenSource`
+- `Token.inputStream`
 
-Minimum adapter output contract:
+Output:
 
-- identifiers and keywords become `TokenTree.Ident`
-- literals become `TokenTree.Literal`
-- punctuation becomes one or more `TokenTree.Punct`
-- delimiters become nested `TokenTree.Group`
-- hidden-channel tokens do not appear in output
-- source positions are available for `Span`
+- `List<TokenTree>`
+- then `TokenStream(TokenStreamData(output))`
 
-### 4. Fix Swift Export by API shape, not target removal
+Core algorithm:
 
-The failing `macosArm64DebugSwiftExport` task is part of the publish gate. The
-fix must preserve the configured target surface.
+1. Fill the ANTLR token stream.
+2. Drop hidden-channel tokens and EOF.
+3. Group delimiter pairs by token text or generated token type:
+   - `(` and `)` -> `Delimiter.PARENTHESIS`
+   - `{` and `}` -> `Delimiter.BRACE`
+   - `[` and `]` -> `Delimiter.BRACKET`
+4. Convert identifiers and keywords to `Ident`.
+5. Convert string, char, integer, and float spellings to `Literal` with the
+   existing internal Kotlin literal helpers.
+6. Convert punctuation to `Punct` values.
+7. Preserve `Spacing.JOINT` for decomposed multi-character operators.
+8. Attach spans from ANTLR start/stop offsets and line/column fields.
 
-Work shape:
+The adapter should not expose ANTLR token constants in the public
+`proc_macro` API. Generated grammar-specific constants should be private to
+adapter tests or injected through a small internal vocabulary map.
 
-1. Identify the exported declaration producing unsupported optional wrapping.
-2. Change the Kotlin API shape so Swift Export can bridge it.
-3. Keep Java/ANTLR runtime compatibility where generated Kotlin callers need
-   the original shape.
-4. Re-run `swiftExportSmokeTest`, then full `build`.
+### Span Work
 
-Likely search areas:
+Current `proc-macro-kotlin SpanData` supports:
 
-- nullable generic return types
-- nullable platform-style factory parameters
-- `Token?`, `TokenSource?`, `CharStream?`, `RuleContext?`
-- generic token factories and listener APIs
+- `CallSite`
+- `MixedSite`
+- `DefSite`
+- `Synthetic(IntRange)`
 
-### 5. Publish antlr4-kotlin only after tests and gates are meaningful
+ANTLR tokens provide richer source information:
 
-Publication should wait for:
+- byte or UTF-16-ish offsets from `startIndex` and `stopIndex`
+- line
+- column
+- source name
+- source text via `Token.inputStream`
 
-- generated build/workflow sync confirmed
-- full target compilation gate passing
-- Swift Export smoke test passing
-- runtime test suite has meaningful pure runtime and token stream coverage
-- generated or ANTLR-compatible token source fixture proves parser caller shape
+The adapter can start with `Synthetic` ranges for structural correctness, but
+diagnostics and source text fidelity need a source-backed `SpanData` shape in
+`proc-macro-kotlin`. The natural shape is:
 
-### 6. Wire proc-macro-kotlin above this runtime
+```text
+SourceBacked(
+  sourceId,
+  sourceName,
+  sourceText,
+  byteRange,
+  line,
+  column
+)
+```
 
-Once `antlr4-kotlin` is published:
-
-1. Add the Maven dependency in `proc-macro-kotlin`.
-2. Add `AntlrTokenAdapter` beside `KtTokenAdapter`.
-3. Keep `TokenStream.fromString` JetBrains-backed until the ANTLR-generated
-   Kotlin grammar path is fully validated.
-4. Add explicit tests that compare normalized output from the JetBrains lexer
-   path and ANTLR token path for equivalent Kotlin snippets.
-5. Wire `proc-macro2-kotlin` compiler mode only after
-   `proc-macro-kotlin.TokenStream` behavior is stable.
+That work belongs in `proc-macro-kotlin`, not here. `antlr4-kotlin` needs to
+keep token offsets, line, column, token source, and input stream behavior
+correct enough for that span layer to trust.
 
 ---
 
-## Test Source Inventory
+## API Shape And Swift Export
 
-Translated runtime tests are under:
+The current full build reaches Swift Export and then fails in
+`macosArm64DebugSwiftExport` with unsupported optional-wrapper handling. The
+fix should change exported API shape while preserving generated parser
+compatibility and every target in the build gate.
+
+High-risk exported shapes in this runtime:
+
+- `TokenFactory<Symbol : Token?>`
+- `TokenSource.nextToken(): Token?`
+- `TokenSource.inputStream: CharStream?`
+- `Token.tokenSource: TokenSource?`
+- `Token.inputStream: CharStream?`
+- `CommonToken.source: Pair<TokenSource?, CharStream?>?`
+- collections such as `List<Token?>`, `Array<String?>?`, and nullable maps
+- generic listener/interpreter APIs that return nullable runtime types
+
+Triage sequence:
+
+1. Run the failing Swift Export task with stacktrace and info logging.
+2. Identify the exact declaration Swift Export is lowering when it reports
+   optional wrapping.
+3. Prefer non-null public facade types where ANTLR compatibility allows it.
+4. Where generated code needs a Java-shaped nullable API, isolate Swift-facing
+   wrappers or reshape generics so Swift Export sees a simpler signature.
+5. Re-run `swiftExportSmokeTest`.
+6. Re-run full `build`.
+
+The worker classpath error for
+`kotlinx/coroutines/internal/intellij/IntellijCoroutines` is a separate
+toolchain/classpath symptom on the same Swift Export path. It should be
+validated after the optional-wrapper declaration is isolated so the two
+failures are not mixed together.
+
+---
+
+## Test Ladder
+
+Current committed tests:
+
+- `src/commonTest/.../misc/IntegerListTest.kt`
+- `src/jvmTest/.../CodePointCharStreamTest.kt`
+
+Translated runtime tests exist under:
 
 ```text
-/Volumes/stuff/Projects/kotlinmania/toport/antlr4/runtime-testsuite
+/Volumes/stuff/Projects/kotlinmania/toport/antlr4/runtime-testsuite/test
 ```
 
-Translated tool tests and tool classes are under:
+Descriptor-driven runtime fixtures exist under:
 
 ```text
-/Volumes/stuff/Projects/kotlinmania/toport/antlr4/tool-testsuite
-/Volumes/stuff/Projects/kotlinmania/toport/antlr4/tool
+/Volumes/stuff/Projects/kotlinmania/toport/antlr4/runtime-testsuite/resources/org/antlr/v4/test/runtime/descriptors
 ```
 
-The runtime test port should draw from `runtime-testsuite` first. The tool
-suite is useful once generated grammar fixtures are running.
+Descriptor inventory:
+
+| Area | Count |
+| --- | ---: |
+| CompositeLexers | 2 |
+| CompositeParsers | 15 |
+| FullContextParsing | 15 |
+| LeftRecursion | 98 |
+| LexerErrors | 12 |
+| LexerExec | 42 |
+| Listeners | 7 |
+| ParseTrees | 10 |
+| ParserErrors | 34 |
+| ParserExec | 50 |
+| Performance | 7 |
+| SemPredEvalLexer | 8 |
+| SemPredEvalParser | 26 |
+| Sets | 31 |
+
+Port order:
+
+1. Pure common runtime tests:
+   - `IntegerList`
+   - `Interval`
+   - `IntervalSet`
+   - prediction context value behavior
+   - ATN serializer/deserializer helpers that do not require generated grammar
+     fixtures
+2. JVM stream tests:
+   - `CharStreams`
+   - `CodePointCharStream`
+   - `UnbufferedCharStream`
+   - encoding and invalid-input behavior
+3. Common token source and token stream tests:
+   - `CommonToken`
+   - `CommonTokenFactory`
+   - `ListTokenSource`
+   - `BufferedTokenStream`
+   - `CommonTokenStream`
+   - `UnbufferedTokenStream`
+   - `TokenStreamRewriter`
+4. Generated or ANTLR-compatible fixture tests:
+   - hand-built token sources first
+   - generated lexer fixtures second
+   - generated parser fixtures third
+5. Descriptor-driven runtime suite:
+   - lexer execution
+   - parser execution
+   - parse tree behavior
+   - listeners and visitors
+   - semantic predicate evaluation
+   - left recursion
+
+The first valuable milestone is not raw test count. It is catching mechanical
+translation defects in stream, token, and parser-compatible behavior before
+downstream adapters rely on this runtime.
+
+---
+
+## Downstream Wiring Sequence
+
+### 1. Finish antlr4-kotlin release readiness
+
+Validation:
+
+```bash
+./gradlew jvmTest --no-daemon --no-configuration-cache
+./gradlew compileKotlinJvm compileKotlinAndroidNativeArm64 compileKotlinJs compileKotlinWasmJs --no-daemon --no-configuration-cache
+./gradlew swiftExportSmokeTest --no-daemon --no-configuration-cache
+./gradlew build --no-daemon --no-configuration-cache
+```
+
+Release readiness requires:
+
+- generated Gradle and workflow files synchronized with `proc-macro-kotlin`
+- property and TOML files synchronized with the generated template's expected
+  keys
+- every target still in the build gate
+- Swift Export smoke test passing
+- runtime tests covering streams, token buffering, and parser-compatible token
+  flow
+
+### 2. Add antlr4-kotlin to proc-macro-kotlin
+
+Do not edit generated `proc-macro-kotlin/build.gradle.kts` by hand.
+
+Expected change shape:
+
+- add `antlr4-kotlin` to `gradle/libs.versions.toml`
+- include it in the common main dependency bundle selected by
+  `gradle.properties`
+- keep generated build script and workflows in sync with the parent template
+
+### 3. Add AntlrTokenAdapter to proc-macro-kotlin
+
+Code shape:
+
+```text
+internal object AntlrTokenAdapter {
+  fun tokenize(
+    tokens: io.github.kotlinmania.antlr4.TokenStream,
+    vocabulary: Vocabulary?,
+    source: SourceInfo?
+  ): TokenStreamParseOutcome
+}
+```
+
+Expected implementation shape:
+
+- collect and normalize ANTLR tokens
+- share grouping and punctuation spacing logic with `KtTokenAdapter` where the
+  local code shape supports it
+- use internal literal helpers
+- produce `TokenStream(TokenStreamData(...))`
+- return `TokenStreamParseOutcome.Err` for unclosed delimiters, unsupported
+  token spellings, and malformed literal spellings
+
+### 4. Compare JetBrains and ANTLR normalization
+
+Add tests in `proc-macro-kotlin` with equivalent Kotlin snippets:
+
+- identifiers and keywords
+- nested delimiter groups
+- string, char, integer, and float literals
+- multi-character punctuation
+- safe casts and negated `in`/`is`
+- hidden tokens and comments
+- source span ranges
+
+The comparison target is normalized `TokenTree` shape, not identical lexer
+token IDs.
+
+### 5. Restore proc-macro2-kotlin wrapper dispatch
+
+Expected change shape:
+
+- replace direct public wrapping of fallback internals with wrapper internals
+- remove the invalid port-lint placeholder in `Wrapper.kt`
+- map fallback and compiler variants through the same public API
+- preserve fallback parsing as the default outside compiler mode
+- let `forceFallback` and `unforceFallback` keep their documented behavior
+
+Mapping table:
+
+| proc-macro2 public | fallback internal | compiler internal |
+| --- | --- | --- |
+| `TokenStream` | `FallbackTokenStream` | `proc-macro-kotlin TokenStream` |
+| `TokenTree.Group` | `FallbackGroup` | `proc-macro-kotlin Group` |
+| `TokenTree.Ident` | `FallbackIdent` | `proc-macro-kotlin Ident` |
+| `TokenTree.Punct` | `FallbackPunct` | `proc-macro-kotlin Punct` |
+| `TokenTree.Literal` | `FallbackLiteral` | `proc-macro-kotlin Literal` |
+| `Span` | `FallbackSpan` | `proc-macro-kotlin Span` |
+| `LexError` | fallback parse error | proc-macro parse error |
+
+Enum mapping:
+
+| proc-macro2 | proc-macro-kotlin |
+| --- | --- |
+| `Delimiter.Parenthesis` | `Delimiter.PARENTHESIS` |
+| `Delimiter.Brace` | `Delimiter.BRACE` |
+| `Delimiter.Bracket` | `Delimiter.BRACKET` |
+| `Delimiter.None` | `Delimiter.NONE` |
+| `Spacing.Joint` | `Spacing.JOINT` |
+| `Spacing.Alone` | `Spacing.ALONE` |
+
+### 6. Enable serde_derive work
+
+When `proc-macro2-kotlin` can select the compiler variant and still preserve
+fallback behavior, serde macro porting can use the Rust-shaped public API
+without knowing whether a token stream came from fallback parsing or the
+compiler-backed proc-macro path.
 
 ---
 
 ## Done Criteria
 
-This repository is ready to unblock `proc-macro-kotlin` when:
+This repository is ready for `proc-macro-kotlin` release wiring when:
 
 - `./gradlew build --no-daemon --no-configuration-cache` passes.
 - Android, Android Native, JVM, JS, Wasm, Apple, Linux, and Windows target
   compilation remain in the build gate.
 - Swift Export smoke testing passes locally.
-- Runtime tests cover character streams, token streams, core ATN/DFA behavior,
-  and parser-compatible token source flow.
+- Runtime tests cover character streams, token streams, ATN/DFA behavior, and
+  parser-compatible token source flow.
 - The ANTLR-to-proc-macro adapter contract is proven by tests.
 - Generated build and workflow files remain synchronized with
   `proc-macro-kotlin`.
+- `gradle.properties` and `gradle/libs.versions.toml` are synchronized with
+  the generated build's expected keys and dependency bundle names.
