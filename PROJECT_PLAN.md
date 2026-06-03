@@ -184,6 +184,48 @@ mechanically translated Kotlin material produced with IntelliJ as well as
 grammar files and generated artifacts. Treat those Kotlin files as concrete
 port inputs to evaluate, repair, and wire together, not as prose references.
 
+ANTLR upstream Java source is cloned locally for comparison under:
+
+```text
+tmp/antlr4
+```
+
+That directory is ignored and is not a tracked dependency. It currently points
+at upstream `antlr/antlr4` dev commit `7d57703`. Use it as the reference for
+mechanically translated ANTLR runtime and test files in
+`/Volumes/stuff/Projects/kotlinmania/toport/antlr4`.
+
+Primary upstream comparison paths:
+
+```text
+tmp/antlr4/runtime/Java/src/org/antlr/v4/runtime
+tmp/antlr4/runtime-testsuite/test
+tmp/antlr4/tool-testsuite/test
+```
+
+Primary mechanically translated Kotlin paths:
+
+```text
+/Volumes/stuff/Projects/kotlinmania/toport/antlr4/runtime-testsuite/test
+/Volumes/stuff/Projects/kotlinmania/toport/antlr4/tool-testsuite/test
+```
+
+The runtime test-suite and tool test-suite file counts match the upstream Java
+suite shape in this checkout:
+
+| Suite | Upstream Java | Toport Kotlin |
+| --- | ---: | ---: |
+| runtime-testsuite/test | 63 | 63 |
+| tool-testsuite/test | 57 | 57 |
+
+The toport Kotlin tests are already translated mechanically. The work is to
+compare each Kotlin file against its upstream Java source, repair Java and
+JUnit idioms into Kotlin Multiplatform code, and move accepted tests into
+`src/commonTest`. Tests must not be split across `jvmTest`, `jsTest`,
+`androidTest`, or other target-specific source sets. If a test needs native
+data, common code defines the bridge contract and the platform source set only
+supplies the native value.
+
 Upstream dependency shape:
 
 ```text
@@ -565,6 +607,42 @@ source text
 The all-target fixture path should start with `ANTLRInputStream(String)`.
 `CharStreams` is currently JVM-specific and belongs in JVM-only stream tests.
 
+### Common Platform Binding
+
+The runtime does not need platform-specific hardware calls for its current
+platform binding. Keep the binding in `commonMain`:
+
+```text
+src/commonMain/.../Platform.kt
+  class Platform
+  currentPlatformName()
+```
+
+This proves the generated target hierarchy carries common runtime code into
+every configured target without creating target-specific source files. Add an
+`expect`/`actual` layer only when the runtime needs a real platform service
+that common Kotlin cannot express.
+
+JVM consumes this `commonMain` source directly in the absence of a JVM-specific
+replacement. Do not add `jvmMain` actuals or JVM-only runtime files for behavior
+that can be expressed in common Kotlin.
+
+The architectural rule is the bridge pattern:
+
+```text
+commonMain runtime logic
+  -> calls a narrow common contract only when native data is required
+  -> platform source set supplies the native value or operation briefly
+  -> commonMain continues processing uniformly
+```
+
+Do not put runtime architecture, token logic, parser logic, test orchestration,
+networking-style workflow, or generation decisions in platform source sets.
+Platform files are outlets, not rooms in the house. If this runtime needs a
+native-only operation later, the common source set defines the smallest
+contract, and each platform implementation returns native data immediately to
+common code.
+
 ### Kotlin Grammar Source Path
 
 The Kotlin ANTLR grammar source is in:
@@ -890,15 +968,29 @@ failures are not mixed together.
 
 ## Test Ladder
 
-Current committed tests:
+Committed tests live in `commonTest`:
 
 - `src/commonTest/.../misc/IntegerListTest.kt`
-- `src/jvmTest/.../CodePointCharStreamTest.kt`
+- `src/commonTest/.../ANTLRInputStreamTest.kt`
+- `src/commonTest/.../PlatformTest.kt`
 
-Translated runtime tests exist under:
+Mechanically translated runtime tests exist under:
 
 ```text
 /Volumes/stuff/Projects/kotlinmania/toport/antlr4/runtime-testsuite/test
+```
+
+Mechanically translated tool tests exist under:
+
+```text
+/Volumes/stuff/Projects/kotlinmania/toport/antlr4/tool-testsuite/test
+```
+
+Original Java tests for comparison are in the ignored upstream clone:
+
+```text
+tmp/antlr4/runtime-testsuite/test
+tmp/antlr4/tool-testsuite/test
 ```
 
 Descriptor-driven runtime fixtures exist under:
@@ -928,14 +1020,15 @@ Descriptor inventory:
 
 Port order:
 
-1. Pure common runtime tests:
+1. Common runtime tests:
    - `IntegerList`
    - `Interval`
    - `IntervalSet`
+   - `ANTLRInputStream`
    - prediction context value behavior
    - ATN serializer/deserializer helpers that do not require generated grammar
      fixtures
-2. JVM stream tests:
+2. Stream implementation parity:
    - `CharStreams`
    - `CodePointCharStream`
    - `UnbufferedCharStream`
@@ -960,6 +1053,25 @@ Port order:
    - semantic predicate evaluation
    - left recursion
 
+Test migration code shape:
+
+```text
+../toport/antlr4/.../SomeTest.kt
+  compare with tmp/antlr4/.../SomeTest.java
+  repair package/imports/assertions/generated fixture references
+  admit common-compatible coverage to src/commonTest
+  run across real KotlinMania targets
+```
+
+The mechanically translated tests currently contain Java/JUnit idioms such as
+`org.junit.jupiter.api`, `assertThrows`, Java stream APIs, generated Java
+fixture packages, and JVM-only helpers. Accepted test files should use
+`kotlin.test`, root package `io.github.kotlinmania.antlr4`, and common runtime
+classes. `CharStreams` and `CodePointCharStream` currently live in `jvmMain`;
+their toport tests enter `commonTest` after the stream implementation is moved
+or implemented in `commonMain` with behavior equivalent across every configured
+target.
+
 The first valuable milestone is not raw test count. It is catching mechanical
 translation defects in stream, token, and parser-compatible behavior before
 downstream adapters rely on this runtime.
@@ -973,8 +1085,8 @@ downstream adapters rely on this runtime.
 Validation:
 
 ```bash
-./gradlew jvmTest --no-daemon --no-configuration-cache
-./gradlew compileKotlinJvm compileKotlinAndroidNativeArm64 compileKotlinJs compileKotlinWasmJs --no-daemon --no-configuration-cache
+./gradlew jvmTest jsTestClasses wasmJsTestClasses wasmWasiTestClasses testAndroidHostTest --no-daemon --no-configuration-cache
+./gradlew compileKotlinJvm compileKotlinAndroidNativeArm64 compileKotlinJs compileKotlinWasmJs compileKotlinWasmWasi --no-daemon --no-configuration-cache
 ./gradlew swiftExportSmokeTest --no-daemon --no-configuration-cache
 ./gradlew build --no-daemon --no-configuration-cache
 ```
