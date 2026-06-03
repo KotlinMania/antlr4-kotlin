@@ -11,26 +11,26 @@ package io.github.kotlinmania.antlr4.misc
  *
  * @author Sam Harwell
  */
-open class IntList {
+open class IntegerList {
     private var _data: IntArray
 
     private var _size = 0
 
     constructor() {
-        _data = io.github.kotlinmania.antlr4.misc.IntList.Companion.EMPTY_DATA
+        _data = io.github.kotlinmania.antlr4.misc.IntegerList.Companion.EMPTY_DATA
     }
 
     constructor(capacity: Int) {
         require(capacity >= 0)
 
         if (capacity == 0) {
-            _data = io.github.kotlinmania.antlr4.misc.IntList.Companion.EMPTY_DATA
+            _data = io.github.kotlinmania.antlr4.misc.IntegerList.Companion.EMPTY_DATA
         } else {
             _data = IntArray(capacity)
         }
     }
 
-    constructor(list: IntList) {
+    constructor(list: IntegerList) {
         _data = list._data.copyOf()
         _size = list._size
     }
@@ -56,7 +56,7 @@ open class IntList {
         _size += array.size
     }
 
-    fun addAll(list: IntList) {
+    fun addAll(list: IntegerList) {
         ensureCapacity(_size + list._size)
         list._data.copyInto(_data, _size, 0, list._size)
         _size += list._size
@@ -145,7 +145,7 @@ open class IntList {
 
     fun toArray(): IntArray {
         if (_size == 0) {
-            return io.github.kotlinmania.antlr4.misc.IntList.Companion.EMPTY_DATA
+            return io.github.kotlinmania.antlr4.misc.IntegerList.Companion.EMPTY_DATA
         }
 
         return _data.copyOf(_size)
@@ -157,7 +157,7 @@ open class IntList {
 
     /**
      * Compares the specified object with this list for equality.  Returns
-     * `true` if and only if the specified object is also an [IntList],
+     * `true` if and only if the specified object is also an [IntegerList],
      * both lists have the same size, and all corresponding pairs of elements in
      * the two lists are equal.  In other words, two lists are defined to be
      * equal if they contain the same elements in the same order.
@@ -165,7 +165,7 @@ open class IntList {
      *
      * This implementation first checks if the specified object is this
      * list. If so, it returns `true`; if not, it checks if the
-     * specified object is an [IntList]. If not, it returns `false`;
+     * specified object is an [IntegerList]. If not, it returns `false`;
      * if so, it checks the size of both lists. If the lists are not the same size,
      * it returns `false`; otherwise it iterates over both lists, comparing
      * corresponding pairs of elements.  If any comparison returns `false`,
@@ -179,7 +179,7 @@ open class IntList {
             return true
         }
 
-        if (other !is IntList) {
+        if (other !is IntegerList) {
             return false
         }
 
@@ -247,32 +247,29 @@ open class IntList {
     }
 
     private fun ensureCapacity(capacity: Int) {
-        if (capacity < 0 || capacity > io.github.kotlinmania.antlr4.misc.IntList.Companion.MAX_ARRAY_SIZE) {
+        if (capacity < 0 || capacity > io.github.kotlinmania.antlr4.misc.IntegerList.Companion.MAX_ARRAY_SIZE) {
             throw IllegalStateException("Requested array size exceeds limit")
         }
 
         var newLength: Int
         if (_data.size == 0) {
-            newLength = io.github.kotlinmania.antlr4.misc.IntList.Companion.INITIAL_SIZE
+            newLength = io.github.kotlinmania.antlr4.misc.IntegerList.Companion.INITIAL_SIZE
         } else {
             newLength = _data.size
         }
 
         while (newLength < capacity) {
             newLength = newLength * 2
-            if (newLength < 0 || newLength > io.github.kotlinmania.antlr4.misc.IntList.Companion.MAX_ARRAY_SIZE) {
-                newLength = io.github.kotlinmania.antlr4.misc.IntList.Companion.MAX_ARRAY_SIZE
+            if (newLength < 0 || newLength > io.github.kotlinmania.antlr4.misc.IntegerList.Companion.MAX_ARRAY_SIZE) {
+                newLength = io.github.kotlinmania.antlr4.misc.IntegerList.Companion.MAX_ARRAY_SIZE
             }
         }
 
         _data = _data.copyOf(newLength)
     }
 
-    /** Convert the int list to a char array where values > 0x7FFFF take 2 bytes. TODO?????
-     * If all values are less
-     * than the 0x7FFF 16-bit code point limit (1 bit taken to indicatethen this is just a char array
-     * of 16-bit char as usual. For values in the supplementary range, encode
-     * them as two UTF-16 code units.
+    /**
+     * Converts this list of Unicode code points to UTF-16 code units.
      */
     fun toCharArray(): CharArray? {
         // Optimize for the common case (all data values are
@@ -307,10 +304,17 @@ open class IntList {
 
     companion object {
         private fun intToChars(codePoint: Int): CharArray {
-            if (codePoint < 0 || codePoint > Char.MAX_VALUE.code) {
+            if (codePoint < 0 || codePoint > 0x10FFFF) {
                 throw IllegalArgumentException("Invalid code point: $codePoint")
             }
-            return charArrayOf(codePoint.toChar())
+            if (codePoint <= Char.MAX_VALUE.code) {
+                return charArrayOf(codePoint.toChar())
+            }
+
+            val offset = codePoint - 0x10000
+            val high = (0xD800 + (offset ushr 10)).toChar()
+            val low = (0xDC00 + (offset and 0x3FF)).toChar()
+            return charArrayOf(high, low)
         }
 
         private fun charCount(codePoint: Int): Int =
@@ -328,3 +332,5 @@ open class IntList {
         private val MAX_ARRAY_SIZE: Int = Int.MAX_VALUE - 8
     }
 }
+
+typealias IntList = IntegerList
