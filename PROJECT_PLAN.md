@@ -406,6 +406,53 @@ It uses:
 That partial port should be treated as an existing caller, not as future
 scratch work.
 
+### Output Backend Policy
+
+This is a Kotlin-only port. The product backend generates Kotlin, not Rust.
+
+Rust output still matters because it gives the port a precise proof target.
+When the Kotlin port needs to prove semantic parity against upstream Rust, the
+same derive model should be able to emit Rust-shaped output and compare that
+against upstream expectations.
+
+The generator shape should be:
+
+```text
+input tokens
+  -> parser
+  -> syntax tree
+  -> serde internal model
+  -> language-neutral expansion model
+     -> Rust output backend for parity proof
+     -> Kotlin output backend for product use
+```
+
+Do not bake Rust syntax into the serde semantic passes. Rust-specific syntax
+belongs in the Rust output backend. Kotlin-specific syntax belongs in the
+Kotlin output backend.
+
+Recommended backend split:
+
+```text
+Serde derive analysis
+  Container.fromAst
+  attr/check/name/case logic
+  serialize/deserialize expansion decisions
+
+Rust backend
+  emits proc-macro2-kotlin TokenStream
+  uses quote-kotlin builders
+  validates against upstream serde_derive behavior
+
+Kotlin backend
+  emits proc-macro-kotlin TokenStream or Kotlin source fragments
+  uses Kotlin names, Kotlin type syntax, Kotlin trait/interface calls
+  is the backend shipped for Kotlin-only consumers
+```
+
+The Rust backend is a test oracle and compatibility harness. It is not the
+final code-generation target.
+
 ---
 
 ## Caller Maps
@@ -503,7 +550,8 @@ not the active source of truth.
 
 ### serde Derive End-To-End Path
 
-The end-to-end Kotlin shape should follow the Rust derive entry points:
+The end-to-end Kotlin shape should preserve the Rust derive control flow while
+adding explicit output backend selection:
 
 ```text
 deriveSerialize(input: proc-macro-kotlin TokenStream)
@@ -513,17 +561,19 @@ deriveSerialize(input: proc-macro-kotlin TokenStream)
      -> CompileError(TokenStream)
   -> serde-kotlin serdederive expandDeriveSerialize(DeriveInput)
      -> SynResult<TokenStream>
-  -> quote-kotlin ToTokens builders
-  -> proc-macro2-kotlin TokenStream
-  -> proc-macro2-kotlin TokenStream.toProcMacro()
+  -> serde derive expansion model
+  -> output backend
+     -> Rust: quote-kotlin / proc-macro2-kotlin TokenStream
+     -> Kotlin: proc-macro-kotlin TokenStream or Kotlin source fragments
   -> proc-macro-kotlin TokenStream
 
 deriveDeserialize follows the same shape.
 ```
 
 The macro-entry functions should be thin. Real serde logic stays in functions
-that accept `syn-kotlin` AST values and return `SynResult<proc-macro2
-TokenStream>` so the same code can be unit-tested through the fallback path.
+that accept parsed AST values and return a language-neutral expansion model.
+Rust parity tests can render that model through the Rust backend. Kotlin
+consumers render it through the Kotlin backend.
 
 ---
 
@@ -876,7 +926,8 @@ Expected change shape:
 When `proc-macro2-kotlin` can select the compiler variant and still preserve
 fallback behavior, serde macro code can use the Rust-shaped public API without
 knowing whether a token stream came from fallback parsing or the compiler-backed
-proc-macro path.
+proc-macro path. That API is the validation and parsing bridge, not the only
+generation target.
 
 Expected change shape:
 
@@ -886,7 +937,9 @@ Expected change shape:
   TokenStream`
 - parse through `syn-kotlin`
 - lower through `Container.fromAst`
-- generate through `quote-kotlin` builders
+- build a language-neutral serde expansion model
+- render Rust output through `quote-kotlin` builders for parity proof
+- render Kotlin output through a Kotlin backend for product use
 - return `SynError.intoCompileError()` on failure
 
 First serde derive tests:
@@ -899,6 +952,7 @@ First serde derive tests:
 - duplicate serde attribute error
 - unsupported union error
 - span on a malformed serde attribute
+- same semantic model rendered as Rust and Kotlin for a small named struct
 
 ---
 
