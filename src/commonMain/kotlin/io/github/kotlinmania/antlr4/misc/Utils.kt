@@ -112,3 +112,60 @@ internal object CommonUtils {
         x: Char,
     ): Int = s.count { it == x }
 }
+
+object Utils {
+    fun <T> join(
+        iter: Iterator<T?>,
+        separator: String?,
+    ): String = CommonUtils.join(iter, separator)
+
+    fun <T> join(
+        array: Array<T?>,
+        separator: String?,
+    ): String = CommonUtils.join(array, separator)
+
+    fun numNonnull(data: Array<Any?>?): Int = CommonUtils.numNonnull(data)
+
+    fun <T> removeAllElements(
+        data: MutableCollection<T?>?,
+        value: T?,
+    ) {
+        CommonUtils.removeAllElements(data, value)
+    }
+
+    fun escapeWhitespace(
+        s: String,
+        escapeSpaces: Boolean,
+    ): String = CommonUtils.escapeWhitespace(s, escapeSpaces)
+
+    fun toMap(keys: Array<String>): Map<String, Int> {
+        val result = mutableMapOf<String, Int>()
+        for (i in keys.indices) {
+            result[keys[i]] = i
+        }
+        return result
+    }
+
+    fun toCharArray(data: IntList?): CharArray? = data?.toCharArray()
+
+    fun toSet(bits: BitSet): IntervalSet = CommonUtils.toSet(bits)
+
+    fun expandTabs(
+        s: String?,
+        tabSize: Int,
+    ): String? = CommonUtils.expandTabs(s, tabSize)
+
+    fun spaces(n: Int): String = CommonUtils.spaces(n)
+
+    fun newlines(n: Int): String = CommonUtils.newlines(n)
+
+    fun sequence(
+        n: Int,
+        s: String?,
+    ): String = CommonUtils.sequence(n, s)
+
+    fun count(
+        s: String,
+        x: Char,
+    ): Int = CommonUtils.count(s, x)
+}

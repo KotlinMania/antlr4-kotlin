@@ -86,7 +86,7 @@ Current identity facts:
 Owns the ANTLR runtime contract:
 
 - Character input: `IntStream`, `CharStream`, `ANTLRInputStream`,
-  `CodePointCharStream`, JVM `CharStreams`, `UnbufferedCharStream`.
+  `CodePointCharStream`, `CharStreams`, `UnbufferedCharStream`.
 - Token production: `Token`, `WritableToken`, `CommonToken`, `TokenSource`,
   `TokenFactory`, `CommonTokenFactory`, `Lexer`.
 - Token buffering: `TokenStream`, `BufferedTokenStream`,
@@ -209,6 +209,35 @@ Primary mechanically translated Kotlin paths:
 /Volumes/stuff/Projects/kotlinmania/toport/antlr4/runtime-testsuite/test
 /Volumes/stuff/Projects/kotlinmania/toport/antlr4/tool-testsuite/test
 ```
+
+An existing Kotlin ANTLR runtime implementation is also vendored as an ignored
+reference source:
+
+```text
+tmp/antlr-kotlin
+```
+
+This is `Strumenta/antlr-kotlin` at commit `609ecdd`. It is permissively
+licensed, with Apache 2.0 and BSD 3-Clause notices in the runtime sources. It
+publishes under the `com.strumenta` group with project name `antlr-kotlin`,
+including an `antlr-kotlin-runtime` module. Its Maven identity is close enough
+to this repo to cause community confusion, so use it only as a reference
+implementation. Do not copy its package identity, artifact identity, or public
+positioning into this project. If source snippets are borrowed, preserve the
+applicable license notice in the copied file.
+
+Useful comparison paths:
+
+```text
+tmp/antlr-kotlin/antlr-kotlin-runtime/src/commonMain/kotlin/org/antlr/v4/kotlinruntime
+tmp/antlr-kotlin/antlr-kotlin-runtime/src/commonMain/kotlin/org/antlr/v4/kotlinruntime/misc
+```
+
+That runtime records its own thread-safety limitations. Treat it as a source
+shape reference, not as a concurrency guarantee. In this repo, factories such
+as `CharStreams` should remain stateless, stream objects are mutable cursors
+owned by one consumer, and shared caches must either be explicitly synchronized
+or avoided in common runtime code.
 
 The runtime test-suite and tool test-suite file counts match the upstream Java
 suite shape in this checkout:
@@ -594,7 +623,7 @@ This is the path `antlr4-kotlin` needs to make possible:
 ```text
 source text
   -> common input: ANTLRInputStream(source)
-     or JVM input: CharStreams.fromString(source)
+     or CharStreams.fromString(source)
   -> generated Kotlin lexer : io.github.kotlinmania.antlr4.Lexer
   -> CommonTokenStream(lexer)
   -> generated Kotlin parser : io.github.kotlinmania.antlr4.Parser
@@ -604,8 +633,8 @@ source text
   -> TokenStream(TokenStreamData)
 ```
 
-The all-target fixture path should start with `ANTLRInputStream(String)`.
-`CharStreams` is currently JVM-specific and belongs in JVM-only stream tests.
+All-target fixtures can start with `ANTLRInputStream(String)` or
+`CharStreams.fromString(source)`. Both paths are common runtime code.
 
 ### Common Platform Binding
 
@@ -623,9 +652,9 @@ every configured target without creating target-specific source files. Add an
 `expect`/`actual` layer only when the runtime needs a real platform service
 that common Kotlin cannot express.
 
-JVM consumes this `commonMain` source directly in the absence of a JVM-specific
-replacement. Do not add `jvmMain` actuals or JVM-only runtime files for behavior
-that can be expressed in common Kotlin.
+Every target consumes this `commonMain` source directly in the absence of a
+target-specific replacement. Do not add actuals or target-only runtime files for
+behavior that can be expressed in common Kotlin.
 
 The architectural rule is the bridge pattern:
 
@@ -642,6 +671,26 @@ Platform files are outlets, not rooms in the house. If this runtime needs a
 native-only operation later, the common source set defines the smallest
 contract, and each platform implementation returns native data immediately to
 common code.
+
+Actual declarations are only for operating-system or hardware dependencies.
+Do not create actuals for convenient source organization, legacy JVM shapes, or
+code that common Kotlin can express directly.
+
+Current source-set cleanup status:
+
+```text
+src/commonMain
+  ANTLR runtime logic, CharStreams string factories, CodePointBuffer,
+  CodePointCharStream, UnbufferedCharStream, UnbufferedTokenStream,
+  InterpreterDataReader, LogManager, TestRig, utility helpers.
+
+src/*Main target source sets
+  no tracked runtime source files.
+```
+
+The old JVM-only placement was architectural drift. These classes are Kotlin
+runtime code and must stay in common source unless a future API genuinely needs
+native file, channel, process, or device access through a narrow bridge.
 
 ### Kotlin Grammar Source Path
 
@@ -972,6 +1021,7 @@ Committed tests live in `commonTest`:
 
 - `src/commonTest/.../misc/IntegerListTest.kt`
 - `src/commonTest/.../ANTLRInputStreamTest.kt`
+- `src/commonTest/.../CodePointCharStreamTest.kt`
 - `src/commonTest/.../PlatformTest.kt`
 
 Mechanically translated runtime tests exist under:
@@ -1067,10 +1117,9 @@ The mechanically translated tests currently contain Java/JUnit idioms such as
 `org.junit.jupiter.api`, `assertThrows`, Java stream APIs, generated Java
 fixture packages, and JVM-only helpers. Accepted test files should use
 `kotlin.test`, root package `io.github.kotlinmania.antlr4`, and common runtime
-classes. `CharStreams` and `CodePointCharStream` currently live in `jvmMain`;
-their toport tests enter `commonTest` after the stream implementation is moved
-or implemented in `commonMain` with behavior equivalent across every configured
-target.
+classes. `CharStreams` and `CodePointCharStream` now live in `commonMain`, and
+their accepted tests belong in `commonTest` with behavior equivalent across
+every configured target.
 
 The first valuable milestone is not raw test count. It is catching mechanical
 translation defects in stream, token, and parser-compatible behavior before

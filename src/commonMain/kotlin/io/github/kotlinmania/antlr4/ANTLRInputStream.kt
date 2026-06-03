@@ -4,9 +4,9 @@ package io.github.kotlinmania.antlr4
 
 import io.github.kotlinmania.antlr4.misc.Interval
 
-// Upstream deprecates this in favor of the CharStreams factory, but CharStreams
-// is JVM-only (java.io/nio-backed); in this Kotlin Multiplatform port the
-// char-array-backed ANTLRInputStream is the supported commonMain CharStream.
+// Upstream deprecates this in favor of the CharStreams factory. This
+// char-array-backed stream remains available for generated code and tests that
+// expect the older UTF-16 code-unit behavior.
 open class ANTLRInputStream : CharStream {
     protected var data: CharArray
     protected var n: Int = 0
