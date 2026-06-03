@@ -175,6 +175,14 @@ Source trees inspected:
 - `/Volumes/stuff/Projects/kotlinmania/serde-kotlin/tmp/serde`
 - `/Volumes/stuff/Projects/kotlinmania/unicode-ident-kotlin/tmp/unicode-ident`
 - `/Volumes/stuff/Projects/kotlinmania/toport/kotlin-spec`
+- `/Volumes/stuff/Projects/kotlinmania/toport/kmp-parser`
+- `/Volumes/stuff/Projects/kotlinmania/toport/jflex`
+- `/Volumes/stuff/Projects/kotlinmania/toport/jflex-skeleton`
+
+The `../toport` folder is the local source pool for this work. It contains
+mechanically translated Kotlin material produced with IntelliJ as well as
+grammar files and generated artifacts. Treat those Kotlin files as concrete
+port inputs to evaluate, repair, and wire together, not as prose references.
 
 Upstream dependency shape:
 
@@ -237,6 +245,53 @@ serde-kotlin
 
 Do not make `quote-kotlin` depend on `syn-kotlin`. Upstream quote mentions Syn
 as a caller, not as a dependency.
+
+### Repository Split Policy
+
+Create new KotlinMania sibling repos when a mechanically translated `toport`
+area has its own upstream identity, its own build/test surface, or more than
+one likely consumer. Do not bury reusable toolchain ports inside
+`antlr4-kotlin` or `proc-macro-kotlin` just because the first consumer is this
+macro pipeline.
+
+No existing sibling repos were found for these candidate names during this
+planning pass:
+
+- `jflex-kotlin`
+- `kmp-parser-kotlin`
+- `kotlin-parser-kotlin`
+- `kotlin-spec-kotlin`
+- `intellij-syntax-kotlin`
+
+Candidate repo boundaries:
+
+```text
+jflex-kotlin
+  JFlex generator, KotlinEmitter, Kotlin skeletons, scanner-generation tests.
+  Needed if we regenerate KotlinFlexLexer or KDocFlexLexer from .flex specs.
+
+kmp-parser-kotlin
+  JetBrains KMP lexer/parser package:
+  Kotlin.flex, KDoc.flex, generated flex lexers, KtTokens, KDocTokens,
+  KotlinParser, parser utils, JVM lexer tests.
+  Needed if the JetBrains compiler-derived lexer/parser is reused beyond
+  proc-macro-kotlin.
+
+kotlin-spec-kotlin
+  Kotlin ANTLR grammar package:
+  KotlinLexer.g4, KotlinParser.g4, UnicodeClasses.g4, token metadata,
+  generated ANTLR Kotlin lexer/parser fixtures.
+  Needed if generated Kotlin grammar artifacts become a reusable input to
+  proc-macro-kotlin or other Kotlin compiler tooling.
+
+intellij-platform-syntax-kotlin
+  JetBrains com.intellij.platform.syntax.* support types if they need to be
+  shared outside the existing vendored proc-macro-kotlin surface.
+```
+
+Keep code private to the current repo only when it is a focused fixture,
+one-off validation harness, or test-only adapter. Promote it into a sibling
+repo once it becomes a reusable library or generation tool.
 
 ### Upstream proc_macro
 
@@ -564,6 +619,83 @@ inputs:
 The ANTLR-generated grammar path and the JetBrains KMP lexer path should be
 compared by normalized token/tree behavior, not by matching implementation
 classes.
+
+### JetBrains KMP And JFlex Source Path
+
+The current `proc-macro-kotlin` lexer path comes from JetBrains KMP parser
+sources, not from the ANTLR grammar. These mechanically translated Kotlin
+sources are under `../toport` and are part of the Kotlin compiler lineage.
+
+Core paths:
+
+```text
+/Volumes/stuff/Projects/kotlinmania/toport/kmp-parser
+/Volumes/stuff/Projects/kotlinmania/toport/jflex
+/Volumes/stuff/Projects/kotlinmania/toport/jflex-skeleton
+```
+
+JFlex generator inputs and mechanically translated emitter code:
+
+- `kmp-parser/common/src/org/jetbrains/kotlin/kmp/lexer/Kotlin.flex`
+- `kmp-parser/common/src/org/jetbrains/kotlin/kmp/lexer/KDoc.flex`
+- `jflex/jflex/src/main/java/jflex/generator/KotlinEmitter.kt`
+- `jflex/jflex/src/main/java/jflex/generator/KotlinCountEmitter.kt`
+- `jflex/jflex/src/main/java/jflex/generator/KotlinHiCountEmitter.kt`
+- `jflex/jflex/src/main/java/jflex/generator/KotlinHiLowEmitter.kt`
+- `jflex/jflex/src/main/java/jflex/generator/KotlinPackEmitter.kt`
+- `jflex/jflex/src/main/jflex/kotlin_skeleton.nested`
+- `jflex/jflex/src/main/resources/jflex/skeleton_kotlin.default`
+- `jflex-skeleton/idea-flex-kotlin.skeleton`
+
+Generated lexer outputs and Kotlin wrappers:
+
+- `kmp-parser/common/src/gen/KotlinFlexLexer.kt`
+- `kmp-parser/common/src/gen/KDocFlexLexer.kt`
+- `kmp-parser/common/src/org/jetbrains/kotlin/kmp/lexer/KotlinLexer.kt`
+- `kmp-parser/common/src/org/jetbrains/kotlin/kmp/lexer/KDocLexer.kt`
+- `kmp-parser/common/src/org/jetbrains/kotlin/kmp/lexer/KtTokens.kt`
+- `kmp-parser/common/src/org/jetbrains/kotlin/kmp/lexer/KDocTokens.kt`
+- `kmp-parser/common/src/org/jetbrains/kotlin/kmp/utils/SyntaxElementTypesWithIds.kt`
+
+Mechanically translated parser sources:
+
+- `kmp-parser/common/src/org/jetbrains/kotlin/kmp/parser/KotlinParser.kt`
+- `kmp-parser/common/src/org/jetbrains/kotlin/kmp/parser/AbstractParser.kt`
+- `kmp-parser/common/src/org/jetbrains/kotlin/kmp/parser/KtNodeTypes.kt`
+- `kmp-parser/common/src/org/jetbrains/kotlin/kmp/parser/utils/KotlinParsing.kt`
+- `kmp-parser/common/src/org/jetbrains/kotlin/kmp/parser/utils/KotlinExpressionParsing.kt`
+- `kmp-parser/common/src/org/jetbrains/kotlin/kmp/parser/utils/AbstractKotlinParsing.kt`
+- `kmp-parser/common/src/org/jetbrains/kotlin/kmp/parser/utils/SemanticWhitespaceAwareSyntaxBuilders.kt`
+- `kmp-parser/common/src/org/jetbrains/kotlin/kmp/parser/utils/KotlinWhitespaceAndCommentsBinders.kt`
+
+Lexer comparison tests:
+
+- `kmp-parser/jvm/test/org/jetbrains/kotlin/kmp/infra/AbstractTestLexer.kt`
+- `kmp-parser/jvm/test/org/jetbrains/kotlin/kmp/infra/NewTestLexer.kt`
+- `kmp-parser/jvm/test/org/jetbrains/kotlin/kmp/infra/TestSyntaxElement.kt`
+
+Relationship to this plan:
+
+```text
+Kotlin.flex
+  -> JFlex KotlinEmitter + Kotlin skeleton
+  -> KotlinFlexLexer
+  -> KotlinLexer : FlexAdapter(KotlinFlexLexer)
+  -> proc-macro-kotlin KtTokenAdapter
+  -> proc-macro-kotlin TokenStream
+
+KotlinLexer.g4 / KotlinParser.g4 / UnicodeClasses.g4
+  -> ANTLR Kotlin target generation
+  -> generated KotlinLexer / KotlinParser using antlr4-kotlin
+  -> proc-macro-kotlin AntlrTokenAdapter
+  -> proc-macro-kotlin TokenStream
+```
+
+The JetBrains/JFlex path is already the working comparison path for
+`TokenStream.fromString`. The ANTLR path should be validated against it for
+lexical normalization and parser entry behavior. JFlex itself is not a runtime
+dependency of `antlr4-kotlin`; it is a compiler-lineage source and comparison
+input.
 
 ### proc-macro2 Compiler Variant Path
 
