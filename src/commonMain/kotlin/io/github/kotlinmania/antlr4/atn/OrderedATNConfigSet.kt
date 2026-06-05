@@ -17,5 +17,5 @@ class OrderedATNConfigSet : ATNConfigSet() {
             LexerConfigHashSet()
     }
 
-    class LexerConfigHashSet : AbstractConfigHashSet(AnyEqualityComparator.INSTANCE)
+    internal class LexerConfigHashSet : AbstractConfigHashSet(AnyEqualityComparator.INSTANCE)
 }

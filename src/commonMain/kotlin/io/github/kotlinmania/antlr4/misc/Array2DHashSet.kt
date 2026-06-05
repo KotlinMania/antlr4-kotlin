@@ -7,7 +7,7 @@ package io.github.kotlinmania.antlr4.misc
 
 import kotlin.math.floor
 
-open class Array2DHashSet<T>
+internal open class Array2DHashSet<T>
     @kotlin.jvm.JvmOverloads
     constructor(
         comparator: AbstractEqualityComparator<in T> = AnyEqualityComparator.INSTANCE as AbstractEqualityComparator<in T>,

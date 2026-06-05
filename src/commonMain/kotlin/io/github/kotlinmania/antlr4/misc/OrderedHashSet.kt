@@ -5,7 +5,7 @@
  */
 package io.github.kotlinmania.antlr4.misc
 
-class OrderedHashSet<T> : MutableSet<T> {
+internal class OrderedHashSet<T> : MutableSet<T> {
     private val backingSet: MutableSet<T> = LinkedHashSet()
     private val elements: MutableList<T> = ArrayList()
 
