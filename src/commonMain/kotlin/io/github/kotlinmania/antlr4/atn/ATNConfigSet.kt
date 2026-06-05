@@ -14,8 +14,8 @@ open class ATNConfigSet
     @kotlin.jvm.JvmOverloads
     constructor(
         val fullCtx: Boolean = true,
-    ) : MutableSet<ATNConfig> {
-        class ConfigHashSet : AbstractConfigHashSet(ConfigEqualityComparator.INSTANCE)
+    ) : Set<ATNConfig> {
+        internal class ConfigHashSet : AbstractConfigHashSet(ConfigEqualityComparator.INSTANCE)
 
         class ConfigEqualityComparator private constructor() : AbstractEqualityComparator<ATNConfig>() {
             override fun hashCode(obj: ATNConfig): Int {
@@ -42,7 +42,7 @@ open class ATNConfigSet
 
         protected var readonly: Boolean = false
 
-        var configLookup: AbstractConfigHashSet? = null
+        internal var configLookup: AbstractConfigHashSet? = null
 
         internal val mutableConfigs: MutableList<ATNConfig> = ArrayList(7)
         val configs: List<ATNConfig>
@@ -111,7 +111,7 @@ open class ATNConfigSet
             return true
         }
 
-        override fun add(element: ATNConfig): Boolean = add(element, null)
+        fun add(element: ATNConfig): Boolean = add(element, null)
 
         fun getAlts(): BitSet {
             val alts = BitSet()
@@ -147,7 +147,7 @@ open class ATNConfigSet
             }
         }
 
-        override fun addAll(elements: Collection<ATNConfig>): Boolean {
+        fun addAll(elements: Collection<ATNConfig>): Boolean {
             for (c in elements) add(c)
             return true
         }
@@ -185,9 +185,9 @@ open class ATNConfigSet
             return configLookup!!.containsFast(obj)
         }
 
-        override fun iterator(): MutableIterator<ATNConfig> = mutableConfigs.iterator()
+        override fun iterator(): Iterator<ATNConfig> = mutableConfigs.iterator()
 
-        override fun clear() {
+        fun clear() {
             check(!readonly) { "This set is readonly" }
             mutableConfigs.clear()
             cachedHashCode = -1
@@ -211,15 +211,9 @@ open class ATNConfigSet
             return buf.toString()
         }
 
-        override fun remove(element: ATNConfig): Boolean = throw UnsupportedOperationException("")
-
         override fun containsAll(elements: Collection<ATNConfig>): Boolean = throw UnsupportedOperationException("")
 
-        override fun retainAll(elements: Collection<ATNConfig>): Boolean = throw UnsupportedOperationException("")
-
-        override fun removeAll(elements: Collection<ATNConfig>): Boolean = throw UnsupportedOperationException("")
-
-        open class AbstractConfigHashSet(
+        internal open class AbstractConfigHashSet(
             comparator: AbstractEqualityComparator<in ATNConfig>,
             initialCapacity: Int,
             initialBucketCapacity: Int,
