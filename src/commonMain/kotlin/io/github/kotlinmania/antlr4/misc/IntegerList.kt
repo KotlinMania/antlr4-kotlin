@@ -35,7 +35,7 @@ open class IntegerList {
         _size = list._size
     }
 
-    constructor(list: Collection<Int?>) : this(list.size) {
+    internal constructor(list: Collection<Int?>) : this(list.size) {
         for (value in list) {
             add(value!!)
         }

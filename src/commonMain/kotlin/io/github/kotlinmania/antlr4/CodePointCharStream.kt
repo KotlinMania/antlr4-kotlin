@@ -183,8 +183,8 @@ abstract class CodePointCharStream private constructor(
             codePointBuffer: CodePointBuffer,
             name: String,
         ): CodePointCharStream =
-            when (codePointBuffer.type) {
-                CodePointBuffer.Type.BYTE ->
+            when (codePointBuffer.storageType) {
+                CodePointBuffer.StorageType.BYTE ->
                     CodePoint8BitCharStream(
                         codePointBuffer.position(),
                         codePointBuffer.remaining(),
@@ -193,7 +193,7 @@ abstract class CodePointCharStream private constructor(
                         codePointBuffer.arrayOffset(),
                     )
 
-                CodePointBuffer.Type.CHAR ->
+                CodePointBuffer.StorageType.CHAR ->
                     CodePoint16BitCharStream(
                         codePointBuffer.position(),
                         codePointBuffer.remaining(),
@@ -202,7 +202,7 @@ abstract class CodePointCharStream private constructor(
                         codePointBuffer.arrayOffset(),
                     )
 
-                CodePointBuffer.Type.INT ->
+                CodePointBuffer.StorageType.INT ->
                     CodePoint32BitCharStream(
                         codePointBuffer.position(),
                         codePointBuffer.remaining(),

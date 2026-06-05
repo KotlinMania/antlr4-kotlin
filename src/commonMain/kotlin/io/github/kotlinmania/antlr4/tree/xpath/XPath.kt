@@ -5,7 +5,9 @@ import io.github.kotlinmania.antlr4.CommonTokenStream
 import io.github.kotlinmania.antlr4.LexerNoViableAltException
 import io.github.kotlinmania.antlr4.Parser
 import io.github.kotlinmania.antlr4.ParserRuleContext
+import io.github.kotlinmania.antlr4.RecognitionControlException
 import io.github.kotlinmania.antlr4.Token
+import io.github.kotlinmania.antlr4.asControlException
 import io.github.kotlinmania.antlr4.tree.ParseTree
 
 open class XPath(
@@ -23,7 +25,7 @@ open class XPath(
             tree: ParseTree?,
             xpath: String,
             parser: Parser,
-        ): Collection<ParseTree?> {
+        ): Collection<ParseTree> {
             val p = XPath(parser, xpath)
             return p.evaluate(tree!!)
         }
@@ -38,7 +40,7 @@ open class XPath(
         val lexer: XPathLexer =
             object : XPathLexer(`in`) {
                 override fun recover(e: LexerNoViableAltException?) {
-                    if (e != null) throw e
+                    if (e != null) throw e.asControlException()
                 }
             }
         lexer.removeErrorListeners()
@@ -46,10 +48,11 @@ open class XPath(
         val tokenStream = CommonTokenStream(lexer)
         try {
             tokenStream.fill()
-        } catch (e: LexerNoViableAltException) {
+        } catch (control: RecognitionControlException) {
+            if (control.recognitionException !is LexerNoViableAltException) throw control
             val pos = lexer.charPositionInLine
             val msg = "Invalid tokens or characters at index $pos in path '$path'"
-            throw IllegalArgumentException(msg, e)
+            throw IllegalArgumentException(msg, control)
         }
 
         val tokens = tokenStream.allTokens()
@@ -58,12 +61,12 @@ open class XPath(
         var i = 0
         loop@ while (i < n) {
             val el = tokens[i]
-            when (el?.type) {
+            when (el.type) {
                 XPathLexer.ROOT, XPathLexer.ANYWHERE -> {
                     val anywhere = el.type == XPathLexer.ANYWHERE
                     i++
                     var next = tokens[i]
-                    val invert = next?.type == XPathLexer.BANG
+                    val invert = next.type == XPathLexer.BANG
                     if (invert) {
                         i++
                         next = tokens[i]
@@ -118,15 +121,15 @@ open class XPath(
         }
     }
 
-    fun evaluate(t: ParseTree?): Collection<ParseTree?> {
+    fun evaluate(t: ParseTree?): Collection<ParseTree> {
         val dummyRoot = ParserRuleContext()
-        dummyRoot.children = mutableListOf(t!!)
-        var work: MutableCollection<ParseTree?> = mutableListOf(dummyRoot)
+        dummyRoot.addAnyChild(t!!)
+        var work: MutableCollection<ParseTree> = mutableListOf(dummyRoot)
         var i = 0
         while (i < elements.size) {
-            val next: MutableCollection<ParseTree?> = linkedSetOf()
+            val next: MutableCollection<ParseTree> = linkedSetOf()
             for (node in work) {
-                if (node != null && node.childCount > 0) {
+                if (node.childCount > 0) {
                     val matching = elements[i].evaluate(node)
                     next.addAll(matching)
                 }

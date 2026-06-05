@@ -9,18 +9,18 @@ import io.github.kotlinmania.antlr4.misc.IntervalSet
 
 class AtomTransition(
     target: ATNState,
-    val label: Int,
+    val atomLabel: Int,
 ) : Transition(target) {
     override val serializationType: Int
         get() = ATOM
 
-    override fun label(): IntervalSet = IntervalSet.of(label)
+    override fun label(): IntervalSet = IntervalSet.of(atomLabel)
 
     override fun matches(
         symbol: Int,
         minVocabSymbol: Int,
         maxVocabSymbol: Int,
-    ): Boolean = label == symbol
+    ): Boolean = atomLabel == symbol
 
-    override fun toString(): String = label.toString()
+    override fun toString(): String = atomLabel.toString()
 }

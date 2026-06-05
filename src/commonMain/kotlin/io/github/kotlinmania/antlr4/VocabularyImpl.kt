@@ -11,17 +11,17 @@ package io.github.kotlinmania.antlr4
  *
  * @author Sam Harwell
  */
-class VocabularyImpl(
-    literalNames: Array<String?>?,
-    symbolicNames: Array<String?>?,
-    displayNames: Array<String?>?,
+class VocabularyImpl internal constructor(
+    literalNames: Array<String>?,
+    symbolicNames: Array<String>?,
+    displayNames: Array<String>?,
 ) : Vocabulary {
     // Because this is an actual implementation object, we can provide access methods for vocabulary symbols
-    val literalNames: Array<String?>
+    val literalNames: Array<String>
 
-    val symbolicNames: Array<String?>
+    val symbolicNames: Array<String>
 
-    val displayNames: Array<String?>
+    val displayNames: Array<String>
     override val maxTokenType: Int
 
     /**
@@ -36,7 +36,7 @@ class VocabularyImpl(
      * @see .getLiteralName
      * @see .getSymbolicName
      */
-    constructor(literalNames: Array<String?>?, symbolicNames: Array<String?>?) : this(literalNames, symbolicNames, null)
+    internal constructor(literalNames: Array<String>?, symbolicNames: Array<String>?) : this(literalNames, symbolicNames, null)
 
     /**
      * Constructs a new instance of [VocabularyImpl] from the specified
@@ -72,7 +72,7 @@ class VocabularyImpl(
 
     override fun getLiteralName(tokenType: Int): String? {
         if (tokenType >= 0 && tokenType < literalNames.size) {
-            return literalNames[tokenType]
+            return literalNames[tokenType].ifEmpty { null }
         }
 
         return null
@@ -80,7 +80,7 @@ class VocabularyImpl(
 
     override fun getSymbolicName(tokenType: Int): String? {
         if (tokenType >= 0 && tokenType < symbolicNames.size) {
-            return symbolicNames[tokenType]
+            return symbolicNames[tokenType].ifEmpty { null }
         }
 
         if (tokenType == Token.EOF) {
@@ -93,7 +93,7 @@ class VocabularyImpl(
     override fun getDisplayName(tokenType: Int): String? {
         if (tokenType >= 0 && tokenType < displayNames.size) {
             val displayName = displayNames[tokenType]
-            if (displayName != null) {
+            if (displayName.isNotEmpty()) {
                 return displayName
             }
         }
@@ -112,7 +112,7 @@ class VocabularyImpl(
     }
 
     companion object {
-        private val EMPTY_NAMES = arrayOfNulls<String>(0)
+        private val EMPTY_NAMES = emptyArray<String>()
 
         /**
          * Gets an empty [Vocabulary] instance.
@@ -145,37 +145,33 @@ class VocabularyImpl(
          * @return A [Vocabulary] instance which uses `tokenNames` for
          * the display names of tokens.
          */
-        fun fromTokenNames(tokenNames: Array<String?>?): Vocabulary {
+        fun fromTokenNames(tokenNames: Array<String>?): Vocabulary {
             if (tokenNames == null || tokenNames.size == 0) {
                 return io.github.kotlinmania.antlr4.VocabularyImpl.Companion.EMPTY_VOCABULARY
             }
 
-            val literalNames: Array<String?> = tokenNames.copyOf(tokenNames.size)
-            val symbolicNames: Array<String?> = tokenNames.copyOf(tokenNames.size)
+            val literalNames: Array<String> = Array(tokenNames.size) { tokenNames[it] }
+            val symbolicNames: Array<String> = Array(tokenNames.size) { tokenNames[it] }
             for (i in tokenNames.indices) {
                 val tokenName = tokenNames[i]
-                if (tokenName == null) {
-                    continue
-                }
-
                 if (!tokenName.isEmpty()) {
                     val firstChar: Char = tokenName[0]
                     if (firstChar == '\'') {
-                        symbolicNames[i] = null
+                        symbolicNames[i] = ""
                         continue
                     } else if (firstChar.isUpperCase()) {
-                        literalNames[i] = null
+                        literalNames[i] = ""
                         continue
                     }
                 }
 
                 // wasn't a literal or symbolic name
-                literalNames[i] = null
-                symbolicNames[i] = null
+                literalNames[i] = ""
+                symbolicNames[i] = ""
             }
 
             return io.github.kotlinmania.antlr4
-                .VocabularyImpl(literalNames, symbolicNames, tokenNames as Array<String?>?)
+                .VocabularyImpl(literalNames, symbolicNames, tokenNames)
         }
     }
 }

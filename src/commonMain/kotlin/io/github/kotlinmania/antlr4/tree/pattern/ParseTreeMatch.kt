@@ -3,15 +3,14 @@ package io.github.kotlinmania.antlr4.tree.pattern
 import io.github.kotlinmania.antlr4.misc.MultiMap
 import io.github.kotlinmania.antlr4.tree.ParseTree
 
-class ParseTreeMatch(
+class ParseTreeMatch internal constructor(
     tree: ParseTree,
     pattern: ParseTreePattern,
-    labels: MultiMap<String, ParseTree>,
+    internal val labels: MultiMap<String, ParseTree>,
     mismatchedNode: ParseTree?,
 ) {
     private val tree: ParseTree
     private val pattern: ParseTreePattern
-    private val labels: MultiMap<String, ParseTree>
     private val mismatchedNode: ParseTree?
 
     init {
@@ -20,7 +19,6 @@ class ParseTreeMatch(
         requireNotNull(labels) { "labels cannot be null" }
         this.tree = tree
         this.pattern = pattern
-        this.labels = labels
         this.mismatchedNode = mismatchedNode
     }
 
@@ -37,7 +35,7 @@ class ParseTreeMatch(
         return nodes ?: emptyList()
     }
 
-    fun getLabels(): MultiMap<String, ParseTree> = labels
+    fun getLabels(): Map<String, List<ParseTree>> = labels.data.mapValues { (_, values) -> values.toList() }
 
     fun getMismatchedNode(): ParseTree? = mismatchedNode
 
@@ -49,6 +47,6 @@ class ParseTreeMatch(
 
     override fun toString(): String {
         val status = if (succeeded()) "succeeded" else "failed"
-        return "Match $status; found ${getLabels().data.size} labels"
+        return "Match $status; found ${labels.data.size} labels"
     }
 }

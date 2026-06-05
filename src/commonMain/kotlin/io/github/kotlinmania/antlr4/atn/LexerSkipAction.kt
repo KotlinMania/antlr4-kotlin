@@ -22,8 +22,7 @@ class LexerSkipAction
 /**
      * Constructs the singleton instance of the lexer `skip` command.
      */
-    private constructor() :
-    LexerAction {
+    private constructor() : LexerAction {
         override val actionType: LexerActionType
             /**
              * {@inheritDoc}

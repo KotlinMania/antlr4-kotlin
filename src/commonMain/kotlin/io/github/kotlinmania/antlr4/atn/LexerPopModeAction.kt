@@ -22,8 +22,7 @@ class LexerPopModeAction
 /**
      * Constructs the singleton instance of the lexer `popMode` command.
      */
-    private constructor() :
-    LexerAction {
+    private constructor() : LexerAction {
         override val actionType: LexerActionType
             /**
              * {@inheritDoc}

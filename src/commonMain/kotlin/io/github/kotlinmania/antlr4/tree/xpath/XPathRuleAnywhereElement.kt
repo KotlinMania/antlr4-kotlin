@@ -7,5 +7,5 @@ class XPathRuleAnywhereElement(
     ruleName: String,
     val ruleIndex: Int,
 ) : XPathElement(ruleName) {
-    override fun evaluate(t: ParseTree): Collection<ParseTree?> = Trees.findAllRuleNodes(t, ruleIndex)
+    override fun evaluate(t: ParseTree): Collection<ParseTree> = Trees.findAllRuleNodes(t, ruleIndex)
 }

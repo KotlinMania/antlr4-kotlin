@@ -5,7 +5,7 @@ package io.github.kotlinmania.antlr4.internal
  * Platform monitor primitives are only needed when shared mutable state
  * crosses a real thread boundary.
  */
-inline fun <T> synchronized(
+internal inline fun <T> synchronized(
     lock: Any,
     block: () -> T,
 ): T = block()

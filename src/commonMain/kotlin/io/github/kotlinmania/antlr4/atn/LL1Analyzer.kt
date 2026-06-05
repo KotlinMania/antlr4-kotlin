@@ -29,10 +29,10 @@ class LL1Analyzer(
      * @param s the ATN state
      * @return the expected symbols for each outgoing transition of `s`.
      */
-    fun getDecisionLookahead(s: ATNState?): Array<IntervalSet?>? {
+    fun getDecisionLookahead(s: ATNState?): Array<IntervalSet?> {
 // 		println("LOOK("+s.stateNumber+")");
         if (s == null) {
-            return null
+            return emptyArray()
         }
 
         val look: Array<IntervalSet?> = arrayOfNulls<IntervalSet>(s.numberOfTransitions)

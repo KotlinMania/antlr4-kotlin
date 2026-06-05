@@ -1,6 +1,6 @@
 package io.github.kotlinmania.antlr4.misc
 
-class Pair<A, B>(
+internal class Pair<A, B>(
     val a: A?,
     val b: B?,
 ) {

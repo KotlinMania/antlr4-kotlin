@@ -59,9 +59,7 @@ abstract class Parser(
         override fun visitErrorNode(node: ErrorNode?) {}
 
         override fun exitEveryRule(ctx: ParserRuleContext?) {
-            if (ctx?.children is ArrayList) {
-                (ctx.children as? ArrayList<*>)?.trimToSize()
-            }
+            ctx?.trimChildrenToSize()
         }
 
         companion object {
@@ -242,7 +240,6 @@ abstract class Parser(
      * `ttype` and the error strategy could not recover from the
      * mismatched symbol
      */
-    @kotlin.Throws(RecognitionException::class)
     fun match(ttype: Int): Token {
         var t: Token = this.currentToken
         if (t.type == ttype) {
@@ -281,7 +278,6 @@ abstract class Parser(
      * a wildcard and the error strategy could not recover from the mismatched
      * symbol
      */
-    @kotlin.Throws(RecognitionException::class)
     fun matchWildcard(): Token {
         var t: Token = this.currentToken
         if (t.type > 0) {
@@ -594,6 +590,7 @@ abstract class Parser(
 
     protected fun addContextToParseTree() {
         val parentCtx = _ctx?.parent as? ParserRuleContext ?: return
-        val ctx = _ctx; state = ctx?.invokingState ?: -1
+        val ctx = _ctx
+        state = ctx?.invokingState ?: -1
     }
 }

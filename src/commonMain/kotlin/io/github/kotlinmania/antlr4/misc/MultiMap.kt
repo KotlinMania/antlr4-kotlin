@@ -1,6 +1,6 @@
 package io.github.kotlinmania.antlr4.misc
 
-class MultiMap<K, V> {
+internal class MultiMap<K, V> {
     val data: MutableMap<K, MutableList<V>> = LinkedHashMap()
 
     fun map(

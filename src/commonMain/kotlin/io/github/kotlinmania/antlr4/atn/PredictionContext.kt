@@ -73,14 +73,14 @@ abstract class PredictionContext protected constructor(
     fun toStrings(
         recognizer: Recognizer<*, *>?,
         currentState: Int,
-    ): Array<String?> = toStrings(recognizer, EmptyPredictionContext.Instance, currentState)
+    ): Array<String> = toStrings(recognizer, EmptyPredictionContext.Instance, currentState)
 
     // FROM SAM
     fun toStrings(
         recognizer: Recognizer<*, *>?,
         stop: PredictionContext?,
         currentState: Int,
-    ): Array<String?> {
+    ): Array<String> {
         val result: MutableList<String> = ArrayList()
 
         var perm = 0
@@ -218,7 +218,7 @@ abstract class PredictionContext protected constructor(
         }
 
         // dispatch
-        fun merge(
+        internal fun merge(
             a: PredictionContext?,
             b: PredictionContext?,
             rootIsWildcard: Boolean,
@@ -295,7 +295,7 @@ abstract class PredictionContext protected constructor(
          * otherwise false to indicate a full-context merge
          * @param mergeCache
          */
-        fun mergeSingletons(
+        internal fun mergeSingletons(
             a: SingletonPredictionContext,
             b: SingletonPredictionContext,
             rootIsWildcard: Boolean,
@@ -415,7 +415,7 @@ abstract class PredictionContext protected constructor(
          * @param rootIsWildcard `true` if this is a local-context merge,
          * otherwise false to indicate a full-context merge
          */
-        fun mergeRoot(
+        internal fun mergeRoot(
             a: SingletonPredictionContext,
             b: SingletonPredictionContext,
             rootIsWildcard: Boolean,
@@ -477,7 +477,7 @@ abstract class PredictionContext protected constructor(
          * [SingletonPredictionContext].<br></br>
          * <embed src="images/ArrayMerge_EqualTop.svg" type="image/svg+xml"></embed>
          */
-        fun mergeArrays(
+        internal fun mergeArrays(
             a: ArrayPredictionContext,
             b: ArrayPredictionContext,
             rootIsWildcard: Boolean,
@@ -609,7 +609,7 @@ abstract class PredictionContext protected constructor(
          * Make pass over all *M* `parents`; merge any `equals()`
          * ones.
          */
-        fun combineCommonParents(parents: Array<PredictionContext?>) {
+        internal fun combineCommonParents(parents: Array<PredictionContext?>) {
             val uniqueParents: MutableMap<PredictionContext?, PredictionContext?> =
                 HashMap<PredictionContext?, PredictionContext?>()
 
@@ -631,9 +631,9 @@ abstract class PredictionContext protected constructor(
             buf.append("digraph G {\n")
             buf.append("rankdir=LR;\n")
 
-            val nodes: List<PredictionContext?> =
+            val nodes: List<PredictionContext> =
                 getAllContextNodes(context)
-            (nodes as? MutableList<PredictionContext?>)?.sortWith(compareBy { it?.id ?: 0 })
+            (nodes as? MutableList<PredictionContext>)?.sortWith(compareBy { it.id })
 
             for (current in nodes) {
                 if (current is SingletonPredictionContext) {
@@ -664,8 +664,8 @@ abstract class PredictionContext protected constructor(
 
             for (current in nodes) {
                 if (current === EmptyPredictionContext.Instance) continue
-                for (i in 0..<(current?.size() ?: 0)) {
-                    if (current?.getParent(i) == null) continue
+                for (i in 0..<current.size()) {
+                    if (current.getParent(i) == null) continue
                     val s: String? = current.id.toString()
                     buf.append("  s").append(s)
                     buf.append("->")
@@ -684,7 +684,7 @@ abstract class PredictionContext protected constructor(
         }
 
         // From Sam
-        fun getCachedContext(
+        internal fun getCachedContext(
             context: PredictionContext,
             contextCache: PredictionContextCache,
             visited: MutableMap<PredictionContext?, PredictionContext?>,
@@ -774,8 +774,8 @@ abstract class PredictionContext protected constructor(
         // 		return nodes;
         // 	}
         // ter's recursive version of Sam's getAllNodes()
-        fun getAllContextNodes(context: PredictionContext?): List<PredictionContext?> {
-            val nodes: MutableList<PredictionContext?> = ArrayList<PredictionContext?>()
+        fun getAllContextNodes(context: PredictionContext?): List<PredictionContext> {
+            val nodes: MutableList<PredictionContext> = ArrayList()
             val visited: MutableMap<PredictionContext?, PredictionContext?> =
                 HashMap<PredictionContext?, PredictionContext?>()
             io.github.kotlinmania.antlr4.atn.PredictionContext.Companion
@@ -783,9 +783,9 @@ abstract class PredictionContext protected constructor(
             return nodes
         }
 
-        fun getAllContextNodes_(
+        internal fun getAllContextNodes_(
             context: PredictionContext?,
-            nodes: MutableList<PredictionContext?>,
+            nodes: MutableList<PredictionContext>,
             visited: MutableMap<PredictionContext?, PredictionContext?>,
         ) {
             if (context == null || visited.containsKey(context)) return

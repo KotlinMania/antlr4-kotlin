@@ -10,7 +10,7 @@ interface ParseTree : SyntaxTree {
 
     fun setParent(parent: RuleContext?)
 
-    fun <T> accept(visitor: ParseTreeVisitor<out T?>?): T?
+    fun <T> accept(visitor: ParseTreeVisitor<out T>?): T?
 
     val text: String?
 

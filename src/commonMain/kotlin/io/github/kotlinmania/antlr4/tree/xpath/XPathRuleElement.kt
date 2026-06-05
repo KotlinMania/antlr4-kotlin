@@ -8,7 +8,7 @@ class XPathRuleElement(
     ruleName: String,
     val ruleIndex: Int,
 ) : XPathElement(ruleName) {
-    override fun evaluate(t: ParseTree): Collection<ParseTree?> {
+    override fun evaluate(t: ParseTree): Collection<ParseTree> {
         val nodes = mutableListOf<ParseTree>()
         for (c in Trees.getChildren(t)) {
             if (c is ParserRuleContext) {

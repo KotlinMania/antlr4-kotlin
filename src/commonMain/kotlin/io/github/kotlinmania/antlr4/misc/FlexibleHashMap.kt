@@ -7,14 +7,14 @@ package io.github.kotlinmania.antlr4.misc
 
 import kotlin.math.floor
 
-open class FlexibleHashMap<K, V>
+internal open class FlexibleHashMap<K, V>
     @kotlin.jvm.JvmOverloads
     constructor(
         comparator: AbstractEqualityComparator<in K> = AnyEqualityComparator.INSTANCE as AbstractEqualityComparator<in K>,
         initialCapacity: Int = INITIAL_CAPACITY,
         initialBucketCapacity: Int = INITIAL_BUCKET_CAPACITY,
     ) : AbstractMutableMap<K, V>() {
-        class Entry<K, V>(
+        internal class Entry<K, V>(
             override val key: K,
             override var value: V,
         ) : MutableMap.MutableEntry<K, V> {

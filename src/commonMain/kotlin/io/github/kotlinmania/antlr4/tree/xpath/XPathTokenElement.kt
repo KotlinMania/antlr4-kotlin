@@ -8,7 +8,7 @@ class XPathTokenElement(
     tokenName: String,
     val tokenType: Int,
 ) : XPathElement(tokenName) {
-    override fun evaluate(t: ParseTree): Collection<ParseTree?> {
+    override fun evaluate(t: ParseTree): Collection<ParseTree> {
         val nodes = mutableListOf<ParseTree>()
         for (c in Trees.getChildren(t)) {
             if (c is TerminalNode) {

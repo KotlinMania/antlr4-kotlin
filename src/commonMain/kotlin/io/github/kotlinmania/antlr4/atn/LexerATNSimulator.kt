@@ -7,20 +7,21 @@
 
 package io.github.kotlinmania.antlr4.atn
 
-import kotlinx.coroutines.InternalCoroutinesApi
 import io.github.kotlinmania.antlr4.CharStream
 import io.github.kotlinmania.antlr4.IntStream
 import io.github.kotlinmania.antlr4.Lexer
 import io.github.kotlinmania.antlr4.LexerNoViableAltException
 import io.github.kotlinmania.antlr4.Token
+import io.github.kotlinmania.antlr4.asControlException
 import io.github.kotlinmania.antlr4.assert
 import io.github.kotlinmania.antlr4.dfa.DFA
 import io.github.kotlinmania.antlr4.dfa.DFAState
 import io.github.kotlinmania.antlr4.misc.Interval
+import kotlinx.coroutines.InternalCoroutinesApi
 import io.github.kotlinmania.antlr4.internal.synchronized as antlrSynchronized
 
 /** "dup" of ParserInterpreter  */
-class LexerATNSimulator(
+class LexerATNSimulator internal constructor(
     recog: Lexer?,
     atn: ATN?,
     decisionToDFA: Array<DFA>,
@@ -79,7 +80,7 @@ class LexerATNSimulator(
         io.github.kotlinmania.antlr4.atn.LexerATNSimulator
             .SimState()
 
-    constructor(
+    internal constructor(
         atn: ATN?,
         decisionToDFA: Array<DFA>,
         sharedContextCache: PredictionContextCache?,
@@ -324,7 +325,7 @@ class LexerATNSimulator(
                 return Token.EOF
             }
 
-            throw LexerNoViableAltException(recog, input, startIndex, reach)
+            throw LexerNoViableAltException(recog, input, startIndex, reach).asControlException()
         }
     }
 
@@ -747,16 +748,16 @@ class LexerATNSimulator(
         }
 
         val dfa: DFA = decisionToDFA[mode]
-        antlrSynchronized(dfa.states) {
-            val existing: DFAState? = dfa.states.get(proposed)
+        antlrSynchronized(dfa.mutableStates) {
+            val existing: DFAState? = dfa.mutableStates.get(proposed)
             if (existing != null) return existing
 
             val newState: DFAState = proposed
 
-            newState.stateNumber = dfa.states.size
+            newState.stateNumber = dfa.mutableStates.size
             configs.readonlyFlag = true
             newState.configs = configs
-            dfa.states.put(newState, newState)
+            dfa.mutableStates.put(newState, newState)
             return newState
         }
     }

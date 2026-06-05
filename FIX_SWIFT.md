@@ -76,7 +76,26 @@ val byName: Map<String, Item>
 ```
 
 Internal implementation may still use mutable collections. Expose
-read-only views or copy-on-write helpers publicly.
+read-only views or copy-on-write helpers publicly:
+
+```kotlin
+internal val mutableItems: MutableList<Item> = ArrayList()
+val items: List<Item>
+    get() = mutableItems
+```
+
+This applies to public properties on mutable implementation classes too.
+A class may still mutate internally, but `val configs: MutableList<Config>`
+is a Swift Export ABI leak. In Kotlin/Native link output this can surface
+as:
+
+```text
+Compilation failed: Global 'ktypew:kotlin.collections.MutableList' already exists
+```
+
+When that happens, inspect the generated Swift bridge for
+`kotlin.collections.MutableList` / `MutableMap` / `MutableSet`, then fix
+the source declaration that exported it.
 
 ### Generic Runtime Types
 
@@ -169,6 +188,34 @@ class Type
 class SynType
 ```
 
+## Inspect Generated Swift
+
+When `macosArm64DebugSwiftExport` succeeds but
+`macosArm64DebugBuildSPMPackage` or direct `xcodebuild` fails, inspect the
+generated package:
+
+```bash
+rg -n "error:|warning:" build/xcodebuild-swift-export.log
+rg --files build/SPMPackage/macosArm64/Debug/Sources
+```
+
+The module source is usually under:
+
+```text
+build/SPMPackage/macosArm64/Debug/Sources/<ModuleName>/<ModuleName>.swift
+```
+
+Map each Swift diagnostic back to Kotlin source shape. Common examples:
+
+- `type member must not be named 'Type'` -> rename the Kotlin enum/class.
+- property `label` plus method `label()` -> rename the Kotlin property.
+- `init(fileName:)` overriding `init(input:)` -> align constructor
+  parameter labels in the Kotlin subclass and superclass.
+- exported collection implementation subclasses Swift's stdlib wrappers ->
+  make the implementation internal or expose a simpler public type.
+
+Do not edit generated Swift. Fix the Kotlin declarations that generated it.
+
 ## Expect/Actual Leaks
 
 If an `internal expect fun` leaks into the Swift bridge and produces an
@@ -195,9 +242,10 @@ swiftExport {
 }
 ```
 
-For coroutine runtime warnings only, `SWIFT.md` allows relaxing
-`allWarningsAsErrors` for generated `compileSwiftExport*` code. Before
-using that exception, confirm our own bridge has no unchecked casts.
+For coroutine/runtime Swift Export generated-code warnings only, `SWIFT.md`
+allows relaxing `allWarningsAsErrors` for generated `compileSwiftExport*`
+and `linkSwiftExportBinary*` tasks. Before using that exception, confirm
+our own bridge has no source-shape errors.
 
 ## Verification
 

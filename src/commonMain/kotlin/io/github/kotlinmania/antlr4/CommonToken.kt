@@ -6,7 +6,6 @@
 package io.github.kotlinmania.antlr4
 
 import io.github.kotlinmania.antlr4.misc.Interval
-import io.github.kotlinmania.antlr4.misc.Pair
 
 class CommonToken : WritableToken {
     override var type: Int
@@ -17,7 +16,7 @@ class CommonToken : WritableToken {
 
     override var channel: Int = Token.DEFAULT_CHANNEL
 
-    protected var source: Pair<TokenSource?, CharStream?>? = null
+    protected var source: TokenSourceCharStream? = null
 
     private var _text: String? = null
 
@@ -50,15 +49,15 @@ class CommonToken : WritableToken {
         this.source = CommonToken.EMPTY_SOURCE
     }
 
-    constructor(source: Pair<TokenSource?, CharStream?>, type: Int, channel: Int, start: Int, stop: Int) {
+    constructor(source: TokenSourceCharStream, type: Int, channel: Int, start: Int, stop: Int) {
         this.source = source
         this.type = type
         this.channel = channel
         this.startIndex = start
         this.stopIndex = stop
-        if (source.a != null) {
-            this.line = source.a.line
-            this.charPositionInLine = source.a.charPositionInLine
+        if (source.tokenSource != null) {
+            this.line = source.tokenSource.line
+            this.charPositionInLine = source.tokenSource.charPositionInLine
         }
     }
 
@@ -83,14 +82,14 @@ class CommonToken : WritableToken {
             source = oldToken.source
         } else {
             _text = oldToken.text
-            source = Pair<TokenSource?, CharStream?>(oldToken.tokenSource, oldToken.inputStream)
+            source = TokenSourceCharStream(oldToken.tokenSource, oldToken.inputStream)
         }
     }
 
     override val tokenSource: TokenSource?
-        get() = source?.a
+        get() = source?.tokenSource
     override val inputStream: CharStream?
-        get() = source?.b
+        get() = source?.charStream
 
     override fun toString(): String = toString(null)
 
@@ -115,6 +114,6 @@ class CommonToken : WritableToken {
     }
 
     companion object {
-        protected val EMPTY_SOURCE: Pair<TokenSource?, CharStream?> = Pair<TokenSource?, CharStream?>(null, null)
+        protected val EMPTY_SOURCE: TokenSourceCharStream = TokenSourceCharStream(null, null)
     }
 }

@@ -145,7 +145,7 @@ interface IntSet {
      * @return A list containing all element present in the current set, sorted
      * in ascending numerical order.
      */
-    fun toList(): List<Int?>?
+    fun toList(): List<Int>
 
     /**
      * {@inheritDoc}

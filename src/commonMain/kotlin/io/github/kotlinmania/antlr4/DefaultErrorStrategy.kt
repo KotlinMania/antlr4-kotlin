@@ -9,7 +9,6 @@ import io.github.kotlinmania.antlr4.atn.ATN
 import io.github.kotlinmania.antlr4.atn.ATNState
 import io.github.kotlinmania.antlr4.atn.RuleTransition
 import io.github.kotlinmania.antlr4.misc.IntervalSet
-import io.github.kotlinmania.antlr4.misc.Pair
 
 /**
  * This is the default implementation of [ANTLRErrorStrategy] used for
@@ -233,11 +232,13 @@ open class DefaultErrorStrategy : ANTLRErrorStrategy {
      * some reason speed is suffering for you, you can turn off this
      * functionality by simply overriding this method as a blank { }.
      */
-    @kotlin.Throws(RecognitionException::class)
     open override fun sync(recognizer: Parser?) {
         val recognizer = recognizer!!
         val s: ATNState =
-            recognizer.interpreter?.atn?.states?.getOrNull(recognizer.state) ?: return
+            recognizer.interpreter
+                ?.atn
+                ?.states
+                ?.getOrNull(recognizer.state) ?: return
         // 		println("sync @ "+s.stateNumber+"="+s::class.getSimpleName());
         // If already recovering, don't try to sync
         if (inErrorRecoveryMode(recognizer)) {
@@ -273,7 +274,7 @@ open class DefaultErrorStrategy : ANTLRErrorStrategy {
                     return
                 }
 
-                throw InputMismatchException(recognizer)
+                throw InputMismatchException(recognizer).asControlException()
             }
 
             ATNState.PLUS_LOOP_BACK, ATNState.STAR_LOOP_BACK -> {
@@ -487,7 +488,6 @@ open class DefaultErrorStrategy : ANTLRErrorStrategy {
      * is in the set of tokens that can follow the `')'` token reference
      * in rule `atom`. It can assume that you forgot the `')'`.
      */
-    @kotlin.Throws(RecognitionException::class)
     open override fun recoverInline(recognizer: Parser?): Token? {
         val recognizer = recognizer!!
         // SINGLE TOKEN DELETION
@@ -512,7 +512,7 @@ open class DefaultErrorStrategy : ANTLRErrorStrategy {
             e = InputMismatchException(recognizer, nextTokensState, nextTokensContext)
         }
 
-        throw e
+        throw e.asControlException()
     }
 
     /**
@@ -632,7 +632,7 @@ open class DefaultErrorStrategy : ANTLRErrorStrategy {
         }
         val safeCurrent: Token = current
         return recognizer.tokenFactory?.create(
-            Pair<TokenSource?, CharStream?>(safeCurrent.tokenSource, safeCurrent.tokenSource?.inputStream),
+            TokenSourceCharStream(safeCurrent.tokenSource, safeCurrent.tokenSource?.inputStream),
             expectedTokenType,
             tokenText,
             Token.DEFAULT_CHANNEL,

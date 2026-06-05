@@ -161,7 +161,7 @@ open class RuleContext : RuleNode {
     override val childCount: Int
         get() = 0
 
-    override fun <T> accept(visitor: ParseTreeVisitor<out T?>?): T? = visitor?.visitChildren(this)
+    override fun <T> accept(visitor: ParseTreeVisitor<out T>?): T? = visitor?.visitChildren(this)
 
     /** Print out a whole tree, not just a node, in LISP format
      * (root child1 .. childN). Print just a node if this is a leaf.
@@ -172,15 +172,15 @@ open class RuleContext : RuleNode {
     /** Print out a whole tree, not just a node, in LISP format
      * (root child1 .. childN). Print just a node if this is a leaf.
      */
-    fun toStringTree(ruleNames: List<String?>?): String = Trees.toStringTree(this, ruleNames)!!
+    fun toStringTree(ruleNames: List<String>?): String = Trees.toStringTree(this, ruleNames)!!
 
-    override fun toStringTree(): String = toStringTree(null as List<String?>?)
+    override fun toStringTree(): String = toStringTree(null as List<String>?)
 
-    override fun toString(): String = toString(null as List<String?>?, null as RuleContext?)
+    override fun toString(): String = toString(null as List<String>?, null as RuleContext?)
 
     fun toString(recog: Recognizer<*, *>?): String? = toString(recog, ParserRuleContext.EMPTY)
 
-    fun toString(ruleNames: List<String?>?): String = toString(ruleNames, null)
+    fun toString(ruleNames: List<String>?): String = toString(ruleNames, null)
 
     // recog null unless ParserRuleContext, in which case we use subclass toString(...)
     fun toString(
@@ -188,12 +188,12 @@ open class RuleContext : RuleNode {
         stop: RuleContext?,
     ): String {
         val ruleNames: Array<String>? = if (recog != null) recog.ruleNames else null
-        val ruleNamesList: List<String?>? = if (ruleNames != null) ruleNames.map { it as String? } else null
+        val ruleNamesList: List<String>? = ruleNames?.toList()
         return toString(ruleNamesList, stop)
     }
 
     fun toString(
-        ruleNames: List<String?>?,
+        ruleNames: List<String>?,
         stop: RuleContext?,
     ): String {
         val buf: StringBuilder = StringBuilder()

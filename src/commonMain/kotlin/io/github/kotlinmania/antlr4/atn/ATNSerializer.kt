@@ -202,7 +202,7 @@ class ATNSerializer(
                     }
 
                     Transition.ATOM -> {
-                        arg1 = (t as AtomTransition).label
+                        arg1 = (t as AtomTransition).atomLabel
                         if (arg1 == Token.EOF) {
                             arg1 = 0
                             arg3 = 1

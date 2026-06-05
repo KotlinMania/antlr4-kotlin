@@ -15,7 +15,8 @@ object InterpreterDataReader {
 
     fun parse(reader: LineReader): InterpreterData {
         val result = InterpreterData()
-        result.ruleNames = mutableListOf()
+        val ruleNames = mutableListOf<String>()
+        result.ruleNames = ruleNames
 
         val literalNames = mutableListOf<String>()
         val symbolicNames = mutableListOf<String>()
@@ -44,24 +45,26 @@ object InterpreterDataReader {
         while (true) {
             val line = reader.readLineOrNull()
             if (line.isNullOrEmpty()) break
-            result.ruleNames!!.add(line)
+            ruleNames.add(line)
         }
 
         var line = reader.readLineOrNull() ?: throw RuntimeException("Unexpected data entry")
         if (line == "channel names:") {
-            result.channels = mutableListOf()
+            val channels = mutableListOf<String>()
+            result.channels = channels
             while (true) {
                 val channel = reader.readLineOrNull()
                 if (channel.isNullOrEmpty()) break
-                result.channels!!.add(channel)
+                channels.add(channel)
             }
 
             reader.expect("mode names:")
-            result.modes = mutableListOf()
+            val modes = mutableListOf<String>()
+            result.modes = modes
             while (true) {
                 val mode = reader.readLineOrNull()
                 if (mode.isNullOrEmpty()) break
-                result.modes!!.add(mode)
+                modes.add(mode)
             }
             line = reader.readLineOrNull() ?: throw RuntimeException("Unexpected data entry")
         }
@@ -87,8 +90,11 @@ object InterpreterDataReader {
     class InterpreterData {
         var atn: ATN? = null
         var vocabulary: Vocabulary? = null
-        var ruleNames: MutableList<String>? = null
-        var channels: MutableList<String>? = null
-        var modes: MutableList<String>? = null
+        var ruleNames: List<String>? = null
+            internal set
+        var channels: List<String>? = null
+            internal set
+        var modes: List<String>? = null
+            internal set
     }
 }

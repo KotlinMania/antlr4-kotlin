@@ -6,14 +6,14 @@
 package io.github.kotlinmania.antlr4
 
 class CodePointBuffer private constructor(
-    val type: Type,
+    val storageType: StorageType,
     private var position: Int,
     private val limit: Int,
     private val byteArray: ByteArray?,
     private val charArray: CharArray?,
     private val intArray: IntArray?,
 ) {
-    enum class Type {
+    enum class StorageType {
         BYTE,
         CHAR,
         INT,
@@ -30,41 +30,41 @@ class CodePointBuffer private constructor(
 
     fun get(offset: Int): Int {
         require(offset in 0..<limit) { "offset $offset outside buffer limit $limit" }
-        return when (type) {
-            Type.BYTE -> byteArray!![offset].toInt() and 0xFF
-            Type.CHAR -> charArray!![offset].code
-            Type.INT -> intArray!![offset]
+        return when (storageType) {
+            StorageType.BYTE -> byteArray!![offset].toInt() and 0xFF
+            StorageType.CHAR -> charArray!![offset].code
+            StorageType.INT -> intArray!![offset]
         }
     }
 
-    internal fun getType(): Type = type
+    internal fun getType(): StorageType = storageType
 
     internal fun arrayOffset(): Int = 0
 
     internal fun byteArray(): ByteArray {
-        require(type == Type.BYTE)
+        require(storageType == StorageType.BYTE)
         return byteArray!!
     }
 
     internal fun charArray(): CharArray {
-        require(type == Type.CHAR)
+        require(storageType == StorageType.CHAR)
         return charArray!!
     }
 
     internal fun intArray(): IntArray {
-        require(type == Type.INT)
+        require(storageType == StorageType.INT)
         return intArray!!
     }
 
     companion object {
         fun withBytes(byteArray: ByteArray): CodePointBuffer =
-            CodePointBuffer(Type.BYTE, 0, byteArray.size, byteArray.copyOf(), null, null)
+            CodePointBuffer(StorageType.BYTE, 0, byteArray.size, byteArray.copyOf(), null, null)
 
         fun withChars(charArray: CharArray): CodePointBuffer =
-            CodePointBuffer(Type.CHAR, 0, charArray.size, null, charArray.copyOf(), null)
+            CodePointBuffer(StorageType.CHAR, 0, charArray.size, null, charArray.copyOf(), null)
 
         fun withInts(intArray: IntArray): CodePointBuffer =
-            CodePointBuffer(Type.INT, 0, intArray.size, null, null, intArray.copyOf())
+            CodePointBuffer(StorageType.INT, 0, intArray.size, null, null, intArray.copyOf())
 
         fun builder(initialBufferSize: Int): Builder = Builder(initialBufferSize)
     }
@@ -72,7 +72,7 @@ class CodePointBuffer private constructor(
     class Builder internal constructor(
         initialBufferSize: Int,
     ) {
-        private var type: Type = Type.BYTE
+        private var type: StorageType = StorageType.BYTE
         private var byteArray = ByteArray(maxOf(1, initialBufferSize))
         private var byteLength = 0
         private var charArray: CharArray? = null
@@ -80,13 +80,13 @@ class CodePointBuffer private constructor(
         private var intArray: IntArray? = null
         private var intLength = 0
 
-        internal fun getType(): Type = type
+        internal fun getType(): StorageType = type
 
         fun build(): CodePointBuffer =
             when (type) {
-                Type.BYTE ->
+                StorageType.BYTE ->
                     CodePointBuffer(
-                        Type.BYTE,
+                        StorageType.BYTE,
                         0,
                         byteLength,
                         byteArray.copyOf(byteLength),
@@ -94,9 +94,9 @@ class CodePointBuffer private constructor(
                         null,
                     )
 
-                Type.CHAR ->
+                StorageType.CHAR ->
                     CodePointBuffer(
-                        Type.CHAR,
+                        StorageType.CHAR,
                         0,
                         charLength,
                         null,
@@ -104,9 +104,9 @@ class CodePointBuffer private constructor(
                         null,
                     )
 
-                Type.INT ->
+                StorageType.INT ->
                     CodePointBuffer(
-                        Type.INT,
+                        StorageType.INT,
                         0,
                         intLength,
                         null,
@@ -141,9 +141,9 @@ class CodePointBuffer private constructor(
             while (index < stop) {
                 index =
                     when (type) {
-                        Type.BYTE -> appendByte(input, index, stop)
-                        Type.CHAR -> appendChar(input, index, stop)
-                        Type.INT -> appendInt(input, index, stop)
+                        StorageType.BYTE -> appendByte(input, index, stop)
+                        StorageType.CHAR -> appendChar(input, index, stop)
+                        StorageType.INT -> appendInt(input, index, stop)
                     }
             }
         }
@@ -204,16 +204,16 @@ class CodePointBuffer private constructor(
 
         private fun activeLength(): Int =
             when (type) {
-                Type.BYTE -> byteLength
-                Type.CHAR -> charLength
-                Type.INT -> intLength
+                StorageType.BYTE -> byteLength
+                StorageType.CHAR -> charLength
+                StorageType.INT -> intLength
             }
 
         private fun ensureCapacity(requiredCapacity: Int) {
             when (type) {
-                Type.BYTE -> ensureByteCapacity(requiredCapacity)
-                Type.CHAR -> ensureCharCapacity(requiredCapacity)
-                Type.INT -> ensureIntCapacity(requiredCapacity)
+                StorageType.BYTE -> ensureByteCapacity(requiredCapacity)
+                StorageType.CHAR -> ensureCharCapacity(requiredCapacity)
+                StorageType.INT -> ensureIntCapacity(requiredCapacity)
             }
         }
 
@@ -243,7 +243,7 @@ class CodePointBuffer private constructor(
             for (i in 0..<byteLength) {
                 newBuffer[i] = (byteArray[i].toInt() and 0xFF).toChar()
             }
-            type = Type.CHAR
+            type = StorageType.CHAR
             charArray = newBuffer
             charLength = byteLength
             byteArray = ByteArray(0)
@@ -256,7 +256,7 @@ class CodePointBuffer private constructor(
             for (i in 0..<byteLength) {
                 newBuffer[i] = byteArray[i].toInt() and 0xFF
             }
-            type = Type.INT
+            type = StorageType.INT
             intArray = newBuffer
             intLength = byteLength
             byteArray = ByteArray(0)
@@ -270,7 +270,7 @@ class CodePointBuffer private constructor(
             for (i in 0..<charLength) {
                 newBuffer[i] = chars[i].code and 0xFFFF
             }
-            type = Type.INT
+            type = StorageType.INT
             intArray = newBuffer
             intLength = charLength
             charArray = null

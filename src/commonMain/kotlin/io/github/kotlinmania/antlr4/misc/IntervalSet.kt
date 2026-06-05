@@ -9,7 +9,7 @@ class IntervalSet : IntSet {
     internal var intervals: MutableList<Interval> = ArrayList()
     protected var readonly: Boolean = false
 
-    constructor(intervals: MutableList<Interval>?) {
+    internal constructor(intervals: MutableList<Interval>?) {
         this.intervals = intervals ?: ArrayList()
     }
 
@@ -86,8 +86,8 @@ class IntervalSet : IntSet {
                 this.add(I.a, I.b)
             }
         } else {
-            for (value in set.toList()!!) {
-                if (value != null) add(value)
+            for (value in set.toList()) {
+                add(value)
             }
         }
         return this
@@ -215,7 +215,7 @@ class IntervalSet : IntSet {
             return intervals[0].a
         }
 
-    fun getIntervals(): MutableList<Interval> = intervals
+    fun getIntervals(): List<Interval> = intervals
 
     override fun hashCode(): Int {
         var hash: Int = MurmurHash.initialize()
@@ -280,7 +280,7 @@ class IntervalSet : IntSet {
     }
 
     @Deprecated("Use {@link #toString(Vocabulary)} instead.")
-    fun toString(tokenNames: Array<String?>?): String? = toString(VocabularyImpl.fromTokenNames(tokenNames))
+    fun toString(tokenNames: Array<String>?): String? = toString(VocabularyImpl.fromTokenNames(tokenNames))
 
     fun toString(vocabulary: Vocabulary): String? {
         val buf: StringBuilder = StringBuilder()
@@ -315,7 +315,7 @@ class IntervalSet : IntSet {
 
     @Deprecated("Use {@link #elementName(Vocabulary, int)} instead.")
     protected fun elementName(
-        tokenNames: Array<String?>?,
+        tokenNames: Array<String>?,
         a: Int,
     ): String? = elementName(VocabularyImpl.fromTokenNames(tokenNames), a)
 

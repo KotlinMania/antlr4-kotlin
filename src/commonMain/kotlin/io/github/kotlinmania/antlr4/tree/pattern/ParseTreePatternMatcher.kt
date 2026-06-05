@@ -8,8 +8,9 @@ import io.github.kotlinmania.antlr4.ListTokenSource
 import io.github.kotlinmania.antlr4.Parser
 import io.github.kotlinmania.antlr4.ParserInterpreter
 import io.github.kotlinmania.antlr4.ParserRuleContext
-import io.github.kotlinmania.antlr4.RecognitionException
+import io.github.kotlinmania.antlr4.RecognitionControlException
 import io.github.kotlinmania.antlr4.Token
+import io.github.kotlinmania.antlr4.asControlException
 import io.github.kotlinmania.antlr4.misc.MultiMap
 import io.github.kotlinmania.antlr4.misc.ParseCancellationException
 import io.github.kotlinmania.antlr4.tree.ParseTree
@@ -20,11 +21,11 @@ open class ParseTreePatternMatcher(
     private val lexer: Lexer,
     parser: Parser,
 ) {
-    class CannotInvokeStartRule(
-        e: Throwable?,
-    ) : RuntimeException(e)
+    private class CannotInvokeStartRule(
+        message: String?,
+    ) : RuntimeException(message)
 
-    class StartRuleDoesNotConsumeFullPattern : RuntimeException()
+    private class StartRuleDoesNotConsumeFullPattern : RuntimeException()
 
     private val parser: Parser = parser
 
@@ -101,13 +102,13 @@ open class ParseTreePatternMatcher(
         try {
             parserInterp.errorHandler = BailErrorStrategy()
             tree = parserInterp.parse(patternRuleIndex)
-        } catch (re: RecognitionException) {
-            throw re
+        } catch (control: RecognitionControlException) {
+            throw control
         } catch (e: Exception) {
             if (e is ParseCancellationException) {
-                throw (e.cause as RecognitionException)
+                throw (e.recognitionException ?: throw CannotInvokeStartRule(e.message)).asControlException()
             }
-            throw CannotInvokeStartRule(e)
+            throw CannotInvokeStartRule(e.message)
         }
 
         if (tokens.LA(1) != Token.EOF) {
@@ -121,7 +122,7 @@ open class ParseTreePatternMatcher(
 
     fun getParser(): Parser = parser
 
-    protected fun matchImpl(
+    private fun matchImpl(
         tree: ParseTree,
         patternTree: ParseTree,
         labels: MultiMap<String, ParseTree>,
