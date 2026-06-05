@@ -8,7 +8,9 @@ interface LineReader {
     fun readLineOrNull(): String?
 }
 
-class StringLineReader(str: String) : LineReader {
+class StringLineReader(
+    str: String,
+) : LineReader {
     private val lines = str.lineSequence().iterator()
 
     override fun readLine(): String = readLineOrNull() ?: throw NoSuchElementException()

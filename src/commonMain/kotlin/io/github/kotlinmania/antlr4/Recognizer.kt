@@ -34,7 +34,7 @@ abstract class Recognizer<Symbol, ATNInterpreter : ATNSimulator> {
     // abstract member every recognizer implements and is the backing source for
     // the vocabulary view below; keeping it non-deprecated avoids an illegal
     // @Suppress("DEPRECATION") under the workspace's allWarningsAsErrors policy.
-    abstract val tokenNames: Array<String?>?
+    abstract val tokenNames: Array<String>
 
     abstract val ruleNames: Array<String>?
 

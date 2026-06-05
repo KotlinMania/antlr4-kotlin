@@ -13,19 +13,31 @@ class ATN(
     val grammarType: ATNType,
     val maxTokenType: Int,
 ) {
-    val states: MutableList<ATNState> = ArrayList()
+    internal val mutableStates: MutableList<ATNState> = ArrayList()
+    val states: List<ATNState>
+        get() = mutableStates
 
-    val decisionToState: MutableList<DecisionState> = ArrayList()
+    internal val mutableDecisionToState: MutableList<DecisionState> = ArrayList()
+    val decisionToState: List<DecisionState>
+        get() = mutableDecisionToState
 
     var ruleToStartState: Array<RuleStartState?> = arrayOf()
+        internal set
     var ruleToStopState: Array<RuleStopState?> = arrayOf()
+        internal set
 
-    val modeNameToStartState: MutableMap<String, TokensStartState> = LinkedHashMap()
+    internal val mutableModeNameToStartState: MutableMap<String, TokensStartState> = LinkedHashMap()
+    val modeNameToStartState: Map<String, TokensStartState>
+        get() = mutableModeNameToStartState
 
     var ruleToTokenType: IntArray = IntArray(0)
+        internal set
     var lexerActions: Array<LexerAction?> = arrayOf()
+        internal set
 
-    val modeToStartState: MutableList<TokensStartState> = ArrayList()
+    internal val mutableModeToStartState: MutableList<TokensStartState> = ArrayList()
+    val modeToStartState: List<TokensStartState>
+        get() = mutableModeToStartState
 
     fun nextTokens(
         s: ATNState,
@@ -42,9 +54,9 @@ class ATN(
     fun addState(state: ATNState?) {
         if (state != null) {
             state.atn = this
-            state.stateNumber = states.size
+            state.stateNumber = mutableStates.size
         }
-        states.add(
+        mutableStates.add(
             state ?: object : ATNState() {
                 override val stateType: Int = INVALID_TYPE
             },
@@ -53,36 +65,36 @@ class ATN(
 
     fun removeState(state: ATNState) {
         // Replace with invalid-state sentinel instead of null
-        states[state.stateNumber] =
+        mutableStates[state.stateNumber] =
             object : ATNState() {
                 override val stateType: Int = INVALID_TYPE
             }
     }
 
     fun defineDecisionState(s: DecisionState): Int {
-        decisionToState.add(s)
-        s.decision = decisionToState.size - 1
+        mutableDecisionToState.add(s)
+        s.decision = mutableDecisionToState.size - 1
         return s.decision
     }
 
     fun getDecisionState(decision: Int): DecisionState? {
-        if (decisionToState.isNotEmpty() && decision in decisionToState.indices) {
-            return decisionToState[decision]
+        if (mutableDecisionToState.isNotEmpty() && decision in mutableDecisionToState.indices) {
+            return mutableDecisionToState[decision]
         }
         return null
     }
 
     val numberOfDecisions: Int
-        get() = decisionToState.size
+        get() = mutableDecisionToState.size
 
     fun getExpectedTokens(
         stateNumber: Int,
         context: RuleContext?,
     ): IntervalSet {
-        require(stateNumber in 0 until states.size) { "Invalid state number." }
+        require(stateNumber in 0 until mutableStates.size) { "Invalid state number." }
 
         var ctx = context
-        val s = states[stateNumber]
+        val s = mutableStates[stateNumber]
         var following = nextTokens(s)
         if (!following.contains(Token.EPSILON)) return following
 
@@ -90,7 +102,7 @@ class ATN(
         expected.addAll(following)
         expected.remove(Token.EPSILON)
         while (ctx != null && ctx.invokingState >= 0 && following.contains(Token.EPSILON)) {
-            val invokingState = states[ctx.invokingState]
+            val invokingState = mutableStates[ctx.invokingState]
             val rt = invokingState.transition(0) as RuleTransition
             following = nextTokens(rt.followState)
             expected.addAll(following)

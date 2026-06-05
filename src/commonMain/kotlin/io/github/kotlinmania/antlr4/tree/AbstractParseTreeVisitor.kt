@@ -1,6 +1,6 @@
 package io.github.kotlinmania.antlr4.tree
 
-abstract class AbstractParseTreeVisitor<T> : ParseTreeVisitor<T?> {
+abstract class AbstractParseTreeVisitor<T> : ParseTreeVisitor<T> {
     override fun visit(tree: ParseTree?): T? = tree?.accept(this)
 
     override fun visitChildren(node: RuleNode?): T? {

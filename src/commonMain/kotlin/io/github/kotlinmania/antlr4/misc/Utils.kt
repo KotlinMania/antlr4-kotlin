@@ -113,7 +113,7 @@ internal object CommonUtils {
     ): Int = s.count { it == x }
 }
 
-object Utils {
+internal object Utils {
     fun <T> join(
         iter: Iterator<T?>,
         separator: String?,

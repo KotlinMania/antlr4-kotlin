@@ -29,7 +29,7 @@ open class TerminalNodeImpl(
 
     override val childCount: Int get() = 0
 
-    override fun <T> accept(visitor: ParseTreeVisitor<out T?>?): T? = visitor?.visitTerminal(this)
+    override fun <T> accept(visitor: ParseTreeVisitor<out T>?): T? = visitor?.visitTerminal(this)
 
     override val text: String?
         get() = symbol?.text

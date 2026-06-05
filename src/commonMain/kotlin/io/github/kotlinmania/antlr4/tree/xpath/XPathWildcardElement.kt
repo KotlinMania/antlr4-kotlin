@@ -8,7 +8,7 @@ class XPathWildcardElement : XPathElement(WILDCARD) {
         const val WILDCARD: String = "*"
     }
 
-    override fun evaluate(t: ParseTree): Collection<ParseTree?> {
+    override fun evaluate(t: ParseTree): Collection<ParseTree> {
         if (invert) return mutableListOf()
         val kids = mutableListOf<ParseTree>()
         for (c in Trees.getChildren(t)) {

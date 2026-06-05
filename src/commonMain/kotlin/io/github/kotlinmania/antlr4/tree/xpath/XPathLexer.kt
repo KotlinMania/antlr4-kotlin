@@ -8,6 +8,7 @@ import io.github.kotlinmania.antlr4.LexerNoViableAltException
 import io.github.kotlinmania.antlr4.Token
 import io.github.kotlinmania.antlr4.Vocabulary
 import io.github.kotlinmania.antlr4.VocabularyImpl
+import io.github.kotlinmania.antlr4.asControlException
 import io.github.kotlinmania.antlr4.atn.ATN
 import io.github.kotlinmania.antlr4.atn.ATNType
 import io.github.kotlinmania.antlr4.misc.Interval
@@ -20,7 +21,7 @@ open class XPathLexer(
     override val ruleNames: Array<String>
         get() = Companion.ruleNames
 
-    override val tokenNames: Array<String?>?
+    override val tokenNames: Array<String>
         get() = Array(Companion.tokenNames.size) { Companion.tokenNames[it] }
 
     override val vocabulary: Vocabulary
@@ -63,7 +64,7 @@ open class XPathLexer(
                         val id = matchID()
                         t = if (id[0].isUpperCase()) CommonToken(TOKEN_REF, id) else CommonToken(RULE_REF, id)
                     } else {
-                        throw LexerNoViableAltException(this, _input, _tokenStartCharIndex, null)
+                        throw LexerNoViableAltException(this, _input, _tokenStartCharIndex, null).asControlException()
                     }
                 }
             }
@@ -132,9 +133,9 @@ open class XPathLexer(
                 "STRING",
             )
 
-        private val _LITERAL_NAMES: Array<String?> = arrayOf(null, null, null, "'//'", "'/'", "'*'", "'!'")
-        private val _SYMBOLIC_NAMES: Array<String?> =
-            arrayOf(null, "TOKEN_REF", "RULE_REF", "ANYWHERE", "ROOT", "WILDCARD", "BANG", "ID", "STRING")
+        private val _LITERAL_NAMES: Array<String> = arrayOf("", "", "", "'//'", "'/'", "'*'", "'!'")
+        private val _SYMBOLIC_NAMES: Array<String> =
+            arrayOf("", "TOKEN_REF", "RULE_REF", "ANYWHERE", "ROOT", "WILDCARD", "BANG", "ID", "STRING")
 
         val VOCABULARY: Vocabulary = VocabularyImpl(_LITERAL_NAMES, _SYMBOLIC_NAMES, null)
 

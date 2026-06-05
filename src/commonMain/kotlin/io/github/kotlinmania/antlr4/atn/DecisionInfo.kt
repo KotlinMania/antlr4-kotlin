@@ -120,7 +120,9 @@ class DecisionInfo
      *
      * @see ContextSensitivityInfo
      */
-    val contextSensitivities: MutableList<ContextSensitivityInfo> = ArrayList()
+    internal val mutableContextSensitivities: MutableList<ContextSensitivityInfo> = ArrayList()
+    val contextSensitivities: List<ContextSensitivityInfo>
+        get() = mutableContextSensitivities
 
     /**
      * A collection of [ErrorInfo] instances describing the parse errors
@@ -129,7 +131,9 @@ class DecisionInfo
      *
      * @see ErrorInfo
      */
-    val errors: MutableList<ErrorInfo> = ArrayList()
+    internal val mutableErrors: MutableList<ErrorInfo> = ArrayList()
+    val errors: List<ErrorInfo>
+        get() = mutableErrors
 
     /**
      * A collection of [AmbiguityInfo] instances describing the
@@ -137,7 +141,9 @@ class DecisionInfo
      *
      * @see AmbiguityInfo
      */
-    val ambiguities: MutableList<AmbiguityInfo> = ArrayList()
+    internal val mutableAmbiguities: MutableList<AmbiguityInfo> = ArrayList()
+    val ambiguities: List<AmbiguityInfo>
+        get() = mutableAmbiguities
 
     /**
      * A collection of [PredicateEvalInfo] instances describing the
@@ -146,7 +152,9 @@ class DecisionInfo
      *
      * @see PredicateEvalInfo
      */
-    val predicateEvals: MutableList<PredicateEvalInfo> = ArrayList()
+    internal val mutablePredicateEvals: MutableList<PredicateEvalInfo> = ArrayList()
+    val predicateEvals: List<PredicateEvalInfo>
+        get() = mutablePredicateEvals
 
     /**
      * The total number of ATN transitions required during SLL prediction for

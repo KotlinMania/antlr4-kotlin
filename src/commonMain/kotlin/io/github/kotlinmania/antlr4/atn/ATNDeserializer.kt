@@ -131,7 +131,7 @@ class ATNDeserializer
             val nmodes = data[p++]
             for (i in 0..<nmodes) {
                 val s = data[p++]
-                atn.modeToStartState.add(atn.states[s] as TokensStartState)
+                atn.mutableModeToStartState.add(atn.states[s] as TokensStartState)
             }
 
             //
@@ -220,7 +220,7 @@ class ATNDeserializer
             for (i in 1..ndecisions) {
                 val s = data[p++]
                 val decState: DecisionState = atn.states.get(s) as DecisionState
-                atn.decisionToState.add(decState)
+                atn.mutableDecisionToState.add(decState)
                 decState.decision = i - 1
             }
 

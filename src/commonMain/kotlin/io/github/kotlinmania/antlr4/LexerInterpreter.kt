@@ -11,7 +11,7 @@ import io.github.kotlinmania.antlr4.atn.LexerATNSimulator
 import io.github.kotlinmania.antlr4.atn.PredictionContextCache
 import io.github.kotlinmania.antlr4.dfa.DFA
 
-class LexerInterpreter(
+class LexerInterpreter internal constructor(
     grammarFileName: String?,
     vocabulary: Vocabulary,
     ruleNames: Collection<String?>,
@@ -23,10 +23,10 @@ class LexerInterpreter(
     override val grammarFileName: String
     override val atn: ATN
 
-    override val tokenNames: Array<String?>?
+    override val tokenNames: Array<String>
     override val ruleNames: Array<String>?
-    val interpreterChannelNames: Array<String?>?
-    val interpreterModeNames: Array<String?>?
+    val interpreterChannelNames: Array<String>
+    val interpreterModeNames: Array<String>
 
     override var vocabulary: Vocabulary = VocabularyImpl.fromTokenNames(emptyArray())
 
@@ -34,7 +34,7 @@ class LexerInterpreter(
     protected val _sharedContextCache: PredictionContextCache = PredictionContextCache()
 
     @Deprecated("")
-    constructor(
+    internal constructor(
         grammarFileName: String?,
         tokenNames: Collection<String?>,
         ruleNames: Collection<String?>,
@@ -52,7 +52,7 @@ class LexerInterpreter(
     )
 
     @Deprecated("")
-    constructor(
+    internal constructor(
         grammarFileName: String?,
         vocabulary: Vocabulary,
         ruleNames: Collection<String?>,
@@ -66,7 +66,7 @@ class LexerInterpreter(
 
         this.grammarFileName = grammarFileName!!
         this.atn = atn
-        val tokenNamesArr = Array<String?>(atn.maxTokenType) { "" }
+        val tokenNamesArr = Array(atn.maxTokenType) { "" }
         for (i in tokenNamesArr.indices) {
             tokenNamesArr[i] = vocabulary.getDisplayName(i) ?: ""
         }

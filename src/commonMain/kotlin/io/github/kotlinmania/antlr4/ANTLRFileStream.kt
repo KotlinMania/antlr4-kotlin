@@ -16,7 +16,7 @@ class ANTLRFileStream(
     override var sourceName: String?,
     @Suppress("UNUSED_PARAMETER") encoding: String?,
 ) : ANTLRInputStream() {
-    constructor(fileName: String?) : this(fileName, null)
+    constructor(input: String?) : this(input, null)
 
     init {
         // TODO: load from file when file I/O is available

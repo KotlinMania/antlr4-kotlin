@@ -7,5 +7,5 @@ class XPathTokenAnywhereElement(
     tokenName: String,
     val tokenType: Int,
 ) : XPathElement(tokenName) {
-    override fun evaluate(t: ParseTree): Collection<ParseTree?> = Trees.findAllTokenNodes(t, tokenType)
+    override fun evaluate(t: ParseTree): Collection<ParseTree> = Trees.findAllTokenNodes(t, tokenType)
 }

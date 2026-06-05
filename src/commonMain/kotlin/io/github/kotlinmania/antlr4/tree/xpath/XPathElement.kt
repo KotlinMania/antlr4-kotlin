@@ -7,7 +7,7 @@ abstract class XPathElement(
 ) {
     var invert: Boolean = false
 
-    abstract fun evaluate(t: ParseTree): Collection<ParseTree?>
+    abstract fun evaluate(t: ParseTree): Collection<ParseTree>
 
     override fun toString(): String {
         val inv = if (invert) "!" else ""

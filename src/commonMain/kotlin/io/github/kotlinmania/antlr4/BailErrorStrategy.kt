@@ -40,8 +40,8 @@ import io.github.kotlinmania.antlr4.misc.ParseCancellationException
 class BailErrorStrategy : DefaultErrorStrategy() {
     /** Instead of recovering from exception `e`, re-throw it wrapped
      * in a [ParseCancellationException] so it is not caught by the
-     * rule function catches.  Use [Exception.getCause] to get the
-     * original [RecognitionException].
+     * rule function catches.  The cancellation carries the original
+     * [RecognitionException].
      */
     override fun recover(
         recognizer: Parser?,
@@ -59,7 +59,6 @@ class BailErrorStrategy : DefaultErrorStrategy() {
     /** Make sure we don't attempt to recover inline; if the parser
      * successfully recovers, it won't throw an exception.
      */
-    @kotlin.Throws(RecognitionException::class)
     override fun recoverInline(recognizer: Parser?): Token? {
         val e = InputMismatchException(recognizer)
         var context: ParserRuleContext? = recognizer?._ctx

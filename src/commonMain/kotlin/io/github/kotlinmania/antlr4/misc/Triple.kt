@@ -1,6 +1,6 @@
 package io.github.kotlinmania.antlr4.misc
 
-class Triple<A, B, C>(
+internal class Triple<A, B, C>(
     val a: A?,
     val b: B?,
     val c: C?,

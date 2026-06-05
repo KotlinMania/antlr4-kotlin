@@ -9,7 +9,7 @@ package io.github.kotlinmania.antlr4.atn
 
 import io.github.kotlinmania.antlr4.assert
 
-class ArrayPredictionContext(
+class ArrayPredictionContext internal constructor(
     parents: Array<PredictionContext?>,
     returnStates: IntArray,
 ) : PredictionContext(calculateHashCode(parents, returnStates)) {
@@ -24,7 +24,7 @@ class ArrayPredictionContext(
      */
     val returnStates: IntArray
 
-    constructor(a: SingletonPredictionContext) : this(arrayOf<PredictionContext?>(a.parent), intArrayOf(a.returnState))
+    internal constructor(a: SingletonPredictionContext) : this(arrayOf<PredictionContext?>(a.parent), intArrayOf(a.returnState))
 
     init {
         assert(parents.size > 0)

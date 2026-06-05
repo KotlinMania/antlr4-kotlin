@@ -113,7 +113,7 @@ class ProfilingATNSimulator(
         if (existingTargetState != null) {
             decisions[currentDecision].SLL_DFATransitions++ // count only if we transition over a DFA state
             if (existingTargetState === ERROR) {
-                decisions[currentDecision].errors.add(
+                decisions[currentDecision].mutableErrors.add(
                     ErrorInfo(currentDecision, previousD.configs, _input, _startIndex, _sllStopIndex, false),
                 )
             }
@@ -150,7 +150,7 @@ class ProfilingATNSimulator(
             if (reachConfigs != null) {
             } else { // no reach on current lookahead symbol. ERROR.
                 // TODO: does not handle delayed errors per getSynValidOrSemInvalidAltThatFinishedDecisionEntryRule()
-                decisions[currentDecision].errors.add(
+                decisions[currentDecision].mutableErrors.add(
                     ErrorInfo(currentDecision, closure, _input, _startIndex, _llStopIndex, true),
                 )
             }
@@ -158,7 +158,7 @@ class ProfilingATNSimulator(
             decisions[currentDecision].SLL_ATNTransitions++
             if (reachConfigs != null) {
             } else { // no reach on current lookahead symbol. ERROR.
-                decisions[currentDecision].errors.add(
+                decisions[currentDecision].mutableErrors.add(
                     ErrorInfo(currentDecision, closure, _input, _startIndex, _sllStopIndex, false),
                 )
             }
@@ -176,7 +176,7 @@ class ProfilingATNSimulator(
         if (pred !is SemanticContext.PrecedencePredicate) {
             val fullContext = _llStopIndex >= 0
             val stopIndex = if (fullContext) _llStopIndex else _sllStopIndex
-            decisions[currentDecision].predicateEvals.add(
+            decisions[currentDecision].mutablePredicateEvals.add(
                 PredicateEvalInfo(currentDecision, _input, _startIndex, stopIndex, pred, result, alt, fullCtx),
             )
         }
@@ -208,7 +208,7 @@ class ProfilingATNSimulator(
         stopIndex: Int,
     ) {
         if (prediction != conflictingAltResolvedBySLL) {
-            decisions[currentDecision].contextSensitivities.add(
+            decisions[currentDecision].mutableContextSensitivities.add(
                 ContextSensitivityInfo(currentDecision, configs, _input, startIndex, stopIndex),
             )
         }
@@ -236,11 +236,11 @@ class ProfilingATNSimulator(
             // are showing a conflict, hence an ambiguity, but if they resolve
             // to different minimum alternatives we have also identified a
             // context sensitivity.
-            decisions[currentDecision].contextSensitivities.add(
+            decisions[currentDecision].mutableContextSensitivities.add(
                 ContextSensitivityInfo(currentDecision, configs, _input, startIndex, stopIndex),
             )
         }
-        decisions[currentDecision].ambiguities.add(
+        decisions[currentDecision].mutableAmbiguities.add(
             AmbiguityInfo(
                 currentDecision,
                 configs,

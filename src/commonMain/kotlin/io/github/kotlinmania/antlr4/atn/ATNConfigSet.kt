@@ -44,7 +44,9 @@ open class ATNConfigSet
 
         var configLookup: AbstractConfigHashSet? = null
 
-        val configs: MutableList<ATNConfig> = ArrayList(7)
+        internal val mutableConfigs: MutableList<ATNConfig> = ArrayList(7)
+        val configs: List<ATNConfig>
+            get() = mutableConfigs
 
         var uniqueAlt: Int = 0
 
@@ -67,7 +69,7 @@ open class ATNConfigSet
             this.dipsIntoOuterContext = old.dipsIntoOuterContext
         }
 
-        fun add(
+        internal fun add(
             config: ATNConfig,
             mergeCache: DoubleKeyMap<PredictionContext, PredictionContext, PredictionContext>?,
         ): Boolean {
@@ -81,6 +83,7 @@ open class ATNConfigSet
 
             val existing = configLookup!!.getOrAdd(config)
             if (existing === config) {
+                mutableConfigs.add(config)
                 cachedHashCode = -1
                 return true
             }
@@ -112,13 +115,13 @@ open class ATNConfigSet
 
         fun getAlts(): BitSet {
             val alts = BitSet()
-            for (config in configs) alts.set(config.alt)
+            for (config in mutableConfigs) alts.set(config.alt)
             return alts
         }
 
         fun getAltLabels(): Map<Int, Set<ATNConfig>>? {
             val labels = mutableMapOf<Int, MutableSet<ATNConfig>>()
-            for (config in configs) {
+            for (config in mutableConfigs) {
                 labels.getOrPut(config.alt) { mutableSetOf() }.add(config)
             }
             return labels
@@ -127,19 +130,19 @@ open class ATNConfigSet
         fun getConflictingAltsResolved(): BitSet {
             if (conflictingAlts != null) return conflictingAlts!!
             val alts = BitSet()
-            for (config in configs) alts.set(config.alt)
+            for (config in mutableConfigs) alts.set(config.alt)
             return alts
         }
 
         val predicates: List<SemanticContext>
-            get() = configs.filter { it.semanticContext != SemanticContext.Empty.Instance }.map { it.semanticContext }
+            get() = mutableConfigs.filter { it.semanticContext != SemanticContext.Empty.Instance }.map { it.semanticContext }
 
-        fun get(i: Int): ATNConfig = configs[i]
+        fun get(i: Int): ATNConfig = mutableConfigs[i]
 
         fun optimizeConfigs(interpreter: ATNSimulator) {
             check(!readonly) { "This set is readonly" }
             if (configLookup!!.isEmpty()) return
-            for (config in configs) {
+            for (config in mutableConfigs) {
                 config.context = interpreter.getCachedContext(config.context)
             }
         }
@@ -152,7 +155,7 @@ open class ATNConfigSet
         override fun equals(other: Any?): Boolean {
             if (other === this) return true
             if (other !is ATNConfigSet) return false
-            return configs == other.configs &&
+            return mutableConfigs == other.mutableConfigs &&
                 fullCtx == other.fullCtx &&
                 uniqueAlt == other.uniqueAlt &&
                 conflictingAlts == other.conflictingAlts &&
@@ -162,15 +165,15 @@ open class ATNConfigSet
 
         override fun hashCode(): Int {
             if (readonly && cachedHashCode == -1) {
-                cachedHashCode = configs.hashCode()
+                cachedHashCode = mutableConfigs.hashCode()
             }
-            return if (readonly) cachedHashCode else configs.hashCode()
+            return if (readonly) cachedHashCode else mutableConfigs.hashCode()
         }
 
         override val size: Int
-            get() = configs.size
+            get() = mutableConfigs.size
 
-        override fun isEmpty(): Boolean = configs.isEmpty()
+        override fun isEmpty(): Boolean = mutableConfigs.isEmpty()
 
         override fun contains(element: ATNConfig): Boolean {
             if (configLookup == null) throw UnsupportedOperationException("This method is not implemented for readonly sets.")
@@ -182,11 +185,11 @@ open class ATNConfigSet
             return configLookup!!.containsFast(obj)
         }
 
-        override fun iterator(): MutableIterator<ATNConfig> = configs.iterator()
+        override fun iterator(): MutableIterator<ATNConfig> = mutableConfigs.iterator()
 
         override fun clear() {
             check(!readonly) { "This set is readonly" }
-            configs.clear()
+            mutableConfigs.clear()
             cachedHashCode = -1
             configLookup!!.clear()
         }
@@ -200,7 +203,7 @@ open class ATNConfigSet
 
         override fun toString(): String {
             val buf = StringBuilder()
-            buf.append(configs.toString())
+            buf.append(mutableConfigs.toString())
             if (hasSemanticContext) buf.append(",hasSemanticContext=").append(hasSemanticContext)
             if (uniqueAlt != ATN.INVALID_ALT_NUMBER) buf.append(",uniqueAlt=").append(uniqueAlt)
             if (conflictingAlts != null) buf.append(",conflictingAlts=").append(conflictingAlts)

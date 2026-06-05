@@ -5,8 +5,6 @@
  */
 package io.github.kotlinmania.antlr4
 
-import io.github.kotlinmania.antlr4.misc.Pair
-
 /**
  * Provides an implementation of [TokenSource] as a wrapper around a list
  * of [Token] objects.
@@ -131,7 +129,7 @@ class ListTokenSource(
                 val stop: Int = maxOf(-1, start - 1)
                 eofToken =
                     _factory.create(
-                        Pair<TokenSource?, CharStream?>(this, this.inputStream),
+                        TokenSourceCharStream(this, this.inputStream),
                         Token.EOF,
                         "EOF",
                         Token.DEFAULT_CHANNEL,

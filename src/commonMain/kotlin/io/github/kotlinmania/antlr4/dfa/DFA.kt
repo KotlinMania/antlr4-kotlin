@@ -16,7 +16,9 @@ class DFA(
     atnStartState: DecisionState?,
     decision: Int,
 ) {
-    val states: MutableMap<DFAState, DFAState> = HashMap()
+    internal val mutableStates: MutableMap<DFAState, DFAState> = HashMap()
+    val states: Map<DFAState, DFAState>
+        get() = mutableStates
 
     @kotlin.concurrent.Volatile
     var s0: DFAState? = null
@@ -80,7 +82,7 @@ class DFA(
     }
 
     fun getStates(): List<DFAState> {
-        val result = ArrayList<DFAState>(states.keys)
+        val result = ArrayList<DFAState>(mutableStates.keys)
         result.sortBy { it.stateNumber }
         return result
     }
@@ -88,7 +90,7 @@ class DFA(
     override fun toString(): String = toString(VocabularyImpl.EMPTY_VOCABULARY)
 
     @Deprecated("Use toString(Vocabulary) instead.")
-    fun toString(tokenNames: Array<String?>?): String {
+    fun toString(tokenNames: Array<String>?): String {
         if (s0 == null) return ""
         return toString(VocabularyImpl.fromTokenNames(tokenNames))
     }

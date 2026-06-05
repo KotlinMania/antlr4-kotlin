@@ -21,7 +21,7 @@ import io.github.kotlinmania.antlr4.misc.MurmurHash
  * @author Sam Harwell
  * @since 4.2
  */
-class LexerActionExecutor(
+class LexerActionExecutor internal constructor(
     lexerActions: Array<LexerAction>,
 ) {
     private val lexerActions: Array<LexerAction>

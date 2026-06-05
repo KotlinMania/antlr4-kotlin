@@ -42,7 +42,9 @@ open class ParserRuleContext : RuleContext {
      * operation because we don't the need to track the details about
      * how we parse this rule.
      */
-    var children: MutableList<ParseTree>? = null
+    internal var mutableChildren: MutableList<ParseTree>? = null
+    val children: List<ParseTree>?
+        get() = mutableChildren
 
     /** For debugging/tracing purposes, we want to track all of the nodes in
      * the ATN traversed by the parser for a particular rule.
@@ -94,10 +96,10 @@ open class ParserRuleContext : RuleContext {
         this.stop = ctx.stop
 
         // copy any error nodes to alt label node
-        if (ctx.children != null) {
-            this.children = ArrayList()
+        if (ctx.mutableChildren != null) {
+            this.mutableChildren = ArrayList()
             // reset parent pointer for any error nodes
-            for (child in ctx.children) {
+            for (child in ctx.mutableChildren.orEmpty()) {
                 if (child is ErrorNode) {
                     addChild(child)
                 }
@@ -124,8 +126,8 @@ open class ParserRuleContext : RuleContext {
      * @since 4.7
      */
     fun <T : ParseTree> addAnyChild(t: T): T {
-        if (children == null) children = ArrayList()
-        children!!.add(t)
+        if (mutableChildren == null) mutableChildren = ArrayList()
+        mutableChildren!!.add(t)
         return t
     }
 
@@ -182,16 +184,27 @@ open class ParserRuleContext : RuleContext {
      * generic ruleContext object.
      */
     fun removeLastChild() {
-        if (children != null) {
-            children!!.removeAt(children!!.size - 1)
+        if (mutableChildren != null) {
+            mutableChildren!!.removeAt(mutableChildren!!.size - 1)
         }
+    }
+
+    internal fun trimChildrenToSize() {
+        (mutableChildren as? ArrayList<*>)?.trimToSize()
+    }
+
+    internal fun replaceChild(
+        index: Int,
+        child: ParseTree,
+    ) {
+        mutableChildren?.set(index, child)
     }
 
     val parserRuleContextParent: ParserRuleContext?
         get() = super.parent as ParserRuleContext?
 
     override fun getChild(i: Int): ParseTree? {
-        val c = children
+        val c = mutableChildren
         return if (c != null && i >= 0 && i < c.size) c[i] else null
     }
 
@@ -212,7 +225,7 @@ open class ParserRuleContext : RuleContext {
         ttype: Int,
         i: Int,
     ): TerminalNode? {
-        val c = children
+        val c = mutableChildren
         if (c == null || i < 0 || i >= c.size) {
             return null
         }
@@ -234,27 +247,20 @@ open class ParserRuleContext : RuleContext {
         return null
     }
 
-    fun getTokens(ttype: Int): List<TerminalNode?>? {
-        if (children == null) {
+    fun getTokens(ttype: Int): List<TerminalNode> {
+        if (mutableChildren == null) {
             return emptyList()
         }
 
-        var tokens: MutableList<TerminalNode>? = null
-        for (o in children!!) {
+        val tokens: MutableList<TerminalNode> = ArrayList()
+        for (o in mutableChildren!!) {
             if (o is TerminalNode) {
                 val tnode: TerminalNode = o
                 val symbol: Token = tnode.symbol!!
                 if (symbol.type == ttype) {
-                    if (tokens == null) {
-                        tokens = ArrayList()
-                    }
                     tokens.add(tnode)
                 }
             }
-        }
-
-        if (tokens == null) {
-            return emptyList()
         }
 
         return tokens
@@ -274,7 +280,7 @@ open class ParserRuleContext : RuleContext {
     }
 
     override val childCount: Int
-        get() = children?.size ?: 0
+        get() = mutableChildren?.size ?: 0
     override val sourceInterval: Interval
         get() {
             if (start == null) {

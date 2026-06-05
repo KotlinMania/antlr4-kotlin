@@ -274,7 +274,7 @@ import io.github.kotlinmania.antlr4.internal.synchronized as antlrSynchronized
  * both SLL and LL parsing. Erroneous input will therefore require 2 passes over
  * the input.
  */
-open class ParserATNSimulator(
+open class ParserATNSimulator internal constructor(
     parser: Parser?,
     atn: ATN,
     decisionToDFA: Array<DFA>,
@@ -295,7 +295,7 @@ open class ParserATNSimulator(
      * the merge if we ever see a and b again.  Note that (b,a)c should
      * also be examined during cache lookup.
      */
-    protected var mergeCache: DoubleKeyMap<PredictionContext, PredictionContext, PredictionContext>? = null
+    private var mergeCache: DoubleKeyMap<PredictionContext, PredictionContext, PredictionContext>? = null
 
     // LAME globals to avoid parameters!!!!! I need these down deep in predTransition
     protected var _input: TokenStream? = null
@@ -304,7 +304,7 @@ open class ParserATNSimulator(
     protected var _dfa: DFA? = null
 
     /** Testing only!  */
-    constructor(
+    internal constructor(
         atn: ATN,
         decisionToDFA: Array<DFA>,
         sharedContextCache: PredictionContextCache?,
@@ -481,7 +481,7 @@ open class ParserATNSimulator(
                 if (alt != ATN.INVALID_ALT_NUMBER) {
                     return alt
                 }
-                throw e
+                throw e.asControlException()
             }
 
             if (D.requiresFullContext && mode != PredictionMode.SLL) {
@@ -494,7 +494,7 @@ open class ParserATNSimulator(
                         input.seek(startIndex)
                     }
 
-val D_predicates = D.predicates!!
+                    val D_predicates = D.predicates!!
                     conflictingAlts = evalSemanticContext(D_predicates, outerContext, true)
                     if (conflictingAlts.cardinality() == 1) {
                         if (io.github.kotlinmania.antlr4.atn.ParserATNSimulator.Companion.debug) println("Full LL avoided")
@@ -540,10 +540,10 @@ val D_predicates = D.predicates!!
 
                 val stopIndex: Int = input.index()
                 input.seek(startIndex)
-val D_predicates = D.predicates!!
+                val D_predicates = D.predicates!!
                 val alts: BitSet = evalSemanticContext(D_predicates, outerContext, true)
                 when (alts.cardinality()) {
-                    0 -> throw noViableAlt(input, outerContext, D.configs, startIndex)
+                    0 -> throw noViableAlt(input, outerContext, D.configs, startIndex).asControlException()
 
                     1 -> return alts.nextSetBit(0)
 
@@ -719,7 +719,7 @@ val D_predicates = D.predicates!!
                 if (alt != ATN.INVALID_ALT_NUMBER) {
                     return alt
                 }
-                throw e
+                throw e.asControlException()
             }
 
             val altSubSets: Collection<BitSet> = PredictionMode.getConflictingAltSubsets(reach)
@@ -1420,7 +1420,7 @@ val D_predicates = D.predicates!!
      * Assumption: the input stream has been restored to the starting point
      * prediction, which is where predicates need to evaluate.
      */
-    protected fun splitAccordingToSemanticValidity(
+    private fun splitAccordingToSemanticValidity(
         configs: ATNConfigSet,
         outerContext: ParserRuleContext?,
     ): Pair<ATNConfigSet?, ATNConfigSet?> {
@@ -2173,7 +2173,7 @@ val D_predicates = D.predicates!!
                 val t: Transition? = c.state.transition(0)
                 if (t is AtomTransition) {
                     val at: AtomTransition = t
-                    trans = "Atom " + getTokenName(at.label)
+                    trans = "Atom " + getTokenName(at.atomLabel)
                 } else if (t is SetTransition) {
                     val st: SetTransition = t
                     val isNot = st is NotSetTransition
@@ -2278,14 +2278,14 @@ val D_predicates = D.predicates!!
             return D
         }
 
-        antlrSynchronized(dfa.states) {
-            val existing: DFAState? = dfa.states[D]
+        antlrSynchronized(dfa.mutableStates) {
+            val existing: DFAState? = dfa.mutableStates[D]
             if (existing != null) {
                 if (io.github.kotlinmania.antlr4.atn.ParserATNSimulator.Companion.trace_atn_sim) println("addDFAState " + D + " exists")
                 return existing
             }
 
-            D.stateNumber = dfa.states.size
+            D.stateNumber = dfa.mutableStates.size
 
             if (!D.configs.readonlyFlag) {
                 D.configs.optimizeConfigs(this)
@@ -2294,7 +2294,7 @@ val D_predicates = D.predicates!!
 
             if (io.github.kotlinmania.antlr4.atn.ParserATNSimulator.Companion.trace_atn_sim) println("addDFAState new " + D)
 
-            dfa.states[D] = D
+            dfa.mutableStates[D] = D
             return D
         }
     }

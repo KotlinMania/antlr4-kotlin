@@ -5,8 +5,8 @@
  */
 package io.github.kotlinmania.antlr4.misc
 
-class DoubleKeyMap<Key1, Key2, Value> {
-    var data: MutableMap<Key1, MutableMap<Key2, Value>> = LinkedHashMap()
+internal class DoubleKeyMap<Key1, Key2, Value> {
+    internal var data: MutableMap<Key1, MutableMap<Key2, Value>> = LinkedHashMap()
 
     fun put(
         k1: Key1,

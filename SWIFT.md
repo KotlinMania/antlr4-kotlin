@@ -485,6 +485,27 @@ Then stop. A human will pick it up.
    to their immutable equivalents (`List<T>`, `Set<T>`, `Map<K, V>`).
    Where mutability is genuinely needed internally, hide the mutable
    collection with `internal` and expose the read-only view publicly.
+   This includes public implementation-detail fields such as
+   `val configs: MutableList<Config>` on a mutable class. Keep the
+   mutable backing internal:
+
+   ```kotlin
+   internal val mutableConfigs: MutableList<Config> = ArrayList()
+   val configs: List<Config>
+       get() = mutableConfigs
+   ```
+
+   The same root cause can also appear later, during
+   `linkSwiftExportBinary*`, as a Kotlin/Native ObjC export failure:
+
+   ```text
+   Compilation failed: Global 'ktypew:kotlin.collections.MutableList' already exists
+   ```
+
+   Treat that as an exported mutable-collection smell. Inspect
+   `build/SPMPackage/<target>/<config>/Sources/<Module>/<Module>.swift`
+   for `kotlin.collections.MutableList` / `MutableMap` / `MutableSet`,
+   then repair the original commonMain API shape.
 
 7. **`macos-latest` ships an SDK older than the Kotlin/Native platform
    caches reference.** The Kotlin/Native 2.3.x distribution embeds
@@ -705,8 +726,9 @@ become deletable.
    }
    ```
 
-   **9b — Relax `allWarningsAsErrors` for the `compileSwiftExport*` task
-   family — and ONLY for the coroutine-runtime case.** Once 9a is on, the
+   **9b — Relax `allWarningsAsErrors` for the `compileSwiftExport*` and
+   `linkSwiftExportBinary*` task families — and ONLY for the
+   coroutine/runtime generated-code case.** Once 9a is on, the
    plugin emits a generated `build/SwiftExport/<t>/<c>/KotlinCoroutineSupport/
    KotlinCoroutineSupport.kt` runtime module that is itself not
    warning-clean (kotlinx.coroutines inheritance opt-in, useless-elvis,
@@ -716,7 +738,7 @@ become deletable.
 
    ```kotlin
    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
-       if (name.startsWith("compileSwiftExport")) {
+       if (name.startsWith("compileSwiftExport") || name.startsWith("linkSwiftExportBinary")) {
            compilerOptions.allWarningsAsErrors.set(false)
        }
    }
@@ -1524,7 +1546,7 @@ Swift Export's generated bridge fails `allWarningsAsErrors=true` in four distinc
 
 - **Public `kotlin.Result<T>`** → sealed `Outcome.Ok(value: T) | Outcome.Err(error: SomeError)`, where `SomeError` does NOT extend `Throwable`.
 - **`class FooError : RuntimeException(...)`** (or `Exception`) → data class / sealed class that does NOT extend any `Throwable`. Kotlin callers that need to throw it wrap in their own throw site.
-- **Public `MutableList<X>` / `MutableMap<K, V>`** → internal-backed `List<X>` / a custom read-only Map wrapper; internal helpers do copy-and-replace to keep the read-only public surface.
+- **Public `MutableList<X>` / `MutableMap<K, V>` / `MutableSet<X>`** → internal-backed `List<X>` / `Map<K, V>` / `Set<X>` or a custom read-only wrapper; internal helpers mutate the backing collection. If Native link fails with `Global 'ktypew:kotlin.collections.MutableList' already exists`, inspect generated Swift for `kotlin.collections.Mutable*` and fix the source declaration that leaked it.
 - **Public `Pair<A, B>`** → named record class.
 - **Public `() -> X` / `(A) -> B`** function types → `fun interface` SAM type. Swift Export can't bridge raw Kotlin function types.
 
@@ -1734,7 +1756,57 @@ own classpath that doesn't inherit the buildscript classpath. There is
 no known per-repo fix at this time; the error is filed upstream against
 the Kotlin Gradle plugin.
 
-### 14. Custom sealed generic result types in public API cause argument type mismatch in Swift Export bridge
+### 14. Inspect generated Swift when SPM/Xcode fails
+
+**Symptom.** `macosArm64DebugSwiftExport` and
+`macosArm64DebugGenerateSPMPackage` complete, then
+`macosArm64DebugBuildSPMPackage` or direct `xcodebuild` fails inside the
+generated Swift module.
+
+**Where to look.** The emitted Swift package is under:
+
+```text
+build/SPMPackage/macosArm64/Debug/
+```
+
+The module source is usually:
+
+```text
+build/SPMPackage/macosArm64/Debug/Sources/<ModuleName>/<ModuleName>.swift
+```
+
+If Gradle's task output is too compressed, rerun the Xcode command from the
+failing task and capture it under `build/`, then inspect the diagnostics:
+
+```bash
+rg -n "error:|warning:" build/xcodebuild-swift-export.log
+rg --files build/SPMPackage/macosArm64/Debug/Sources
+```
+
+**Root cause.** At this stage Swift Export has already generated a package.
+The remaining failure is the Swift compiler rejecting the emitted public
+API shape. Treat the generated Swift as a diagnostic artifact: each Swift
+line usually maps directly to a Kotlin declaration name, constructor label,
+override shape, or public implementation type.
+
+**Fix.** Change the Kotlin declaration that generated the bad Swift. Do not
+edit generated Swift and do not use hiding annotations. Concrete patterns
+seen in `antlr4-kotlin`:
+
+- `type member must not be named 'Type'` -> rename the Kotlin enum/class
+  (`Type` -> `StorageType`, etc.).
+- A Swift property and method with the same base name, such as `label` and
+  `label()` -> rename the Kotlin property while keeping the method API.
+- `init(fileName:)` overriding `init(input:)` -> align Kotlin subclass and
+  superclass constructor parameter names so Swift emits matching labels.
+- Exported implementation classes that subclass Swift stdlib collection
+  wrappers -> make the implementation `internal` or expose a simpler public
+  interface.
+
+This step belongs before any broader source churn because it tells you the
+exact exported symbol Swift is rejecting.
+
+### 15. Custom sealed generic result types in public API cause argument type mismatch in Swift Export bridge
 
 **Symptom.** `compileSwiftExportMainKotlinMacosArm64` fails with:
 

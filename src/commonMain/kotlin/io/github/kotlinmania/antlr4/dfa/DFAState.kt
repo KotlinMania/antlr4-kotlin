@@ -15,7 +15,7 @@ class DFAState {
 
     var configs: ATNConfigSet = ATNConfigSet()
 
-    var edges: Array<DFAState?>? = null
+    internal var edges: Array<DFAState?>? = null
 
     var isAcceptState: Boolean = false
 
@@ -25,7 +25,7 @@ class DFAState {
 
     var requiresFullContext: Boolean = false
 
-    var predicates: Array<PredPrediction?>? = null
+    internal var predicates: Array<PredPrediction?>? = null
 
     class PredPrediction(
         val pred: SemanticContext,

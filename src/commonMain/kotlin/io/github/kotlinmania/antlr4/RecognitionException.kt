@@ -13,7 +13,9 @@ import io.github.kotlinmania.antlr4.misc.IntervalSet
  * in the input, where it is in the ATN, the rule invocation stack,
  * and what kind of problem occurred.
  */
-open class RecognitionException : RuntimeException {
+open class RecognitionException {
+    val message: String?
+
     /** The [Recognizer] where this exception originated.  */
     private val recognizer: Recognizer<*, *>?
 
@@ -46,6 +48,7 @@ open class RecognitionException : RuntimeException {
         input: IntStream?,
         ctx: ParserRuleContext?,
     ) {
+        this.message = null
         this.recognizer = recognizer
         this.input = input
         this.ctx = ctx
@@ -57,7 +60,8 @@ open class RecognitionException : RuntimeException {
         recognizer: Recognizer<*, *>?,
         input: IntStream?,
         ctx: ParserRuleContext?,
-    ) : super(message) {
+    ) {
+        this.message = message
         this.recognizer = recognizer
         this.input = input
         this.ctx = ctx
@@ -118,3 +122,10 @@ open class RecognitionException : RuntimeException {
      * the recognizer is not available.
      */
 }
+
+internal class RecognitionControlException(
+    val recognitionException: RecognitionException,
+) : RuntimeException(recognitionException.message)
+
+internal fun RecognitionException.asControlException(): RecognitionControlException =
+    RecognitionControlException(this)

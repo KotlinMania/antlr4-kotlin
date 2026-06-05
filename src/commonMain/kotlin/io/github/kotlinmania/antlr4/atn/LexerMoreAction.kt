@@ -22,8 +22,7 @@ class LexerMoreAction
 /**
      * Constructs the singleton instance of the lexer `more` command.
      */
-    private constructor() :
-    LexerAction {
+    private constructor() : LexerAction {
         override val actionType: LexerActionType
             /**
              * {@inheritDoc}

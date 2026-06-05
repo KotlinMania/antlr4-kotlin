@@ -32,11 +32,9 @@ class ParseTreePattern(
         val subtrees = XPath.findAll(tree, xpath ?: "", matcher.getParser())
         val matches = mutableListOf<ParseTreeMatch>()
         for (t in subtrees) {
-            if (t != null) {
-                val match = match(t)
-                if (match.succeeded()) {
-                    matches.add(match)
-                }
+            val match = match(t)
+            if (match.succeeded()) {
+                matches.add(match)
             }
         }
         return matches

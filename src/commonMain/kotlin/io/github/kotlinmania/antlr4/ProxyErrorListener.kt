@@ -16,7 +16,7 @@ import io.github.kotlinmania.antlr4.misc.BitSet
  *
  * @author Sam Harwell
  */
-class ProxyErrorListener(
+internal class ProxyErrorListener(
     delegates: Collection<ANTLRErrorListener?>,
 ) : ANTLRErrorListener {
     private val delegates: Collection<ANTLRErrorListener?>

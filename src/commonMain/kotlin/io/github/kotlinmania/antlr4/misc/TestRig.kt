@@ -7,7 +7,7 @@ package io.github.kotlinmania.antlr4.misc
 
 @Deprecated("Use the ANTLR tool package test rig.")
 object TestRig {
-    fun main(args: Array<String?>?) {
+    fun main(args: Array<String>) {
         println("Use of TestRig requires the ANTLR tool package.")
     }
 }

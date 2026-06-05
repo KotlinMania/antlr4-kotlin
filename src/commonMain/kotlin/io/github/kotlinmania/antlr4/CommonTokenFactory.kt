@@ -6,7 +6,6 @@
 package io.github.kotlinmania.antlr4
 
 import io.github.kotlinmania.antlr4.misc.Interval
-import io.github.kotlinmania.antlr4.misc.Pair
 
 /**
  * This default implementation of [TokenFactory] creates
@@ -54,7 +53,7 @@ class CommonTokenFactory
          * @param copyText The value for [.copyText].
          */
         override fun create(
-            source: Pair<TokenSource?, CharStream?>?,
+            source: TokenSourceCharStream?,
             type: Int,
             text: String?,
             channel: Int,
@@ -68,8 +67,8 @@ class CommonTokenFactory
             t.charPositionInLine = charPositionInLine
             if (text != null) {
                 t.text = text
-            } else if (copyText && source.b != null) {
-                t.text = source.b.getText(Interval.of(start, stop))
+            } else if (copyText && source.charStream != null) {
+                t.text = source.charStream.getText(Interval.of(start, stop))
             }
 
             return t

@@ -8,7 +8,6 @@ package io.github.kotlinmania.antlr4
 import io.github.kotlinmania.antlr4.atn.LexerATNSimulator
 import io.github.kotlinmania.antlr4.misc.IntStack
 import io.github.kotlinmania.antlr4.misc.Interval
-import io.github.kotlinmania.antlr4.misc.Pair
 
 /** A lexer is recognizer that draws input symbols from a character stream.
  * lexer grammars result in a subclass of this object. A Lexer object
@@ -19,7 +18,7 @@ abstract class Lexer :
     Recognizer<Int, LexerATNSimulator>,
     TokenSource {
     var _input: CharStream? = null
-    protected var tokenFactorySourcePair: Pair<TokenSource?, CharStream?>? = null
+    protected var tokenFactorySourcePair: TokenSourceCharStream? = null
 
     /** How to create token objects  */
     protected var _factory: TokenFactory<*> = CommonTokenFactory.DEFAULT
@@ -69,7 +68,7 @@ abstract class Lexer :
 
     constructor(input: CharStream?) {
         this._input = input
-        this.tokenFactorySourcePair = Pair<TokenSource?, CharStream?>(this, input)
+        this.tokenFactorySourcePair = TokenSourceCharStream(this, input)
     }
 
     open fun reset() {
@@ -122,7 +121,9 @@ abstract class Lexer :
                     var ttype: Int
                     try {
                         ttype = interpreter!!.match(_input!!, _mode)
-                    } catch (e: LexerNoViableAltException) {
+                    } catch (control: RecognitionControlException) {
+                        val e = control.recognitionException
+                        if (e !is LexerNoViableAltException) throw control
                         notifyListeners(e) // report error
                         recover(e)
                         ttype = io.github.kotlinmania.antlr4.Lexer.Companion.SKIP
@@ -186,10 +187,10 @@ abstract class Lexer :
     /** Set the char stream and reset the lexer  */
     override fun setInputStream(input: IntStream?) {
         this._input = null
-        this.tokenFactorySourcePair = Pair<TokenSource?, CharStream?>(this, _input)
+        this.tokenFactorySourcePair = TokenSourceCharStream(this, _input)
         reset()
         this._input = input as CharStream?
-        this.tokenFactorySourcePair = Pair<TokenSource?, CharStream?>(this, _input)
+        this.tokenFactorySourcePair = TokenSourceCharStream(this, _input)
     }
 
     override val sourceName: String
@@ -288,18 +289,18 @@ abstract class Lexer :
         this._token = _token
     }
 
-    val channelNames: Array<String?>?
-        get() = null
+    val channelNames: Array<String>
+        get() = emptyArray()
 
-    val modeNames: Array<String?>?
-        get() = null
+    val modeNames: Array<String>
+        get() = emptyArray()
 
-    override val tokenNames: Array<String?>?
+    override val tokenNames: Array<String>
         /** Used to print out token names like ID during debugging and
          * error reporting.  The generated parsers implement a method
          * that overrides this to point to their String[] tokenNames.
          */
-        get() = null
+        get() = emptyArray()
 
     val allTokens: List<Token>
         /** Return a list of all Token objects in input char stream.

@@ -12,19 +12,19 @@ import io.github.kotlinmania.antlr4.misc.Predicate
 import io.github.kotlinmania.antlr4.tree.Trees.toStringTree
 
 object Trees {
-    fun toStringTree(t: Tree): String? = toStringTree(t, null as List<String?>?)
+    fun toStringTree(t: Tree): String? = toStringTree(t, null as List<String>?)
 
     fun toStringTree(
         t: Tree,
         recog: Parser?,
     ): String? {
-        val ruleNamesList: List<String?>? = recog?.ruleNames?.toList()
+        val ruleNamesList: List<String>? = recog?.ruleNames?.toList()
         return toStringTree(t, ruleNamesList)
     }
 
     fun toStringTree(
         t: Tree,
-        ruleNames: List<String?>?,
+        ruleNames: List<String>?,
     ): String? {
         var s: String = CommonUtils.escapeWhitespace(getNodeText(t, ruleNames) ?: "null", false)
         if (t.childCount == 0) return s
@@ -46,18 +46,18 @@ object Trees {
         t: Tree,
         recog: Parser?,
     ): String? {
-        val ruleNamesList: List<String?>? = recog?.ruleNames?.toList()
+        val ruleNamesList: List<String>? = recog?.ruleNames?.toList()
         return getNodeText(t, ruleNamesList)
     }
 
     fun getNodeText(
         t: Tree,
-        ruleNames: List<String?>?,
+        ruleNames: List<String>?,
     ): String? {
         if (ruleNames != null) {
             if (t is RuleContext) {
                 val ruleIndex: Int = t.ruleContext.ruleIndex
-                val ruleName: String = ruleNames[ruleIndex] ?: ""
+                val ruleName: String = ruleNames[ruleIndex]
                 val altNumber: Int = t.altNumber
                 if (altNumber != ATN.INVALID_ALT_NUMBER) {
                     return "$ruleName:$altNumber"
@@ -80,18 +80,19 @@ object Trees {
         return t.payload.toString()
     }
 
-    fun getChildren(t: Tree): List<Tree?> {
-        val kids: MutableList<Tree?> = ArrayList()
+    fun getChildren(t: Tree): List<Tree> {
+        val kids: MutableList<Tree> = ArrayList()
         for (i in 0..<t.childCount) {
-            kids.add(t.getChild(i))
+            val child = t.getChild(i) ?: continue
+            kids.add(child)
         }
         return kids
     }
 
-    fun getAncestors(t: Tree?): List<Tree?> {
+    fun getAncestors(t: Tree?): List<Tree> {
         var t: Tree? = t
         if (t?.parent == null) return emptyList()
-        val ancestors: MutableList<Tree?> = ArrayList()
+        val ancestors: MutableList<Tree> = ArrayList()
         t = t.parent
         while (t != null) {
             ancestors.add(0, t)
@@ -116,19 +117,19 @@ object Trees {
     fun findAllTokenNodes(
         t: ParseTree,
         ttype: Int,
-    ): Collection<ParseTree?> = findAllNodes(t, ttype, true)
+    ): Collection<ParseTree> = findAllNodes(t, ttype, true)
 
     fun findAllRuleNodes(
         t: ParseTree,
         ruleIndex: Int,
-    ): Collection<ParseTree?> = findAllNodes(t, ruleIndex, false)
+    ): Collection<ParseTree> = findAllNodes(t, ruleIndex, false)
 
     fun findAllNodes(
         t: ParseTree,
         index: Int,
         findTokens: Boolean,
-    ): List<ParseTree?> {
-        val nodes: MutableList<ParseTree?> = ArrayList()
+    ): List<ParseTree> {
+        val nodes: MutableList<ParseTree> = ArrayList()
         _findAllNodes(t, index, findTokens, nodes)
         return nodes
     }
@@ -137,7 +138,7 @@ object Trees {
         t: ParseTree,
         index: Int,
         findTokens: Boolean,
-        nodes: MutableList<in ParseTree?>,
+        nodes: MutableList<in ParseTree>,
     ) {
         if (findTokens && t is TerminalNode) {
             val tnode: TerminalNode = t
@@ -152,8 +153,8 @@ object Trees {
         }
     }
 
-    fun getDescendants(t: ParseTree): List<ParseTree?> {
-        val nodes: MutableList<ParseTree?> = ArrayList()
+    fun getDescendants(t: ParseTree): List<ParseTree> {
+        val nodes: MutableList<ParseTree> = ArrayList()
         nodes.add(t)
 
         val n: Int = t.childCount
@@ -165,7 +166,7 @@ object Trees {
     }
 
     @Deprecated("")
-    fun descendants(t: ParseTree): List<ParseTree?> = getDescendants(t)
+    fun descendants(t: ParseTree): List<ParseTree> = getDescendants(t)
 
     fun getRootOfSubtreeEnclosingRegion(
         t: ParseTree,
@@ -205,7 +206,7 @@ object Trees {
             if (child is ParserRuleContext && (range.b < startIndex || range.a > stopIndex)) {
                 if (isAncestorOf(child, root)) {
                     val abbrev: CommonToken = CommonToken(Token.INVALID_TYPE, "...")
-                    t.children?.set(i, TerminalNodeImpl(abbrev))
+                    t.replaceChild(i, TerminalNodeImpl(abbrev))
                 }
             }
         }

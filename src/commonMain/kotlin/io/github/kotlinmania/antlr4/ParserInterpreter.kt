@@ -35,7 +35,7 @@ import io.github.kotlinmania.antlr4.misc.Pair
  *
  * See TestParserInterpreter for examples.
  */
-class ParserInterpreter(
+class ParserInterpreter internal constructor(
     override val grammarFileName: String,
     override val vocabulary: Vocabulary,
     ruleNames: Collection<String?>,
@@ -45,8 +45,10 @@ class ParserInterpreter(
     protected var decisionToDFA: Array<DFA?> // not shared like it is for generated parsers
     protected val sharedContextCache: PredictionContextCache = PredictionContextCache()
 
-    override var tokenNames: Array<String?>? = null
+    override var tokenNames: Array<String> = emptyArray()
+        internal set
     override var ruleNames: Array<String>? = null
+        internal set
 
     /** This stack corresponds to the _parentctx, _parentState pair of locals
      * that would exist on call stack frames with a recursive descent parser;
@@ -61,7 +63,7 @@ class ParserInterpreter(
      * Those values are used to create new recursive rule invocation contexts
      * associated with left operand of an alt like "expr '*' expr".
      */
-    protected val _parentContextStack: ArrayDeque<Pair<ParserRuleContext?, Int?>> =
+    private val _parentContextStack: ArrayDeque<Pair<ParserRuleContext?, Int?>> =
         ArrayDeque<Pair<ParserRuleContext?, Int?>>()
 
     /** We need a map from (decision,inputIndex)->forced alt for computing ambiguous
@@ -82,7 +84,7 @@ class ParserInterpreter(
     protected var rootContext: InterpreterRuleContext? = null
 
     @Deprecated("")
-    constructor(
+    internal constructor(
         grammarFileName: String,
         tokenNames: Collection<String>,
         ruleNames: Collection<String>,
@@ -99,7 +101,7 @@ class ParserInterpreter(
     init {
         this.tokenNames = Array(atn.maxTokenType) { "" }
         for (i in 0..<atn.maxTokenType) {
-            tokenNames!![i] = vocabulary.getDisplayName(i) ?: ""
+            tokenNames[i] = vocabulary.getDisplayName(i) ?: ""
         }
 
         this.ruleNames = ruleNames.map { it ?: "" }.toTypedArray()
@@ -161,7 +163,8 @@ class ParserInterpreter(
                 else ->
                     try {
                         visitState(p)
-                    } catch (e: RecognitionException) {
+                    } catch (control: RecognitionControlException) {
+                        val e = control.recognitionException
                         state = atn.ruleToStopState[p.ruleIndex]!!.stateNumber
                         _ctx!!.exception = e
                         errorHandler.reportError(this, e)
@@ -214,7 +217,7 @@ class ParserInterpreter(
                     )
                 }
 
-            Transition.ATOM -> match((transition as AtomTransition).label)
+            Transition.ATOM -> match((transition as AtomTransition).atomLabel)
             Transition.RANGE, Transition.SET, Transition.NOT_SET -> {
                 if (!transition.matches(_input!!.LA(1), Token.MIN_USER_TOKEN_TYPE, 65535)) {
                     recoverInline()
@@ -242,7 +245,7 @@ class ParserInterpreter(
             Transition.PREDICATE -> {
                 val predicateTransition: PredicateTransition = transition as PredicateTransition
                 if (!sempred(_ctx, predicateTransition.ruleIndex, predicateTransition.predIndex)) {
-                    throw FailedPredicateException(this)
+                    throw FailedPredicateException(this).asControlException()
                 }
             }
 
@@ -256,7 +259,7 @@ class ParserInterpreter(
                     throw FailedPredicateException(
                         this,
                         "precpred(_ctx, ${(transition).precedence})",
-                    )
+                    ).asControlException()
                 }
 
             else -> throw UnsupportedOperationException("Unrecognized ATN transition type.")
@@ -376,7 +379,7 @@ class ParserInterpreter(
                 }
                 val errToken: Token? =
                     tokenFactory?.create(
-                        Pair<TokenSource?, CharStream?>(tok.tokenSource, tok.tokenSource?.inputStream),
+                        TokenSourceCharStream(tok.tokenSource, tok.tokenSource?.inputStream),
                         expectedTokenType,
                         tok.text,
                         Token.DEFAULT_CHANNEL,
@@ -390,7 +393,7 @@ class ParserInterpreter(
                 val tok: Token = e.offendingToken!!
                 val errToken: Token? =
                     tokenFactory?.create(
-                        Pair<TokenSource?, CharStream?>(tok.tokenSource, tok.tokenSource?.inputStream),
+                        TokenSourceCharStream(tok.tokenSource, tok.tokenSource?.inputStream),
                         Token.INVALID_TYPE,
                         tok.text,
                         Token.DEFAULT_CHANNEL,
