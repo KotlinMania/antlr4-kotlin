@@ -349,9 +349,6 @@ kotlin {
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
-    if (name.startsWith("compileSwiftExport") || name.startsWith("linkSwiftExportBinary")) {
-        compilerOptions.allWarningsAsErrors.set(false)
-    }
 }
 
 // ============================================================================
