@@ -1,33 +1,35 @@
 import org.gradle.api.tasks.ClasspathNormalizer
 import org.gradle.api.tasks.PathSensitivity
+import java.util.Properties
 
 plugins {
     base
 }
 
-val codeqlKotlinVersion = providers.gradleProperty("codeql.kotlin.version").getOrElse("2.3.21")
+val parentProperties =
+    Properties().also { properties ->
+        val parentPropertiesFile = layout.projectDirectory.file("../gradle.properties").asFile
+        if (parentPropertiesFile.isFile) {
+            parentPropertiesFile.inputStream().use(properties::load)
+        }
+    }
+
+fun propertyValue(
+    name: String,
+    default: String,
+): String = providers.gradleProperty(name).orNull ?: parentProperties.getProperty(name) ?: default
+
+val codeqlKotlinVersion = propertyValue("codeql.kotlin.version", "2.3.21")
 val codeqlLanguageVersion =
-    providers
-        .gradleProperty("kotlin.languageVersion")
-        .getOrElse(codeqlKotlinVersion.split('.').take(2).joinToString("."))
-val codeqlApiVersion = providers.gradleProperty("kotlin.apiVersion").getOrElse(codeqlLanguageVersion)
-val jvmToolchainVersion = providers.gradleProperty("jvm.toolchain").getOrElse("21")
-val codeqlKotlinSourceSetNames =
-    providers
-        .gradleProperty("project.codeql.kotlinSourceSets")
-        .getOrElse("commonMain,jvmMain")
-        .splitToSequence(",")
-        .map { it.trim() }
-        .filter { it.isNotEmpty() }
-        .toList()
+    propertyValue(
+        "kotlin.languageVersion",
+        codeqlKotlinVersion.split('.').take(2).joinToString("."),
+    )
+val codeqlApiVersion = propertyValue("kotlin.apiVersion", codeqlLanguageVersion)
+val jvmToolchainVersion = propertyValue("jvm.toolchain", "21")
+val androidCompileSdk = propertyValue("android.compileSdk", "34")
 val codeqlKotlinCommonSourceSetNames =
-    providers
-        .gradleProperty("project.codeql.kotlinCommonSourceSets")
-        .getOrElse("commonMain")
-        .splitToSequence(",")
-        .map { it.trim() }
-        .filter { it.isNotEmpty() }
-        .toList()
+    propertyValue("project.codeql.kotlinCommonSourceSets", "commonMain").toSourceSetList()
 val commonOptIns =
     listOf(
         "kotlin.time.ExperimentalTime",
@@ -47,95 +49,133 @@ val codeqlAndroidAar by configurations.creating
 dependencies {
     add("codeqlKotlinc", "org.jetbrains.kotlin:kotlin-compiler-embeddable:$codeqlKotlinVersion")
 
-    providers
-        .gradleProperty("project.dependencies.codeqlSourceClasspath")
-        .getOrElse(defaultCodeqlSourceClasspath)
+    propertyValue("project.dependencies.codeqlSourceClasspath", defaultCodeqlSourceClasspath)
         .splitToSequence(",")
         .map { it.trim() }
         .filter { it.isNotEmpty() }
         .forEach { add("codeqlSourceClasspath", it) }
 
-    providers
-        .gradleProperty("project.dependencies.codeqlAndroidAar")
-        .getOrElse("")
+    propertyValue("project.dependencies.codeqlAndroidAar", "")
         .splitToSequence(",")
         .map { it.trim() }
         .filter { it.isNotEmpty() }
         .forEach { add("codeqlAndroidAar", it) }
 }
 
-tasks.register<JavaExec>("codeqlCompileJvm") {
-    description =
-        "Compile ${codeqlKotlinSourceSetNames.joinToString(",")} Kotlin sources " +
-            "with kotlinc $codeqlKotlinVersion for CodeQL Java/Kotlin extraction."
-    group = "verification"
-    classpath(codeqlKotlinc)
-    mainClass.set("org.jetbrains.kotlin.cli.jvm.K2JVMCompiler")
+fun String.toSourceSetList(): List<String> =
+    splitToSequence(",")
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .toList()
 
-    val sourceRoot = layout.projectDirectory.dir("..")
-    val outDir = layout.buildDirectory.dir("classes/kotlin/codeql-jvm")
-    val aarExtractDir = layout.buildDirectory.dir("codeql/android-aar")
-    val commonSources =
-        files(
-            codeqlKotlinCommonSourceSetNames.map { sourceSetName ->
-                fileTree(sourceRoot.dir("src/$sourceSetName/kotlin")) { include("**/*.kt") }
-            },
+fun androidJar(): File {
+    val candidateRoots =
+        listOfNotNull(
+            providers.environmentVariable("ANDROID_HOME").orNull,
+            providers.environmentVariable("ANDROID_SDK_ROOT").orNull,
+            layout.projectDirectory.dir("../.android-sdk").asFile.absolutePath,
         )
-    val sources =
-        files(
-            codeqlKotlinSourceSetNames.map { sourceSetName ->
-                fileTree(sourceRoot.dir("src/$sourceSetName/kotlin")) { include("**/*.kt") }
-            },
-        )
-
-    inputs.files(sources).withPathSensitivity(PathSensitivity.RELATIVE)
-    inputs.files(commonSources).withPathSensitivity(PathSensitivity.RELATIVE)
-    inputs.files(codeqlSourceClasspath).withNormalizer(ClasspathNormalizer::class.java)
-    inputs.files(codeqlAndroidAar).withNormalizer(ClasspathNormalizer::class.java)
-    outputs.dir(outDir)
-    outputs.dir(aarExtractDir)
-
-    doFirst {
-        outDir.get().asFile.mkdirs()
-        val extractedJars =
-            codeqlAndroidAar.resolve().mapNotNull { aar ->
-                val extractTarget = aarExtractDir.get().asFile.resolve(aar.nameWithoutExtension)
-                extractTarget.mkdirs()
-                copy {
-                    from(zipTree(aar))
-                    include("classes.jar")
-                    into(extractTarget)
-                }
-                extractTarget.resolve("classes.jar").takeIf { it.exists() }
-            }
-        val fullClasspath =
-            (codeqlSourceClasspath.resolve() + extractedJars)
-                .joinToString(File.pathSeparator) { it.absolutePath }
-        val commonSourceFiles = commonSources.files.toMutableList()
-        require(commonSourceFiles.isNotEmpty()) {
-            "project.codeql.kotlinCommonSourceSets must resolve to at least one Kotlin source file"
-        }
-        val sourceFiles = sources.files.toMutableList()
-        require(sourceFiles.isNotEmpty()) {
-            "project.codeql.kotlinSourceSets must resolve to at least one Kotlin source file"
-        }
-        args =
-            listOf(
-                "-d",
-                outDir.get().asFile.absolutePath,
-                "-classpath",
-                fullClasspath,
-                "-jvm-target",
-                jvmToolchainVersion,
-                "-no-stdlib",
-                "-no-reflect",
-                "-language-version",
-                codeqlLanguageVersion,
-                "-api-version",
-                codeqlApiVersion,
-                "-Xmulti-platform",
-                "-Xcommon-sources=${commonSourceFiles.joinToString(",") { it.absolutePath }}",
-                "-Xexpect-actual-classes",
-            ) + commonOptIns.flatMap { listOf("-opt-in", it) } + sourceFiles.map { it.absolutePath }
+    val androidJar =
+        candidateRoots
+            .map { File(it).resolve("platforms/android-$androidCompileSdk/android.jar") }
+            .firstOrNull { it.isFile }
+    return requireNotNull(androidJar) {
+        "Android CodeQL extraction requires platforms/android-$androidCompileSdk/android.jar under " +
+            "ANDROID_HOME, ANDROID_SDK_ROOT, or ../.android-sdk"
     }
 }
+
+fun registerCodeqlCompileTask(
+    taskName: String,
+    sourceSetNames: List<String>,
+    includeAndroidClasspath: Boolean,
+) {
+    tasks.register<JavaExec>(taskName) {
+        description =
+            "Compile ${sourceSetNames.joinToString(",")} Kotlin sources " +
+                "with kotlinc $codeqlKotlinVersion for CodeQL Java/Kotlin extraction."
+        group = "verification"
+        classpath(codeqlKotlinc)
+        mainClass.set("org.jetbrains.kotlin.cli.jvm.K2JVMCompiler")
+
+        val sourceRoot = layout.projectDirectory.dir("..")
+        val outDir = layout.buildDirectory.dir("classes/kotlin/$taskName")
+        val aarExtractDir = layout.buildDirectory.dir("codeql/android-aar/$taskName")
+        val commonSources =
+            files(
+                codeqlKotlinCommonSourceSetNames.map { sourceSetName ->
+                    fileTree(sourceRoot.dir("src/$sourceSetName/kotlin")) { include("**/*.kt") }
+                },
+            )
+        val sources =
+            files(
+                sourceSetNames.map { sourceSetName ->
+                    fileTree(sourceRoot.dir("src/$sourceSetName/kotlin")) { include("**/*.kt") }
+                },
+            )
+
+        inputs.files(sources).withPathSensitivity(PathSensitivity.RELATIVE)
+        inputs.files(commonSources).withPathSensitivity(PathSensitivity.RELATIVE)
+        inputs.files(codeqlSourceClasspath).withNormalizer(ClasspathNormalizer::class.java)
+        inputs.files(codeqlAndroidAar).withNormalizer(ClasspathNormalizer::class.java)
+        outputs.dir(outDir)
+        outputs.dir(aarExtractDir)
+
+        doFirst {
+            outDir.get().asFile.mkdirs()
+            val extractedJars =
+                codeqlAndroidAar.resolve().mapNotNull { aar ->
+                    val extractTarget = aarExtractDir.get().asFile.resolve(aar.nameWithoutExtension)
+                    extractTarget.mkdirs()
+                    copy {
+                        from(zipTree(aar))
+                        include("classes.jar")
+                        into(extractTarget)
+                    }
+                    extractTarget.resolve("classes.jar").takeIf { it.exists() }
+                }
+            val androidClasspath = if (includeAndroidClasspath) listOf(androidJar()) else emptyList()
+            val fullClasspath =
+                (codeqlSourceClasspath.resolve() + extractedJars + androidClasspath)
+                    .joinToString(File.pathSeparator) { it.absolutePath }
+            val commonSourceFiles = commonSources.files.toMutableList()
+            require(commonSourceFiles.isNotEmpty()) {
+                "project.codeql.kotlinCommonSourceSets must resolve to at least one Kotlin source file"
+            }
+            val sourceFiles = sources.files.toMutableList()
+            require(sourceFiles.isNotEmpty()) {
+                "$taskName source sets must resolve to at least one Kotlin source file"
+            }
+            args =
+                listOf(
+                    "-d",
+                    outDir.get().asFile.absolutePath,
+                    "-classpath",
+                    fullClasspath,
+                    "-jvm-target",
+                    jvmToolchainVersion,
+                    "-no-stdlib",
+                    "-no-reflect",
+                    "-language-version",
+                    codeqlLanguageVersion,
+                    "-api-version",
+                    codeqlApiVersion,
+                    "-Xmulti-platform",
+                    "-Xcommon-sources=${commonSourceFiles.joinToString(",") { it.absolutePath }}",
+                    "-Xexpect-actual-classes",
+                ) + commonOptIns.flatMap { listOf("-opt-in", it) } + sourceFiles.map { it.absolutePath }
+        }
+    }
+}
+
+registerCodeqlCompileTask(
+    "codeqlCompileJvm",
+    propertyValue("project.codeql.kotlinSourceSets", "commonMain,jvmMain").toSourceSetList(),
+    includeAndroidClasspath = false,
+)
+
+registerCodeqlCompileTask(
+    "codeqlCompileAndroid",
+    propertyValue("project.codeql.androidKotlinSourceSets", "commonMain,androidMain").toSourceSetList(),
+    includeAndroidClasspath = true,
+)
