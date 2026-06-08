@@ -352,6 +352,9 @@ kotlin {
         }
     }
 }
+
+
+
 // ============================================================================
 // Test logging
 // ============================================================================
@@ -418,8 +421,8 @@ tasks.named("check") {
     // wasmWasi). Test EXECUTION belongs to check; target BUILD coverage belongs
     // to the explicit all-target build set below.
     dependsOn("testAndroidHostTest")
-    // Swift Export smoke test is required; it must not self-skip.
     dependsOn("hostTests")
+    // Swift Export smoke test is required; it must not self-skip.
     dependsOn("swiftExportSmokeTest")
 }
 
