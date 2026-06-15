@@ -11,7 +11,26 @@ target (JVM, Android, Android Native, iOS/tvOS/watchOS, macOS, Linux, Windows,
 JS, and Wasm).
 
 > **Status: port in progress.** The runtime is being translated from the
-> upstream Java sources; not every target compiles cleanly yet.
+> upstream Java sources; the Kotlin Multiplatform target build gate is wired,
+> but runtime API parity is still in progress.
+
+## Installation
+
+```kotlin
+kotlin {
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation("io.github.kotlinmania:antlr4-kotlin:0.1.2")
+            }
+        }
+    }
+}
+```
+
+The runtime is intended to stay almost entirely in `commonMain`. Platform
+`actual` declarations are reserved for hardware or operating-system calls that
+cannot be represented faithfully in common Kotlin.
 
 ## Credit — the original authors
 
