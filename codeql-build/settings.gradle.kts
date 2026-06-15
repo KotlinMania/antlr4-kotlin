@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "antlr4-kotlin-codeql"
+rootProject.name = "kotlinmania-codeql"
