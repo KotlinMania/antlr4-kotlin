@@ -17,10 +17,20 @@ JS, and Wasm).
 ## Installation
 
 ```kotlin
-commonMain.dependencies {
-    implementation("io.github.kotlinmania:antlr4-kotlin:0.1.2")
+kotlin {
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation("io.github.kotlinmania:antlr4-kotlin:0.1.2")
+            }
+        }
+    }
 }
 ```
+
+The runtime is intended to stay almost entirely in `commonMain`. Platform
+`actual` declarations are reserved for hardware or operating-system calls that
+cannot be represented faithfully in common Kotlin.
 
 ## Credit — the original authors
 
