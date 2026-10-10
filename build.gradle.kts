@@ -681,6 +681,19 @@ rootProject.extensions.configure<NodeJsRootExtension>("kotlinNodeJs") {
     versions.kotlinWebHelpers.version = providers.gradleProperty("node.kotlinWebHelpers.version").getOrElse("3.1.0")
 }
 
+// Refresh locks only when explicitly requested; ordinary builds validate stored locks.
+val refreshYarnLocks =
+    providers.gradleProperty("kotlinmania.refreshYarnLocks").map(String::toBoolean).getOrElse(false)
+if (refreshYarnLocks) {
+    tasks
+        .matching { it.name == "kotlinStoreYarnLock" || it.name == "kotlinWasmStoreYarnLock" }
+        .configureEach {
+            dependsOn(
+                if (name == "kotlinStoreYarnLock") "kotlinUpgradeYarnLock" else "kotlinWasmUpgradeYarnLock",
+            )
+        }
+}
+
 // ============================================================================
 // Maven Central publishing — Central Portal, first-party + bespoke upload
 // ----------------------------------------------------------------------------
@@ -700,121 +713,23 @@ val emptyJavadocJar by tasks.registering(Jar::class) {
     archiveClassifier.set("javadoc")
 }
 
-// ============================================================================
-// CodeQL extraction
-// ============================================================================
-val codeqlKotlincScope =
-    configurations.dependencyScope("codeqlKotlinc") {
-        description = "Kotlin compiler (CodeQL extraction target only)"
-    }
-val codeqlSourceScope =
-    configurations.dependencyScope("codeqlSourceClasspath") {
-        description = "Runtime classpath for CodeQL extraction of commonMain sources"
-    }
-val codeqlAarScope =
-    configurations.dependencyScope("codeqlAndroidAar") {
-        description = "Android AAR artifacts for CodeQL dependency classpath extraction"
-    }
-val codeqlKotlincFiles =
-    configurations.resolvable("codeqlKotlincFiles") {
-        extendsFrom(codeqlKotlincScope.get())
-    }
-val codeqlSourceFiles =
-    configurations.resolvable("codeqlSourceFiles") {
-        extendsFrom(codeqlSourceScope.get())
-    }
-val codeqlAarFiles =
-    configurations.resolvable("codeqlAarFiles") {
-        extendsFrom(codeqlAarScope.get())
-    }
-
-val codeqlLanguageVersion =
-    providers
-        .gradleProperty("kotlin.languageVersion")
-        .getOrElse(kotlinVersion.split('.').take(2).joinToString("."))
-val codeqlApiVersion = providers.gradleProperty("kotlin.apiVersion").getOrElse(codeqlLanguageVersion)
-val codeqlKotlinSourceSetNames =
-    providers
-        .gradleProperty("project.codeql.kotlinSourceSets")
-        .getOrElse("commonMain")
-        .splitToSequence(",")
-        .map { it.trim() }
-        .filter { it.isNotEmpty() }
-        .toList()
-val codeqlKotlinCommonSourceSetNames =
-    providers
-        .gradleProperty("project.codeql.kotlinCommonSourceSets")
-        .getOrElse("commonMain")
-        .splitToSequence(",")
-        .map { it.trim() }
-        .filter { it.isNotEmpty() }
-        .toList()
-
-dependencies {
-    val codeqlKotlinVersion = providers.gradleProperty("codeql.kotlin.version").getOrElse(kotlinVersion)
-    add("codeqlKotlinc", "org.jetbrains.kotlin:kotlin-compiler-embeddable:$codeqlKotlinVersion")
-
-    providers
-        .gradleProperty("project.dependencies.codeqlSourceClasspath")
-        .getOrElse("")
-        .splitToSequence(",")
-        .map { it.trim() }
-        .filter { it.isNotEmpty() }
-        .forEach { add("codeqlSourceClasspath", it) }
-
-    providers
-        .gradleProperty("project.dependencies.codeqlAndroidAar")
-        .getOrElse("")
-        .splitToSequence(",")
-        .map { it.trim() }
-        .filter { it.isNotEmpty() }
-        .forEach { add("codeqlAndroidAar", it) }
-}
-
-val codeqlCompileJvm =
-    tasks.register<JavaExec>("codeqlCompileJvm") {
-        description =
-            "Compile ${codeqlKotlinSourceSetNames.joinToString(",")} Kotlin sources " +
-            "with kotlinc $codeqlLanguageVersion for CodeQL Java/Kotlin extraction."
-        group = "verification"
-        classpath(codeqlKotlincFiles)
-        mainClass.set("org.jetbrains.kotlin.cli.jvm.K2JVMCompiler")
-        // Inject services at config time — config-cache safe; project.copy/zipTree in a task
-        // action would violate https://docs.gradle.org/9.5.1/userguide/configuration_cache.html
-        val fs = serviceOf<FileSystemOperations>()
-        val archives = serviceOf<ArchiveOperations>()
-        val outDir = layout.buildDirectory.dir("classes/kotlin/codeql-jvm")
-        val aarExtractDir = layout.buildDirectory.dir("codeql/android-aar")
-        val commonSources =
-            files(
-                codeqlKotlinCommonSourceSetNames.map { sourceSetName ->
-                    fileTree("src/$sourceSetName/kotlin") { include("**/*.kt") }
-                },
-            )
-        val sources =
-            files(
-                codeqlKotlinSourceSetNames.map { sourceSetName ->
-                    fileTree("src/$sourceSetName/kotlin") { include("**/*.kt") }
-                },
-            )
-        inputs.files(sources).withPathSensitivity(PathSensitivity.RELATIVE)
-        inputs.files(commonSources).withPathSensitivity(PathSensitivity.RELATIVE)
-        inputs.files(codeqlSourceFiles).withNormalizer(ClasspathNormalizer::class.java)
-        inputs.files(codeqlAarFiles).withNormalizer(ClasspathNormalizer::class.java)
-        outputs.dir(outDir)
-        outputs.dir(aarExtractDir)
-        doFirst {
-            outDir.get().asFile.mkdirs()
-            val extractedJars =
-                codeqlAarFiles.get().resolve().mapNotNull { aar ->
-                    val extractTarget = aarExtractDir.get().asFile.resolve(aar.nameWithoutExtension)
-                    extractTarget.mkdirs()
-                    fs.copy {
-                        from(archives.zipTree(aar))
-                        include("classes.jar")
-                        into(extractTarget)
-                    }
-                    extractTarget.resolve("classes.jar").takeIf { it.exists() }
+publishing {
+    publications.withType<MavenPublication>().configureEach {
+        artifact(emptyJavadocJar)
+        pom {
+            name.set(publishProjectName)
+            description.set(providers.gradleProperty("project.pom.description").getOrElse(""))
+            inceptionYear.set("2026")
+            url.set("https://github.com/KotlinMania/$publishProjectName")
+            licenses {
+                license {
+                    name.set(providers.gradleProperty("project.pom.licenseName").getOrElse("MIT"))
+                    url.set(
+                        providers
+                            .gradleProperty("project.pom.licenseUrl")
+                            .getOrElse("https://opensource.org/licenses/MIT"),
+                    )
+                    distribution.set("repo")
                 }
             }
             developers {
