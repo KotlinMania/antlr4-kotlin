@@ -21,7 +21,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation("io.github.kotlinmania:antlr4-kotlin:0.1.2")
+                implementation("io.github.kotlinmania:antlr4-kotlin:0.1.3")
             }
         }
     }
