@@ -50,7 +50,7 @@ open class SingletonPredictionContext internal constructor(
     }
 
     override fun toString(): String {
-        val up = parent?.toString() ?: ""
+        val up = parent?.toString().orEmpty()
         if (up.isEmpty()) {
             if (returnState == EMPTY_RETURN_STATE) {
                 return "$"

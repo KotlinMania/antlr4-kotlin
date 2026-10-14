@@ -12,27 +12,27 @@ package io.github.kotlinmania.antlr4.misc
  * @author Sam Harwell
  */
 open class IntegerList {
-    private var _data: IntArray
+    private var data: IntArray
 
-    private var _size = 0
+    private var count = 0
 
     constructor() {
-        _data = io.github.kotlinmania.antlr4.misc.IntegerList.Companion.EMPTY_DATA
+        data = io.github.kotlinmania.antlr4.misc.IntegerList.Companion.EMPTY_DATA
     }
 
     constructor(capacity: Int) {
         require(capacity >= 0)
 
         if (capacity == 0) {
-            _data = io.github.kotlinmania.antlr4.misc.IntegerList.Companion.EMPTY_DATA
+            data = io.github.kotlinmania.antlr4.misc.IntegerList.Companion.EMPTY_DATA
         } else {
-            _data = IntArray(capacity)
+            data = IntArray(capacity)
         }
     }
 
     constructor(list: IntegerList) {
-        _data = list._data.copyOf()
-        _size = list._size
+        data = list.data.copyOf()
+        count = list.count
     }
 
     internal constructor(list: Collection<Int?>) : this(list.size) {
@@ -42,47 +42,47 @@ open class IntegerList {
     }
 
     fun add(value: Int) {
-        if (_data.size == _size) {
-            ensureCapacity(_size + 1)
+        if (data.size == count) {
+            ensureCapacity(count + 1)
         }
 
-        _data[_size] = value
-        _size++
+        data[count] = value
+        count++
     }
 
     fun addAll(array: IntArray) {
-        ensureCapacity(_size + array.size)
-        array.copyInto(_data, _size, 0, array.size)
-        _size += array.size
+        ensureCapacity(count + array.size)
+        array.copyInto(data, count, 0, array.size)
+        count += array.size
     }
 
     fun addAll(list: IntegerList) {
-        ensureCapacity(_size + list._size)
-        list._data.copyInto(_data, _size, 0, list._size)
-        _size += list._size
+        ensureCapacity(count + list.count)
+        list.data.copyInto(data, count, 0, list.count)
+        count += list.count
     }
 
     fun addAll(list: Collection<Int?>) {
-        ensureCapacity(_size + list.size)
+        ensureCapacity(count + list.size)
         var current = 0
         for (x in list) {
-            _data[_size + current] = x!!
+            data[count + current] = x!!
             current++
         }
-        _size += list.size
+        count += list.size
     }
 
     fun get(index: Int): Int {
-        if (index < 0 || index >= _size) {
+        if (index < 0 || index >= count) {
             throw IndexOutOfBoundsException("")
         }
 
-        return _data[index]
+        return data[index]
     }
 
     fun contains(value: Int): Boolean {
-        for (i in 0..<_size) {
-            if (_data[i] == value) {
+        for (i in 0..<count) {
+            if (data[i] == value) {
                 return true
             }
         }
@@ -94,20 +94,20 @@ open class IntegerList {
         index: Int,
         value: Int,
     ): Int {
-        if (index < 0 || index >= _size) {
+        if (index < 0 || index >= count) {
             throw IndexOutOfBoundsException("")
         }
 
-        val previous = _data[index]
-        _data[index] = value
+        val previous = data[index]
+        data[index] = value
         return previous
     }
 
     fun removeAt(index: Int): Int {
         val value = get(index)
-        _data.copyInto(_data, index, index + 1, _size)
-        _data[_size - 1] = 0
-        _size--
+        data.copyInto(data, index, index + 1, count)
+        data[count - 1] = 0
+        count--
         return value
     }
 
@@ -115,44 +115,44 @@ open class IntegerList {
         fromIndex: Int,
         toIndex: Int,
     ) {
-        if (fromIndex < 0 || toIndex < 0 || fromIndex > _size || toIndex > _size) {
+        if (fromIndex < 0 || toIndex < 0 || fromIndex > count || toIndex > count) {
             throw IndexOutOfBoundsException("")
         }
         require(fromIndex <= toIndex)
 
-        _data.copyInto(_data, fromIndex, toIndex, _size)
-        _data.fill(0, _size - (toIndex - fromIndex), _size)
-        _size -= (toIndex - fromIndex)
+        data.copyInto(data, fromIndex, toIndex, count)
+        data.fill(0, count - (toIndex - fromIndex), count)
+        count -= (toIndex - fromIndex)
     }
 
     val isEmpty: Boolean
-        get() = _size == 0
+        get() = count == 0
 
-    fun size(): Int = _size
+    fun size(): Int = count
 
     fun trimToSize() {
-        if (_data.size == _size) {
+        if (data.size == count) {
             return
         }
 
-        _data = _data.copyOf(_size)
+        data = data.copyOf(count)
     }
 
     fun clear() {
-        _data.fill(0, 0, _size)
-        _size = 0
+        data.fill(0, 0, count)
+        count = 0
     }
 
     fun toArray(): IntArray {
-        if (_size == 0) {
+        if (count == 0) {
             return io.github.kotlinmania.antlr4.misc.IntegerList.Companion.EMPTY_DATA
         }
 
-        return _data.copyOf(_size)
+        return data.copyOf(count)
     }
 
     fun sort() {
-        _data.sort(0, _size)
+        data.sort(0, count)
     }
 
     /**
@@ -183,12 +183,12 @@ open class IntegerList {
             return false
         }
 
-        if (_size != other._size) {
+        if (count != other.count) {
             return false
         }
 
-        for (i in 0..<_size) {
-            if (_data[i] != other._data[i]) {
+        for (i in 0..<count) {
+            if (data[i] != other.data[i]) {
                 return false
             }
         }
@@ -208,8 +208,8 @@ open class IntegerList {
      */
     override fun hashCode(): Int {
         var hashCode = 1
-        for (i in 0..<_size) {
-            hashCode = 31 * hashCode + _data[i]
+        for (i in 0..<count) {
+            hashCode = 31 * hashCode + data[i]
         }
 
         return hashCode
@@ -220,14 +220,14 @@ open class IntegerList {
      */
     override fun toString(): String = toArray().contentToString()
 
-    fun binarySearch(key: Int): Int = binarySearch(0, _size, key)
+    fun binarySearch(key: Int): Int = binarySearch(0, count, key)
 
     fun binarySearch(
         fromIndex: Int,
         toIndex: Int,
         key: Int,
     ): Int {
-        if (fromIndex < 0 || toIndex < 0 || fromIndex > _size || toIndex > _size) {
+        if (fromIndex < 0 || toIndex < 0 || fromIndex > count || toIndex > count) {
             throw IndexOutOfBoundsException("")
         }
         require(fromIndex <= toIndex)
@@ -236,7 +236,7 @@ open class IntegerList {
         var high = toIndex - 1
         while (low <= high) {
             val mid = (low + high).ushr(1)
-            val midVal = _data[mid]
+            val midVal = data[mid]
             when {
                 midVal < key -> low = mid + 1
                 midVal > key -> high = mid - 1
@@ -252,10 +252,10 @@ open class IntegerList {
         }
 
         var newLength: Int
-        if (_data.size == 0) {
+        if (data.size == 0) {
             newLength = io.github.kotlinmania.antlr4.misc.IntegerList.Companion.INITIAL_SIZE
         } else {
-            newLength = _data.size
+            newLength = data.size
         }
 
         while (newLength < capacity) {
@@ -265,7 +265,7 @@ open class IntegerList {
             }
         }
 
-        _data = _data.copyOf(newLength)
+        data = data.copyOf(newLength)
     }
 
     /**
@@ -274,11 +274,11 @@ open class IntegerList {
     fun toCharArray(): CharArray? {
         // Optimize for the common case (all data values are
         // < 0xFFFF) to avoid an extra scan
-        var resultArray: CharArray? = CharArray(_size)
+        var resultArray: CharArray? = CharArray(count)
         var resultIdx = 0
         var calculatedPreciseResultSize = false
-        for (i in 0..<_size) {
-            val codePoint = _data[i]
+        for (i in 0..<count) {
+            val codePoint = data[i]
             // Calculate the precise result size if we encounter
             // a code point > 0xFFFF
             if (!calculatedPreciseResultSize &&
@@ -296,8 +296,8 @@ open class IntegerList {
 
     private fun charArraySize(): Int {
         var result = 0
-        for (i in 0..<_size) {
-            result += charCount(_data[i])
+        for (i in 0..<count) {
+            result += charCount(data[i])
         }
         return result
     }

@@ -22,7 +22,7 @@ package io.github.kotlinmania.antlr4.tree
  * in your event methods.
  */
 class ParseTreeProperty<V> {
-    protected var annotations: MutableMap<ParseTree?, V?> = HashMap<ParseTree?, V?>()
+    protected val annotations: MutableMap<ParseTree?, V?> = HashMap<ParseTree?, V?>()
 
     fun get(node: ParseTree?): V? = annotations.get(node)
 

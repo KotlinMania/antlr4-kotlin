@@ -126,7 +126,7 @@ open class RuleContext : RuleNode {
 
             val builder: StringBuilder = StringBuilder()
             for (i in 0..<this.childCount) {
-                builder.append(getChild(i)?.text ?: "")
+                builder.append(getChild(i)?.text.orEmpty())
             }
 
             return builder.toString()

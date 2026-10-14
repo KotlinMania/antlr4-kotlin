@@ -6,19 +6,21 @@
 package io.github.kotlinmania.antlr4.misc
 
 internal class DoubleKeyMap<Key1, Key2, Value> {
-    internal var data: MutableMap<Key1, MutableMap<Key2, Value>> = LinkedHashMap()
+    internal val data: MutableMap<Key1, MutableMap<Key2, Value>> = LinkedHashMap()
 
     fun put(
         k1: Key1,
         k2: Key2,
         v: Value,
     ): Value? {
-        var data2 = data[k1]
+        val existing = data[k1]
+        val data2: MutableMap<Key2, Value>
         var prev: Value? = null
-        if (data2 == null) {
+        if (existing == null) {
             data2 = LinkedHashMap()
             data[k1] = data2
         } else {
+            data2 = existing
             prev = data2[k2]
         }
         data2[k2] = v
@@ -33,7 +35,7 @@ internal class DoubleKeyMap<Key1, Key2, Value> {
         return data2[k2]
     }
 
-    fun get(k1: Key1): Map<Key2, Value> = data[k1] ?: emptyMap()
+    fun get(k1: Key1): Map<Key2, Value> = data[k1].orEmpty()
 
     fun values(k1: Key1): Collection<Value>? {
         val data2 = data[k1] ?: return null

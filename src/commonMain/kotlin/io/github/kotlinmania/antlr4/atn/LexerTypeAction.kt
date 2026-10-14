@@ -14,13 +14,9 @@ import io.github.kotlinmania.antlr4.misc.MurmurHash
  *
  * @author Sam Harwell
  * @since 4.2
- */
-class LexerTypeAction
-/**
- * Constructs a new `type` action with the specified token type value.
  * @param type The type to assign to the token using [Lexer.setType].
  */
-(
+class LexerTypeAction(
     /**
      * Gets the type to assign to a token created by the lexer.
      * @return The type to assign to a token created by the lexer.

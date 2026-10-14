@@ -33,76 +33,83 @@ open class XPathLexer(
     override var charPositionInLine: Int = 0
 
     override fun nextToken(): Token {
-        _tokenStartCharIndex = _input!!.index()
+        tokenStartCharIndex = input!!.index()
         var t: CommonToken? = null
         while (t == null) {
-            when (_input!!.LA(1)) {
+            when (input!!.LA(1)) {
                 '/'.code -> {
                     consume()
-                    if (_input!!.LA(1) == '/'.code) {
+                    if (input!!.LA(1) == '/'.code) {
                         consume()
                         t = CommonToken(ANYWHERE, "//")
                     } else {
                         t = CommonToken(ROOT, "/")
                     }
                 }
+
                 '*'.code -> {
                     consume()
                     t = CommonToken(WILDCARD, "*")
                 }
+
                 '!'.code -> {
                     consume()
                     t = CommonToken(BANG, "!")
                 }
+
                 '\''.code -> {
                     val s = matchString()
                     t = CommonToken(STRING, s)
                 }
-                IntStream.EOF -> return CommonToken(EOF, "<EOF>")
+
+                IntStream.EOF -> {
+                    return CommonToken(EOF, "<EOF>")
+                }
+
                 else -> {
-                    if (isNameStartChar(_input!!.LA(1))) {
+                    if (isNameStartChar(input!!.LA(1))) {
                         val id = matchID()
                         t = if (id[0].isUpperCase()) CommonToken(TOKEN_REF, id) else CommonToken(RULE_REF, id)
                     } else {
-                        throw LexerNoViableAltException(this, _input, _tokenStartCharIndex, null).asControlException()
+                        throw LexerNoViableAltException(this, input, tokenStartCharIndex, null).asControlException()
                     }
                 }
             }
         }
-        t.startIndex = _tokenStartCharIndex
-        t.charPositionInLine = _tokenStartCharIndex
+        t.startIndex = tokenStartCharIndex
+        t.charPositionInLine = tokenStartCharIndex
         t.line = line
         return t
     }
 
     fun consume() {
-        val curChar = _input!!.LA(1)
+        val curChar = input!!.LA(1)
         if (curChar == '\n'.code) {
             line++
             charPositionInLine = 0
         } else {
             charPositionInLine++
         }
-        _input!!.consume()
+        input!!.consume()
     }
 
     fun matchID(): String {
-        val start = _input!!.index()
+        val start = input!!.index()
         consume()
-        while (isNameChar(_input!!.LA(1))) {
+        while (isNameChar(input!!.LA(1))) {
             consume()
         }
-        return _input!!.getText(Interval.of(start, _input!!.index() - 1)) ?: ""
+        return input!!.getText(Interval.of(start, input!!.index() - 1)).orEmpty()
     }
 
     fun matchString(): String {
-        val start = _input!!.index()
+        val start = input!!.index()
         consume()
-        while (_input!!.LA(1) != '\''.code) {
+        while (input!!.LA(1) != '\''.code) {
             consume()
         }
         consume()
-        return _input!!.getText(Interval.of(start, _input!!.index() - 1)) ?: ""
+        return input!!.getText(Interval.of(start, input!!.index() - 1)).orEmpty()
     }
 
     fun isNameChar(c: Int): Boolean = c != IntStream.EOF && (c.toChar().isLetterOrDigit() || c.toChar() == '_')
@@ -133,14 +140,14 @@ open class XPathLexer(
                 "STRING",
             )
 
-        private val _LITERAL_NAMES: Array<String> = arrayOf("", "", "", "'//'", "'/'", "'*'", "'!'")
-        private val _SYMBOLIC_NAMES: Array<String> =
+        private val LITERAL_NAMES: Array<String> = arrayOf("", "", "", "'//'", "'/'", "'*'", "'!'")
+        private val SYMBOLIC_NAMES: Array<String> =
             arrayOf("", "TOKEN_REF", "RULE_REF", "ANYWHERE", "ROOT", "WILDCARD", "BANG", "ID", "STRING")
 
-        val VOCABULARY: Vocabulary = VocabularyImpl(_LITERAL_NAMES, _SYMBOLIC_NAMES, null)
+        val VOCABULARY: Vocabulary = VocabularyImpl(LITERAL_NAMES, SYMBOLIC_NAMES, null)
 
         val tokenNames: Array<String> =
-            Array(_SYMBOLIC_NAMES.size) { i ->
+            Array(SYMBOLIC_NAMES.size) { i ->
                 VOCABULARY.getLiteralName(i) ?: VOCABULARY.getSymbolicName(i) ?: "<INVALID>"
             }
     }

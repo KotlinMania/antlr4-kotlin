@@ -90,13 +90,13 @@ object Trees {
     }
 
     fun getAncestors(t: Tree?): List<Tree> {
-        var t: Tree? = t
-        if (t?.parent == null) return emptyList()
+        var current: Tree? = t
+        if (current?.parent == null) return emptyList()
         val ancestors: MutableList<Tree> = ArrayList()
-        t = t.parent
-        while (t != null) {
-            ancestors.add(0, t)
-            t = t.parent
+        current = current.parent
+        while (current != null) {
+            ancestors.add(0, current)
+            current = current.parent
         }
         return ancestors
     }

@@ -26,8 +26,8 @@ class ProfilingATNSimulator(
     protected val decisions: Array<DecisionInfo>
     protected var numDecisions: Int
 
-    protected var _sllStopIndex: Int = 0
-    protected var _llStopIndex: Int = 0
+    protected var sllStopIndex: Int = 0
+    protected var llStopIndex: Int = 0
 
     protected var currentDecision: Int = 0
     protected var currentState: DFAState? = null
@@ -56,8 +56,8 @@ class ProfilingATNSimulator(
         outerContext: ParserRuleContext?,
     ): Int {
         try {
-            this._sllStopIndex = -1
-            this._llStopIndex = -1
+            this.sllStopIndex = -1
+            this.llStopIndex = -1
             this.currentDecision = decision
             val start: Long =
                 kotlin.time.TimeSource.Monotonic
@@ -73,25 +73,25 @@ class ProfilingATNSimulator(
             decisions[decision].timeInPrediction += (stop - start)
             decisions[decision].invocations++
 
-            val SLL_k: Long = (_sllStopIndex - _startIndex + 1).toLong()
+            val SLL_k: Long = (sllStopIndex - startIndex + 1).toLong()
             decisions[decision].SLL_TotalLook += SLL_k
             decisions[decision].SLL_MinLook =
                 if (decisions[decision].SLL_MinLook == 0L) SLL_k else minOf(decisions[decision].SLL_MinLook, SLL_k)
             if (SLL_k > decisions[decision].SLL_MaxLook) {
                 decisions[decision].SLL_MaxLook = SLL_k
                 decisions[decision].SLL_MaxLookEvent =
-                    LookaheadEventInfo(decision, null, alt, input, _startIndex, _sllStopIndex, false)
+                    LookaheadEventInfo(decision, null, alt, input, startIndex, sllStopIndex, false)
             }
 
-            if (_llStopIndex >= 0) {
-                val LL_k: Long = (_llStopIndex - _startIndex + 1).toLong()
+            if (llStopIndex >= 0) {
+                val LL_k: Long = (llStopIndex - startIndex + 1).toLong()
                 decisions[decision].LL_TotalLook += LL_k
                 decisions[decision].LL_MinLook =
                     if (decisions[decision].LL_MinLook == 0L) LL_k else minOf(decisions[decision].LL_MinLook, LL_k)
                 if (LL_k > decisions[decision].LL_MaxLook) {
                     decisions[decision].LL_MaxLook = LL_k
                     decisions[decision].LL_MaxLookEvent =
-                        LookaheadEventInfo(decision, null, alt, input, _startIndex, _llStopIndex, true)
+                        LookaheadEventInfo(decision, null, alt, input, startIndex, llStopIndex, true)
                 }
             }
 
@@ -107,14 +107,14 @@ class ProfilingATNSimulator(
     ): DFAState? {
         // this method is called after each time the input position advances
         // during SLL prediction
-        _sllStopIndex = _input?.index() ?: -1
+        sllStopIndex = currentInput?.index() ?: -1
 
         val existingTargetState: DFAState? = super.getExistingTargetState(previousD, t)
         if (existingTargetState != null) {
             decisions[currentDecision].SLL_DFATransitions++ // count only if we transition over a DFA state
             if (existingTargetState === ERROR) {
                 decisions[currentDecision].mutableErrors.add(
-                    ErrorInfo(currentDecision, previousD.configs, _input, _startIndex, _sllStopIndex, false),
+                    ErrorInfo(currentDecision, previousD.configs, currentInput, startIndex, sllStopIndex, false),
                 )
             }
         }
@@ -141,7 +141,7 @@ class ProfilingATNSimulator(
         if (fullCtx) {
             // this method is called after each time the input position advances
             // during full context prediction
-            _llStopIndex = _input?.index() ?: -1
+            llStopIndex = currentInput?.index() ?: -1
         }
 
         val reachConfigs: ATNConfigSet? = super.computeReachSet(closure, t, fullCtx)
@@ -151,7 +151,7 @@ class ProfilingATNSimulator(
             } else { // no reach on current lookahead symbol. ERROR.
                 // TODO: does not handle delayed errors per getSynValidOrSemInvalidAltThatFinishedDecisionEntryRule()
                 decisions[currentDecision].mutableErrors.add(
-                    ErrorInfo(currentDecision, closure, _input, _startIndex, _llStopIndex, true),
+                    ErrorInfo(currentDecision, closure, currentInput, startIndex, llStopIndex, true),
                 )
             }
         } else {
@@ -159,7 +159,7 @@ class ProfilingATNSimulator(
             if (reachConfigs != null) {
             } else { // no reach on current lookahead symbol. ERROR.
                 decisions[currentDecision].mutableErrors.add(
-                    ErrorInfo(currentDecision, closure, _input, _startIndex, _sllStopIndex, false),
+                    ErrorInfo(currentDecision, closure, currentInput, startIndex, sllStopIndex, false),
                 )
             }
         }
@@ -174,10 +174,10 @@ class ProfilingATNSimulator(
     ): Boolean {
         val result: Boolean = super.evalSemanticContext(pred, parserCallStack, alt, fullCtx)
         if (pred !is SemanticContext.PrecedencePredicate) {
-            val fullContext = _llStopIndex >= 0
-            val stopIndex = if (fullContext) _llStopIndex else _sllStopIndex
+            val fullContext = llStopIndex >= 0
+            val stopIndex = if (fullContext) llStopIndex else sllStopIndex
             decisions[currentDecision].mutablePredicateEvals.add(
-                PredicateEvalInfo(currentDecision, _input, _startIndex, stopIndex, pred, result, alt, fullCtx),
+                PredicateEvalInfo(currentDecision, currentInput, startIndex, stopIndex, pred, result, alt, fullCtx),
             )
         }
 
@@ -209,7 +209,7 @@ class ProfilingATNSimulator(
     ) {
         if (prediction != conflictingAltResolvedBySLL) {
             decisions[currentDecision].mutableContextSensitivities.add(
-                ContextSensitivityInfo(currentDecision, configs, _input, startIndex, stopIndex),
+                ContextSensitivityInfo(currentDecision, configs, currentInput, startIndex, stopIndex),
             )
         }
         super.reportContextSensitivity(dfa, prediction, configs, startIndex, stopIndex)
@@ -237,7 +237,7 @@ class ProfilingATNSimulator(
             // to different minimum alternatives we have also identified a
             // context sensitivity.
             decisions[currentDecision].mutableContextSensitivities.add(
-                ContextSensitivityInfo(currentDecision, configs, _input, startIndex, stopIndex),
+                ContextSensitivityInfo(currentDecision, configs, currentInput, startIndex, stopIndex),
             )
         }
         decisions[currentDecision].mutableAmbiguities.add(
@@ -245,7 +245,7 @@ class ProfilingATNSimulator(
                 currentDecision,
                 configs,
                 ambigAlts,
-                _input,
+                currentInput,
                 startIndex,
                 stopIndex,
                 configs.fullCtx,

@@ -36,7 +36,7 @@ open class BufferedTokenStream(
      * considered a complete view of the input once [.fetchedEOF] is set
      * to `true`.
      */
-    protected var tokens: MutableList<Token> = ArrayList(100)
+    protected val tokens: MutableList<Token> = ArrayList(100)
 
     /**
      * The index into [.tokens] of the current token (next token to
@@ -170,12 +170,12 @@ open class BufferedTokenStream(
         start: Int,
         stop: Int,
     ): List<Token> {
-        var stop = stop
-        if (start < 0 || stop < 0) return emptyList()
+        var stopIndex = stop
+        if (start < 0 || stopIndex < 0) return emptyList()
         lazyInit()
         val subset: MutableList<Token> = ArrayList()
-        if (stop >= tokens.size) stop = tokens.size - 1
-        for (i in start..stop) {
+        if (stopIndex >= tokens.size) stopIndex = tokens.size - 1
+        for (i in start..stopIndex) {
             val t: Token = tokens.get(i)
             if (t.type == Token.EOF) break
             subset.add(t)
@@ -296,24 +296,24 @@ open class BufferedTokenStream(
         i: Int,
         channel: Int,
     ): Int {
-        var i = i
-        sync(i)
-        if (i >= size()) {
+        var index = i
+        sync(index)
+        if (index >= size()) {
             return size() - 1
         }
 
-        var token: Token = tokens.get(i)
+        var token: Token = tokens.get(index)
         while (token.channel != channel) {
             if (token.type == Token.EOF) {
-                return i
+                return index
             }
 
-            i++
-            sync(i)
-            token = tokens.get(i)
+            index++
+            sync(index)
+            token = tokens.get(index)
         }
 
-        return i
+        return index
     }
 
     /**
@@ -331,23 +331,23 @@ open class BufferedTokenStream(
         i: Int,
         channel: Int,
     ): Int {
-        var i = i
-        sync(i)
-        if (i >= size()) {
+        var index = i
+        sync(index)
+        if (index >= size()) {
             // the EOF token is on every channel
             return size() - 1
         }
 
-        while (i >= 0) {
-            val token: Token = tokens.get(i)
+        while (index >= 0) {
+            val token: Token = tokens.get(index)
             if (token.type == Token.EOF || token.channel == channel) {
-                return i
+                return index
             }
 
-            i--
+            index--
         }
 
-        return i
+        return index
     }
 
     /** Collect all tokens on specified channel to the right of

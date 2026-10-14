@@ -69,8 +69,7 @@ class ATNSerializer(
         addPrecedenceStates()
         addRuleStatesAndLexerTokenTypes()
         addModeStartStates()
-        var setIndices: Map<IntervalSet?, Int?>? = null
-        setIndices = addSets()
+        val setIndices = addSets()
         addEdges(nedges, setIndices)
         addDecisionStartStates()
         addLexerActions()
@@ -153,7 +152,7 @@ class ATNSerializer(
 
     private fun addEdges(
         nedges: Int,
-        setIndices: Map<IntervalSet?, Int?>,
+        setIndices: Map<IntervalSet?, Int>,
     ) {
         data.add(nedges)
         for (s in atn.states) {
@@ -168,7 +167,7 @@ class ATNSerializer(
 
                 val src: Int = s.stateNumber
                 var trg: Int = t.target.stateNumber
-                val edgeType: Int = Transition.serializationTypes.get(t::class)!!
+                val edgeType: Int = Transition.serializationTypes.getValue(t::class)
                 var arg1 = 0
                 var arg2 = 0
                 var arg3 = 0
@@ -216,8 +215,14 @@ class ATNSerializer(
                         arg3 = if (at.isCtxDependent) 1 else 0
                     }
 
-                    Transition.SET -> arg1 = setIndices[(t as SetTransition).set]!!
-                    Transition.NOT_SET -> arg1 = setIndices[(t as SetTransition).set]!!
+                    Transition.SET -> {
+                        arg1 = setIndices.getValue((t as SetTransition).set)
+                    }
+
+                    Transition.NOT_SET -> {
+                        arg1 = setIndices.getValue((t as SetTransition).set)
+                    }
+
                     Transition.WILDCARD -> {}
                 }
 
@@ -231,10 +236,10 @@ class ATNSerializer(
         }
     }
 
-    private fun addSets(): Map<IntervalSet?, Int?> {
+    private fun addSets(): Map<IntervalSet?, Int> {
         io.github.kotlinmania.antlr4.atn.ATNSerializer.Companion
             .serializeSets(data, sets.keys)
-        val setIndices: MutableMap<IntervalSet?, Int?> = HashMap()
+        val setIndices: MutableMap<IntervalSet?, Int> = HashMap()
         var setIndex = 0
         for (s in sets.keys) {
             setIndices[s] = setIndex++
@@ -311,7 +316,7 @@ class ATNSerializer(
 
             for (i in 0..<s.numberOfTransitions) {
                 val t: Transition = s.transition(i)
-                val edgeType: Int = Transition.serializationTypes.get(t::class)!!
+                val edgeType: Int = Transition.serializationTypes.getValue(t::class)
                 if (edgeType == Transition.SET || edgeType == Transition.NOT_SET) {
                     val st: SetTransition = t as SetTransition
                     sets[st.set] = true

@@ -93,7 +93,7 @@ open class ParseTreePatternMatcher(
             ParserInterpreter(
                 parser.grammarFileName,
                 parser.vocabulary,
-                parser.ruleNames?.toList() ?: emptyList(),
+                parser.ruleNames?.toList().orEmpty(),
                 parser.aTNWithBypassAlts!!,
                 tokens,
             )
@@ -133,7 +133,7 @@ open class ParseTreePatternMatcher(
             if (tree.symbol?.type == patternTree.symbol?.type) {
                 val t2Symbol = patternTree.symbol
                 if (t2Symbol is TokenTagToken) {
-                    labels.map(t2Symbol.tokenName ?: "", tree)
+                    labels.map(t2Symbol.tokenName.orEmpty(), tree)
                     if (t2Symbol.label != null) {
                         labels.map(t2Symbol.label, tree)
                     }
@@ -246,17 +246,27 @@ open class ParseTreePatternMatcher(
 
         while (p < n) {
             when (p) {
-                pattern.indexOf(escape + start, p) -> p += escape.length + start.length
-                pattern.indexOf(escape + stop, p) -> p += escape.length + stop.length
+                pattern.indexOf(escape + start, p) -> {
+                    p += escape.length + start.length
+                }
+
+                pattern.indexOf(escape + stop, p) -> {
+                    p += escape.length + stop.length
+                }
+
                 pattern.indexOf(start, p) -> {
                     starts.add(p)
                     p += start.length
                 }
+
                 pattern.indexOf(stop, p) -> {
                     stops.add(p)
                     p += stop.length
                 }
-                else -> p++
+
+                else -> {
+                    p++
+                }
             }
         }
 

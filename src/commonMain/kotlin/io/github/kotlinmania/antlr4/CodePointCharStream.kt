@@ -49,7 +49,7 @@ abstract class CodePointCharStream private constructor(
     override val sourceName: String
         get() = name.ifEmpty { IntStream.UNKNOWN_SOURCE_NAME }
 
-    override fun toString(): String = getText(Interval.of(0, size - 1)) ?: ""
+    override fun toString(): String = getText(Interval.of(0, size - 1)).orEmpty()
 
     private class CodePoint8BitCharStream(
         position: Int,
@@ -76,7 +76,9 @@ abstract class CodePointCharStream private constructor(
                     return byteArray[offset].toInt() and 0xFF
                 }
 
-                0 -> return 0
+                0 -> {
+                    return 0
+                }
 
                 1 -> {
                     offset = position + i - 1
@@ -115,7 +117,9 @@ abstract class CodePointCharStream private constructor(
                     return charArray[offset].code and 0xFFFF
                 }
 
-                0 -> return 0
+                0 -> {
+                    return 0
+                }
 
                 1 -> {
                     offset = position + i - 1
@@ -154,7 +158,9 @@ abstract class CodePointCharStream private constructor(
                     return intArray[offset]
                 }
 
-                0 -> return 0
+                0 -> {
+                    return 0
+                }
 
                 1 -> {
                     offset = position + i - 1
@@ -184,7 +190,7 @@ abstract class CodePointCharStream private constructor(
             name: String,
         ): CodePointCharStream =
             when (codePointBuffer.storageType) {
-                CodePointBuffer.StorageType.BYTE ->
+                CodePointBuffer.StorageType.BYTE -> {
                     CodePoint8BitCharStream(
                         codePointBuffer.position(),
                         codePointBuffer.remaining(),
@@ -192,8 +198,9 @@ abstract class CodePointCharStream private constructor(
                         codePointBuffer.byteArray(),
                         codePointBuffer.arrayOffset(),
                     )
+                }
 
-                CodePointBuffer.StorageType.CHAR ->
+                CodePointBuffer.StorageType.CHAR -> {
                     CodePoint16BitCharStream(
                         codePointBuffer.position(),
                         codePointBuffer.remaining(),
@@ -201,8 +208,9 @@ abstract class CodePointCharStream private constructor(
                         codePointBuffer.charArray(),
                         codePointBuffer.arrayOffset(),
                     )
+                }
 
-                CodePointBuffer.StorageType.INT ->
+                CodePointBuffer.StorageType.INT -> {
                     CodePoint32BitCharStream(
                         codePointBuffer.position(),
                         codePointBuffer.remaining(),
@@ -210,6 +218,7 @@ abstract class CodePointCharStream private constructor(
                         codePointBuffer.intArray(),
                         codePointBuffer.arrayOffset(),
                     )
+                }
             }
     }
 }

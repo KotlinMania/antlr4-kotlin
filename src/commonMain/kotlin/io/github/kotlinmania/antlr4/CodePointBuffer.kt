@@ -84,7 +84,7 @@ class CodePointBuffer private constructor(
 
         fun build(): CodePointBuffer =
             when (type) {
-                StorageType.BYTE ->
+                StorageType.BYTE -> {
                     CodePointBuffer(
                         StorageType.BYTE,
                         0,
@@ -93,8 +93,9 @@ class CodePointBuffer private constructor(
                         null,
                         null,
                     )
+                }
 
-                StorageType.CHAR ->
+                StorageType.CHAR -> {
                     CodePointBuffer(
                         StorageType.CHAR,
                         0,
@@ -103,8 +104,9 @@ class CodePointBuffer private constructor(
                         charArray!!.copyOf(charLength),
                         null,
                     )
+                }
 
-                StorageType.INT ->
+                StorageType.INT -> {
                     CodePointBuffer(
                         StorageType.INT,
                         0,
@@ -113,6 +115,7 @@ class CodePointBuffer private constructor(
                         null,
                         intArray!!.copyOf(intLength),
                     )
+                }
             }
 
         fun ensureRemaining(remainingNeeded: Int) {

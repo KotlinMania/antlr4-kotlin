@@ -7,4 +7,6 @@ package io.github.kotlinmania.antlr4.atn
 
 abstract class AbstractPredicateTransition(
     target: ATNState,
-) : Transition(target)
+) : Transition(target) {
+    abstract override val serializationType: Int
+}

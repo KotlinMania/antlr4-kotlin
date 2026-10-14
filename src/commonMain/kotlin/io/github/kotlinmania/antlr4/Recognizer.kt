@@ -10,15 +10,9 @@ import io.github.kotlinmania.antlr4.atn.ATNSimulator
 import io.github.kotlinmania.antlr4.atn.ParseInfo
 
 abstract class Recognizer<Symbol, ATNInterpreter : ATNSimulator> {
-    private val _listeners: MutableList<ANTLRErrorListener> = mutableListOf(ConsoleErrorListener.INSTANCE)
+    private val _errorListeners: MutableList<ANTLRErrorListener> = mutableListOf(ConsoleErrorListener.INSTANCE)
 
-    protected var _errHandler: ANTLRErrorStrategy = DefaultErrorStrategy()
-
-    var errorHandler: ANTLRErrorStrategy
-        get() = _errHandler
-        set(handler) {
-            _errHandler = handler
-        }
+    var errorHandler: ANTLRErrorStrategy = DefaultErrorStrategy()
 
     /**
      * Get the ATN interpreter used by the recognizer for prediction.
@@ -118,19 +112,19 @@ abstract class Recognizer<Symbol, ATNInterpreter : ATNSimulator> {
 
     fun addErrorListener(listener: ANTLRErrorListener) {
         requireNotNull(listener) { "listener cannot be null." }
-        _listeners.add(listener)
+        _errorListeners.add(listener)
     }
 
     fun removeErrorListener(listener: ANTLRErrorListener) {
-        _listeners.remove(listener)
+        _errorListeners.remove(listener)
     }
 
     fun removeErrorListeners() {
-        _listeners.clear()
+        _errorListeners.clear()
     }
 
     val errorListeners: List<ANTLRErrorListener>
-        get() = _listeners.toList()
+        get() = _errorListeners.toList()
 
     val errorListenerDispatch: ANTLRErrorListener
         get() = ProxyErrorListener(this.errorListeners)

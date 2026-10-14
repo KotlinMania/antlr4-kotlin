@@ -7,7 +7,16 @@
 
 package io.github.kotlinmania.antlr4.atn
 
-import io.github.kotlinmania.antlr4.*
+import io.github.kotlinmania.antlr4.IntStream
+import io.github.kotlinmania.antlr4.NoViableAltException
+import io.github.kotlinmania.antlr4.Parser
+import io.github.kotlinmania.antlr4.ParserRuleContext
+import io.github.kotlinmania.antlr4.RuleContext
+import io.github.kotlinmania.antlr4.Token
+import io.github.kotlinmania.antlr4.TokenStream
+import io.github.kotlinmania.antlr4.Vocabulary
+import io.github.kotlinmania.antlr4.VocabularyImpl
+import io.github.kotlinmania.antlr4.asControlException
 import io.github.kotlinmania.antlr4.assert
 import io.github.kotlinmania.antlr4.atn.ATNState.Companion.BLOCK_END
 import io.github.kotlinmania.antlr4.dfa.DFA
@@ -298,10 +307,10 @@ open class ParserATNSimulator internal constructor(
     private var mergeCache: DoubleKeyMap<PredictionContext, PredictionContext, PredictionContext>? = null
 
     // LAME globals to avoid parameters!!!!! I need these down deep in predTransition
-    protected var _input: TokenStream? = null
-    protected var _startIndex: Int = 0
-    protected var _outerContext: ParserRuleContext? = null
-    protected var _dfa: DFA? = null
+    protected var currentInput: TokenStream? = null
+    protected var startIndex: Int = 0
+    protected var outerContext: ParserRuleContext? = null
+    protected var currentDfa: DFA? = null
 
     /** Testing only!  */
     internal constructor(
@@ -332,7 +341,7 @@ open class ParserATNSimulator internal constructor(
         decision: Int,
         outerContext: ParserRuleContext?,
     ): Int {
-        var outerContext: ParserRuleContext? = outerContext
+        var resolvedOuterContext: ParserRuleContext? = outerContext
         if (debug ||
             trace_atn_sim
         ) {
@@ -343,14 +352,14 @@ open class ParserATNSimulator internal constructor(
             )
         }
 
-        _input = input
-        _startIndex = input.index()
-        _outerContext = outerContext
+        currentInput = input
+        startIndex = input.index()
+        this.outerContext = resolvedOuterContext
         val dfa: DFA = decisionToDFA[decision]
-        _dfa = dfa
+        currentDfa = dfa
 
         val m: Int = input.mark()
-        val index = _startIndex
+        val index = startIndex
 
         // Now we are certain to have a specific decision's DFA
         // But, do we still need an initial state?
@@ -366,7 +375,7 @@ open class ParserATNSimulator internal constructor(
             }
 
             if (s0 == null) {
-                if (outerContext == null) outerContext = ParserRuleContext.EMPTY
+                if (resolvedOuterContext == null) resolvedOuterContext = ParserRuleContext.EMPTY
                 val fullCtx = false
                 var s0_closure: ATNConfigSet =
                     computeStartState(
@@ -392,7 +401,7 @@ open class ParserATNSimulator internal constructor(
                 }
             }
 
-            val alt = execATN(dfa, s0!!, input, index, outerContext)
+            val alt = execATN(dfa, s0!!, input, index, resolvedOuterContext)
             if (io.github.kotlinmania.antlr4.atn.ParserATNSimulator.Companion.debug) {
                 println(
                     "DFA after predictATN: " +
@@ -404,7 +413,7 @@ open class ParserATNSimulator internal constructor(
             return alt
         } finally {
             mergeCache = null // wack cache after each prediction
-            _dfa = null
+            currentDfa = null
             input.seek(index)
             input.release(m)
         }
@@ -463,7 +472,7 @@ open class ParserATNSimulator internal constructor(
         var t: Int = input.LA(1)
 
         while (true) { // while more work
-            var D: DFAState = getExistingTargetState(previousD!!, t) ?: computeTargetState(dfa, previousD, t)
+            val D: DFAState = getExistingTargetState(previousD!!, t) ?: computeTargetState(dfa, previousD, t)
 
             if (D === ERROR) {
                 // if any configs in previous dipped into outer context, that
@@ -543,9 +552,13 @@ open class ParserATNSimulator internal constructor(
                 val D_predicates = D.predicates!!
                 val alts: BitSet = evalSemanticContext(D_predicates, outerContext, true)
                 when (alts.cardinality()) {
-                    0 -> throw noViableAlt(input, outerContext, D.configs, startIndex).asControlException()
+                    0 -> {
+                        throw noViableAlt(input, outerContext, D.configs, startIndex).asControlException()
+                    }
 
-                    1 -> return alts.nextSetBit(0)
+                    1 -> {
+                        return alts.nextSetBit(0)
+                    }
 
                     else -> {
                         // report ambiguity after predicate evaluation to make sure the correct
@@ -840,7 +853,7 @@ open class ParserATNSimulator internal constructor(
          * ensure that the alternative matching the longest overall sequence is
          * chosen when multiple such configurations can match the input.
          */
-        var skippedStopStates: MutableList<ATNConfig>? = null
+        val skippedStopStates: MutableList<ATNConfig> = ArrayList()
 
         // First figure out where we can reach on input t
         for (c in closure) {
@@ -856,10 +869,6 @@ open class ParserATNSimulator internal constructor(
             if (c.state is RuleStopState) {
                 assert(c.context!!.isEmpty)
                 if (fullCtx || t == IntStream.EOF) {
-                    if (skippedStopStates == null) {
-                        skippedStopStates = ArrayList()
-                    }
-
                     skippedStopStates.add(c)
                 }
 
@@ -888,7 +897,7 @@ open class ParserATNSimulator internal constructor(
          * condition is not true when one or more configurations have been
          * withheld in skippedStopStates, or when the current symbol is EOF.
          */
-        if (skippedStopStates == null && t != Token.EOF) {
+        if (skippedStopStates.isEmpty() && t != Token.EOF) {
             if (intermediate.size == 1) {
                 // Don't pursue the closure if there is just one state.
                 // It can only have one alternative; just add to result
@@ -945,8 +954,7 @@ open class ParserATNSimulator internal constructor(
          * chooses an alternative matching the longest overall sequence when
          * multiple alternatives are viable.
          */
-        if (skippedStopStates != null && (!fullCtx || !PredictionMode.hasConfigInRuleStopState(reach))) {
-            assert(!skippedStopStates.isEmpty())
+        if (skippedStopStates.isNotEmpty() && (!fullCtx || !PredictionMode.hasConfigInRuleStopState(reach))) {
             for (c in skippedStopStates) {
                 reach.add(c, mergeCache)
             }
@@ -1210,7 +1218,7 @@ open class ParserATNSimulator internal constructor(
                 continue
             }
 
-            val updatedContext: SemanticContext? = config.semanticContext.evalPrecedence(parser, _outerContext)
+            val updatedContext: SemanticContext? = config.semanticContext.evalPrecedence(parser, outerContext)
             if (updatedContext == null) {
                 // the configuration was eliminated
                 continue
@@ -1701,7 +1709,7 @@ open class ParserATNSimulator internal constructor(
                     // track how far we dip into outer context.  Might
                     // come in handy and we avoid evaluating context dependent
                     // preds if this is > 0.
-                    val dfa = _dfa
+                    val dfa = currentDfa
                     if (dfa != null && dfa.isPrecedenceDfa()) {
                         val outermostPrecedenceReturn: Int = (t as EpsilonTransition).outermostPrecedenceReturn
                         if (outermostPrecedenceReturn == dfa.atnStartState.ruleIndex) {
@@ -1923,27 +1931,37 @@ open class ParserATNSimulator internal constructor(
         treatEofAsEpsilon: Boolean,
     ): ATNConfig? {
         when (t.serializationType) {
-            Transition.RULE -> return ruleTransition(config, t as RuleTransition)
+            Transition.RULE -> {
+                return ruleTransition(config, t as RuleTransition)
+            }
 
-            Transition.PRECEDENCE -> return precedenceTransition(
-                config,
-                t as PrecedencePredicateTransition,
-                collectPredicates,
-                inContext,
-                fullCtx,
-            )
+            Transition.PRECEDENCE -> {
+                return precedenceTransition(
+                    config,
+                    t as PrecedencePredicateTransition,
+                    collectPredicates,
+                    inContext,
+                    fullCtx,
+                )
+            }
 
-            Transition.PREDICATE -> return predTransition(
-                config,
-                t as PredicateTransition,
-                collectPredicates,
-                inContext,
-                fullCtx,
-            )
+            Transition.PREDICATE -> {
+                return predTransition(
+                    config,
+                    t as PredicateTransition,
+                    collectPredicates,
+                    inContext,
+                    fullCtx,
+                )
+            }
 
-            Transition.ACTION -> return actionTransition(config, t as ActionTransition)
+            Transition.ACTION -> {
+                return actionTransition(config, t as ActionTransition)
+            }
 
-            Transition.EPSILON -> return ATNConfig(config, t.target)
+            Transition.EPSILON -> {
+                return ATNConfig(config, t.target)
+            }
 
             Transition.ATOM, Transition.RANGE, Transition.SET -> {
                 // EOF transitions act like epsilon transitions after the first EOF
@@ -1957,7 +1975,9 @@ open class ParserATNSimulator internal constructor(
                 return null
             }
 
-            else -> return null
+            else -> {
+                return null
+            }
         }
     }
 
@@ -1997,10 +2017,10 @@ open class ParserATNSimulator internal constructor(
                 // during closure, which dramatically reduces the size of
                 // the config sets. It also obviates the need to test predicates
                 // later during conflict resolution.
-                val currentPosition: Int = _input?.index() ?: -1
-                _input?.seek(_startIndex)
-                val predSucceeds = evalSemanticContext(pt.predicate, _outerContext, config.alt, fullCtx)
-                _input?.seek(currentPosition)
+                val currentPosition: Int = currentInput?.index() ?: -1
+                currentInput?.seek(startIndex)
+                val predSucceeds = evalSemanticContext(pt.predicate, outerContext, config.alt, fullCtx)
+                currentInput?.seek(currentPosition)
                 if (predSucceeds) {
                     c = ATNConfig(config, pt.target) // no pred context
                 }
@@ -2047,10 +2067,10 @@ open class ParserATNSimulator internal constructor(
                 // during closure, which dramatically reduces the size of
                 // the config sets. It also obviates the need to test predicates
                 // later during conflict resolution.
-                val currentPosition: Int = _input?.index() ?: -1
-                _input?.seek(_startIndex)
-                val predSucceeds = evalSemanticContext(pt.predicate, _outerContext, config.alt, fullCtx)
-                _input?.seek(currentPosition)
+                val currentPosition: Int = currentInput?.index() ?: -1
+                currentInput?.seek(startIndex)
+                val predSucceeds = evalSemanticContext(pt.predicate, outerContext, config.alt, fullCtx)
+                currentInput?.seek(currentPosition)
                 if (predSucceeds) {
                     c = ATNConfig(config, pt.target) // no pred context
                 }
@@ -2226,7 +2246,6 @@ open class ParserATNSimulator internal constructor(
         t: Int,
         to: DFAState?,
     ): DFAState? {
-        var to: DFAState? = to
         if (io.github.kotlinmania.antlr4.atn.ParserATNSimulator.Companion.debug) {
             println("EDGE " + from + " -> " + to + " upon " + getTokenName(t))
         }
@@ -2235,23 +2254,23 @@ open class ParserATNSimulator internal constructor(
             return null
         }
 
-        to = addDFAState(dfa, to) // used existing if possible not incoming
+        val target = addDFAState(dfa, to) // used existing if possible not incoming
         if (from == null || t < -1 || t > atn.maxTokenType) {
-            return to
+            return target
         }
 
         antlrSynchronized(from) {
             if (from.edges == null) {
                 from.edges = arrayOfNulls<DFAState>(atn.maxTokenType + 1 + 1)
             }
-            from.edges!![t + 1] = to // connect
+            from.edges!![t + 1] = target // connect
         }
 
         if (io.github.kotlinmania.antlr4.atn.ParserATNSimulator.Companion.debug) {
             println("DFA=\n" + dfa.toString(if (parser != null) parser.vocabulary else VocabularyImpl.EMPTY_VOCABULARY))
         }
 
-        return to
+        return target
     }
 
     /**

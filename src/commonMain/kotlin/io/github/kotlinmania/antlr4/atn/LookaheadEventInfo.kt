@@ -12,12 +12,6 @@ import io.github.kotlinmania.antlr4.TokenStream
  * depth required in order to make a prediction.
  *
  * @since 4.3
- */
-class LookaheadEventInfo
-/**
- * Constructs a new instance of the [LookaheadEventInfo] class with
- * the specified detailed lookahead information.
- *
  * @param decision The decision number
  * @param configs The final configuration set containing the necessary
  * information to determine the result of a prediction, or `null` if
@@ -29,7 +23,7 @@ class LookaheadEventInfo
  * prediction; otherwise, `false` if the current lookahead is part of
  * an SLL prediction
  */
-(
+class LookaheadEventInfo(
     decision: Int,
     configs: ATNConfigSet?,
     /** The alternative chosen by adaptivePredict(), not necessarily

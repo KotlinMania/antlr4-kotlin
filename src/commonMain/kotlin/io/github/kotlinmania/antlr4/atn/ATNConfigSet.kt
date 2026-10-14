@@ -128,7 +128,8 @@ open class ATNConfigSet
         }
 
         fun getConflictingAltsResolved(): BitSet {
-            if (conflictingAlts != null) return conflictingAlts!!
+            val conflicting = conflictingAlts
+            if (conflicting != null) return conflicting
             val alts = BitSet()
             for (config in mutableConfigs) alts.set(config.alt)
             return alts
@@ -206,7 +207,8 @@ open class ATNConfigSet
             buf.append(mutableConfigs.toString())
             if (hasSemanticContext) buf.append(",hasSemanticContext=").append(hasSemanticContext)
             if (uniqueAlt != ATN.INVALID_ALT_NUMBER) buf.append(",uniqueAlt=").append(uniqueAlt)
-            if (conflictingAlts != null) buf.append(",conflictingAlts=").append(conflictingAlts)
+            val conflicting = conflictingAlts
+            if (conflicting != null) buf.append(",conflictingAlts=").append(conflicting)
             if (dipsIntoOuterContext) buf.append(",dipsIntoOuterContext")
             return buf.toString()
         }

@@ -132,9 +132,10 @@ open class ATNConfig {
             buf.append(",")
             buf.append(alt)
         }
-        if (context != null) {
+        val ctx = context
+        if (ctx != null) {
             buf.append(",[")
-            buf.append(context.toString())
+            buf.append(ctx.toString())
             buf.append("]")
         }
         if (semanticContext != SemanticContext.Empty.Instance) {

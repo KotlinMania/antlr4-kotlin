@@ -27,12 +27,6 @@ import io.github.kotlinmania.antlr4.TokenStream
  *
  *
  * @since 4.3
- */
-class ContextSensitivityInfo
-/**
- * Constructs a new instance of the [ContextSensitivityInfo] class
- * with the specified detailed context sensitivity information.
- *
  * @param decision The decision number
  * @param configs The final configuration set containing the unique
  * alternative identified by full-context prediction
@@ -41,7 +35,7 @@ class ContextSensitivityInfo
  * @param stopIndex The index at which the context sensitivity was
  * identified during full-context prediction
  */
-(
+class ContextSensitivityInfo(
     decision: Int,
     configs: ATNConfigSet?,
     input: TokenStream?,

@@ -30,8 +30,8 @@ class LexerInterpreter internal constructor(
 
     override var vocabulary: Vocabulary = VocabularyImpl.fromTokenNames(emptyArray())
 
-    protected val _decisionToDFA: Array<DFA?>
-    protected val _sharedContextCache: PredictionContextCache = PredictionContextCache()
+    protected val decisionToDFA: Array<DFA?>
+    protected val sharedContextCache: PredictionContextCache = PredictionContextCache()
 
     @Deprecated("")
     internal constructor(
@@ -43,7 +43,7 @@ class LexerInterpreter internal constructor(
         input: CharStream?,
     ) : this(
         grammarFileName,
-        VocabularyImpl.fromTokenNames(tokenNames.map { it ?: "" }.toTypedArray()),
+        VocabularyImpl.fromTokenNames(tokenNames.map { it.orEmpty() }.toTypedArray()),
         ruleNames,
         ArrayList<String?>(),
         modeNames,
@@ -68,20 +68,20 @@ class LexerInterpreter internal constructor(
         this.atn = atn
         val tokenNamesArr = Array(atn.maxTokenType) { "" }
         for (i in tokenNamesArr.indices) {
-            tokenNamesArr[i] = vocabulary.getDisplayName(i) ?: ""
+            tokenNamesArr[i] = vocabulary.getDisplayName(i).orEmpty()
         }
         this.tokenNames = tokenNamesArr
 
-        this.ruleNames = ruleNames.map { it ?: "" }.toTypedArray()
-        this.interpreterChannelNames = channelNames.map { it ?: "" }.toTypedArray()
-        this.interpreterModeNames = modeNames.map { it ?: "" }.toTypedArray()
+        this.ruleNames = ruleNames.map { it.orEmpty() }.toTypedArray()
+        this.interpreterChannelNames = channelNames.map { it.orEmpty() }.toTypedArray()
+        this.interpreterModeNames = modeNames.map { it.orEmpty() }.toTypedArray()
         this.vocabulary = vocabulary
 
-        val decisionToDFA = Array(atn.numberOfDecisions) { i -> DFA(atn.getDecisionState(i), i) }
-        this._decisionToDFA = arrayOfNulls(atn.numberOfDecisions)
-        for (i in decisionToDFA.indices) {
-            this._decisionToDFA[i] = decisionToDFA[i]
+        val decisions = Array(atn.numberOfDecisions) { i -> DFA(atn.getDecisionState(i), i) }
+        this.decisionToDFA = arrayOfNulls(atn.numberOfDecisions)
+        for (i in decisions.indices) {
+            this.decisionToDFA[i] = decisions[i]
         }
-        this.interpreter = LexerATNSimulator(this, atn, decisionToDFA, _sharedContextCache)
+        this.interpreter = LexerATNSimulator(this, atn, decisions, sharedContextCache)
     }
 }

@@ -22,16 +22,8 @@ class ATNDeserializer
     constructor(
         deserializationOptions: ATNDeserializationOptions? = ATNDeserializationOptions.defaultOptions,
     ) {
-        private val deserializationOptions: ATNDeserializationOptions?
-
-        init {
-            var deserializationOptions: ATNDeserializationOptions? = deserializationOptions
-            if (deserializationOptions == null) {
-                deserializationOptions = ATNDeserializationOptions.defaultOptions
-            }
-
-            this.deserializationOptions = deserializationOptions
-        }
+        private val deserializationOptions: ATNDeserializationOptions =
+            deserializationOptions ?: ATNDeserializationOptions.defaultOptions
 
         fun deserialize(data: CharArray): ATN = deserialize(decodeIntsEncodedAs16BitWords(data))
 
@@ -54,12 +46,12 @@ class ATNDeserializer
             val loopBackStateNumbers: MutableList<Pair<LoopEndState?, Int?>> = ArrayList()
             val endStateNumbers: MutableList<Pair<BlockStartState?, Int?>> = ArrayList()
             val nstates = data[p++]
-            for (i in 0..<nstates) {
+            repeat(nstates) {
                 val stype = data[p++]
                 // ignore bad type of states
                 if (stype == ATNState.INVALID_TYPE) {
                     atn.addState(null)
-                    continue
+                    return@repeat
                 }
 
                 val ruleIndex = data[p++]
@@ -84,13 +76,13 @@ class ATNDeserializer
             }
 
             val numNonGreedyStates = data[p++]
-            for (i in 0..<numNonGreedyStates) {
+            repeat(numNonGreedyStates) {
                 val stateNumber = data[p++]
                 (atn.states.get(stateNumber) as DecisionState).nonGreedy = true
             }
 
             val numPrecedenceStates = data[p++]
-            for (i in 0..<numPrecedenceStates) {
+            repeat(numPrecedenceStates) {
                 val stateNumber = data[p++]
                 (atn.states.get(stateNumber) as RuleStartState).isLeftRecursiveRule = true
             }
@@ -129,7 +121,7 @@ class ATNDeserializer
             // MODES
             //
             val nmodes = data[p++]
-            for (i in 0..<nmodes) {
+            repeat(nmodes) {
                 val s = data[p++]
                 atn.mutableModeToStartState.add(atn.states[s] as TokensStartState)
             }
@@ -144,7 +136,7 @@ class ATNDeserializer
             // EDGES
             //
             val nedges = data[p++]
-            for (i in 0..<nedges) {
+            repeat(nedges) {
                 val src = data[p]
                 val trg = data[p + 1]
                 val ttype = data[p + 2]
@@ -242,7 +234,7 @@ class ATNDeserializer
 
             markPrecedenceDecisions(atn)
 
-            if (deserializationOptions!!.isVerifyATN()) {
+            if (deserializationOptions.isVerifyATN()) {
                 verifyATN(atn)
             }
 
@@ -344,26 +336,26 @@ class ATNDeserializer
             p: Int,
             sets: MutableList<IntervalSet?>,
         ): Int {
-            var p = p
-            val nsets = data[p++]
-            for (i in 0..<nsets) {
-                val nintervals = data[p]
-                p++
+            var pos = p
+            val nsets = data[pos++]
+            repeat(nsets) {
+                val nintervals = data[pos]
+                pos++
                 val set: IntervalSet = IntervalSet()
                 sets.add(set)
 
-                val containsEof = data[p++] != 0
+                val containsEof = data[pos++] != 0
                 if (containsEof) {
                     set.add(-1)
                 }
 
-                for (idx in 0..<nintervals) {
-                    val a = data[p++]
-                    val b = data[p++]
+                repeat(nintervals) {
+                    val a = data[pos++]
+                    val b = data[pos++]
                     set.add(a, b)
                 }
             }
-            return p
+            return pos
         }
 
         /**
@@ -470,13 +462,17 @@ class ATNDeserializer
         ): Transition? {
             val target: ATNState = atn.states[trg]
             when (type) {
-                Transition.EPSILON -> return EpsilonTransition(target)
-                Transition.RANGE ->
+                Transition.EPSILON -> {
+                    return EpsilonTransition(target)
+                }
+
+                Transition.RANGE -> {
                     if (arg3 != 0) {
                         return RangeTransition(target, Token.EOF, arg2)
                     } else {
                         return RangeTransition(target, arg1, arg2)
                     }
+                }
 
                 Transition.RULE -> {
                     val rt: RuleTransition = RuleTransition(atn.states[arg1] as RuleStartState, arg2, arg3, target)
@@ -488,22 +484,34 @@ class ATNDeserializer
                     return pt
                 }
 
-                Transition.PRECEDENCE -> return PrecedencePredicateTransition(target, arg1)
-                Transition.ATOM ->
+                Transition.PRECEDENCE -> {
+                    return PrecedencePredicateTransition(target, arg1)
+                }
+
+                Transition.ATOM -> {
                     if (arg3 != 0) {
                         return AtomTransition(target, Token.EOF)
                     } else {
                         return AtomTransition(target, arg1)
                     }
+                }
 
                 Transition.ACTION -> {
                     val a: ActionTransition = ActionTransition(target, arg1, arg2, arg3 != 0)
                     return a
                 }
 
-                Transition.SET -> return SetTransition(target, sets[arg1]!!)
-                Transition.NOT_SET -> return NotSetTransition(target, sets[arg1]!!)
-                Transition.WILDCARD -> return WildcardTransition(target)
+                Transition.SET -> {
+                    return SetTransition(target, sets[arg1]!!)
+                }
+
+                Transition.NOT_SET -> {
+                    return NotSetTransition(target, sets[arg1]!!)
+                }
+
+                Transition.WILDCARD -> {
+                    return WildcardTransition(target)
+                }
             }
 
             throw IllegalArgumentException("The specified transition type is not valid.")
@@ -515,19 +523,58 @@ class ATNDeserializer
         ): ATNState? {
             val s: ATNState?
             when (type) {
-                ATNState.INVALID_TYPE -> return null
-                ATNState.BASIC -> s = BasicState()
-                ATNState.RULE_START -> s = RuleStartState()
-                ATNState.BLOCK_START -> s = BasicBlockStartState()
-                ATNState.PLUS_BLOCK_START -> s = PlusBlockStartState()
-                ATNState.STAR_BLOCK_START -> s = StarBlockStartState()
-                ATNState.TOKEN_START -> s = TokensStartState()
-                ATNState.RULE_STOP -> s = RuleStopState()
-                ATNState.BLOCK_END -> s = BlockEndState()
-                ATNState.STAR_LOOP_BACK -> s = StarLoopbackState()
-                ATNState.STAR_LOOP_ENTRY -> s = StarLoopEntryState()
-                ATNState.PLUS_LOOP_BACK -> s = PlusLoopbackState()
-                ATNState.LOOP_END -> s = LoopEndState()
+                ATNState.INVALID_TYPE -> {
+                    return null
+                }
+
+                ATNState.BASIC -> {
+                    s = BasicState()
+                }
+
+                ATNState.RULE_START -> {
+                    s = RuleStartState()
+                }
+
+                ATNState.BLOCK_START -> {
+                    s = BasicBlockStartState()
+                }
+
+                ATNState.PLUS_BLOCK_START -> {
+                    s = PlusBlockStartState()
+                }
+
+                ATNState.STAR_BLOCK_START -> {
+                    s = StarBlockStartState()
+                }
+
+                ATNState.TOKEN_START -> {
+                    s = TokensStartState()
+                }
+
+                ATNState.RULE_STOP -> {
+                    s = RuleStopState()
+                }
+
+                ATNState.BLOCK_END -> {
+                    s = BlockEndState()
+                }
+
+                ATNState.STAR_LOOP_BACK -> {
+                    s = StarLoopbackState()
+                }
+
+                ATNState.STAR_LOOP_ENTRY -> {
+                    s = StarLoopEntryState()
+                }
+
+                ATNState.PLUS_LOOP_BACK -> {
+                    s = PlusLoopbackState()
+                }
+
+                ATNState.LOOP_END -> {
+                    s = LoopEndState()
+                }
+
                 else -> {
                     val message: String? =
                         "The specified state type $type is not valid."
@@ -546,19 +593,12 @@ class ATNDeserializer
         ): LexerAction? {
             when (type) {
                 LexerActionType.CHANNEL -> return LexerChannelAction(data1)
-
                 LexerActionType.CUSTOM -> return LexerCustomAction(data1, data2)
-
                 LexerActionType.MODE -> return LexerModeAction(data1)
-
                 LexerActionType.MORE -> return LexerMoreAction.INSTANCE
-
                 LexerActionType.POP_MODE -> return LexerPopModeAction.INSTANCE
-
                 LexerActionType.PUSH_MODE -> return LexerPushModeAction(data1)
-
                 LexerActionType.SKIP -> return LexerSkipAction.INSTANCE
-
                 LexerActionType.TYPE -> return LexerTypeAction(data1)
             }
         }

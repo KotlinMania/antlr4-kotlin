@@ -14,13 +14,9 @@ import io.github.kotlinmania.antlr4.misc.MurmurHash
  *
  * @author Sam Harwell
  * @since 4.2
- */
-class LexerModeAction
-/**
- * Constructs a new `mode` action with the specified mode value.
  * @param mode The mode value to pass to [Lexer.mode].
  */
-(
+class LexerModeAction(
     /**
      * Get the lexer mode this action should transition the lexer to.
      *

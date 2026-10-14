@@ -17,11 +17,11 @@ import io.github.kotlinmania.antlr4.misc.Interval
 abstract class Lexer :
     Recognizer<Int, LexerATNSimulator>,
     TokenSource {
-    var _input: CharStream? = null
+    var input: CharStream? = null
     protected var tokenFactorySourcePair: TokenSourceCharStream? = null
 
     /** How to create token objects  */
-    protected var _factory: TokenFactory<*> = CommonTokenFactory.DEFAULT
+    protected var factory: TokenFactory<*> = CommonTokenFactory.DEFAULT
 
     /** The goal of all lexer rules/methods is to create a token object.
      * This is an instance variable as multiple rules may collaborate to
@@ -31,24 +31,24 @@ abstract class Lexer :
      * something nonnull so that the auto token emit mechanism will not
      * emit another token.
      */
-    var _token: Token? = null
+    private var _token: Token? = null
 
     /** What character index in the stream did the current token start at?
      * Needed, for example, to get the text for current token.  Set at
      * the start of nextToken.
      */
-    var _tokenStartCharIndex: Int = -1
+    var tokenStartCharIndex: Int = -1
 
     /** The line on which the first character of the token resides  */
-    var _tokenStartLine: Int = 0
+    var tokenStartLine: Int = 0
 
     /** The character position of first character within the line  */
-    var _tokenStartCharPositionInLine: Int = 0
+    var tokenStartCharPositionInLine: Int = 0
 
     /** Once we see EOF on char stream, next token will be EOF.
      * If you have DONE : EOF ; then you see DONE EOF.
      */
-    var _hitEOF: Boolean = false
+    var hitEOF: Boolean = false
 
     /** The channel number for the current token  */
     var channel: Int = 0
@@ -56,37 +56,35 @@ abstract class Lexer :
     /** The token type for the current token  */
     var type: Int = 0
 
-    val _modeStack: IntStack = IntStack()
-    var _mode: Int = io.github.kotlinmania.antlr4.Lexer.Companion.DEFAULT_MODE
+    val modeStack: IntStack = IntStack()
+    var mode: Int = io.github.kotlinmania.antlr4.Lexer.Companion.DEFAULT_MODE
 
     /** You can set the text for the current token to override what is in
      * the input char buffer.  Use setText() or can set this instance var.
      */
-    var _text: String? = null
+    private var _text: String? = null
 
     constructor()
 
     constructor(input: CharStream?) {
-        this._input = input
+        this.input = input
         this.tokenFactorySourcePair = TokenSourceCharStream(this, input)
     }
 
     open fun reset() {
         // wack Lexer state variables
-        if (_input != null) {
-            _input!!.seek(0) // rewind the input
-        }
+        input?.seek(0) // rewind the input
         _token = null
         this.type = Token.INVALID_TYPE
         this.channel = Token.DEFAULT_CHANNEL
-        _tokenStartCharIndex = -1
-        _tokenStartCharPositionInLine = -1
-        _tokenStartLine = -1
+        tokenStartCharIndex = -1
+        tokenStartCharPositionInLine = -1
+        tokenStartLine = -1
         _text = null
 
-        _hitEOF = false
-        _mode = io.github.kotlinmania.antlr4.Lexer.Companion.DEFAULT_MODE
-        _modeStack.clear()
+        hitEOF = false
+        mode = io.github.kotlinmania.antlr4.Lexer.Companion.DEFAULT_MODE
+        modeStack.clear()
 
         interpreter!!.reset()
     }
@@ -95,23 +93,23 @@ abstract class Lexer :
      * stream.
      */
     override fun nextToken(): Token {
-        checkNotNull(_input) { "nextToken requires a non-null input stream." }
+        checkNotNull(input) { "nextToken requires a non-null input stream." }
 
         // Mark start location in char stream so unbuffered streams are
         // guaranteed at least have text of current token
-        val tokenStartMarker: Int = _input!!.mark()
+        val tokenStartMarker: Int = input!!.mark()
         try {
             outer@ while (true) {
-                if (_hitEOF) {
+                if (hitEOF) {
                     emitEOF()
                     return _token!!
                 }
 
                 _token = null
                 this.channel = Token.DEFAULT_CHANNEL
-                _tokenStartCharIndex = _input!!.index()
-                _tokenStartCharPositionInLine = interpreter!!.charPositionInLine
-                _tokenStartLine = interpreter!!.line
+                tokenStartCharIndex = input!!.index()
+                tokenStartCharPositionInLine = interpreter!!.charPositionInLine
+                tokenStartLine = interpreter!!.line
                 _text = null
                 do {
                     this.type = Token.INVALID_TYPE
@@ -120,7 +118,7 @@ abstract class Lexer :
 // 								   " at index "+input.index());
                     var ttype: Int
                     try {
-                        ttype = interpreter!!.match(_input!!, _mode)
+                        ttype = interpreter!!.match(input!!, mode)
                     } catch (control: RecognitionControlException) {
                         val e = control.recognitionException
                         if (e !is LexerNoViableAltException) throw control
@@ -128,8 +126,8 @@ abstract class Lexer :
                         recover(e)
                         ttype = io.github.kotlinmania.antlr4.Lexer.Companion.SKIP
                     }
-                    if (_input!!.LA(1) == IntStream.EOF) {
-                        _hitEOF = true
+                    if (input!!.LA(1) == IntStream.EOF) {
+                        hitEOF = true
                     }
                     if (this.type == Token.INVALID_TYPE) this.type = ttype
                     if (this.type == io.github.kotlinmania.antlr4.Lexer.Companion.SKIP) {
@@ -142,7 +140,7 @@ abstract class Lexer :
         } finally {
             // make sure we release marker after match or
             // unbuffered char stream will keep buffering
-            _input!!.release(tokenStartMarker)
+            input!!.release(tokenStartMarker)
         }
     }
 
@@ -161,42 +159,42 @@ abstract class Lexer :
     }
 
     fun mode(m: Int) {
-        _mode = m
+        mode = m
     }
 
     fun pushMode(m: Int) {
         if (LexerATNSimulator.debug) println("pushMode " + m)
-        _modeStack.push(_mode)
+        modeStack.push(mode)
         mode(m)
     }
 
     fun popMode(): Int {
-        if (_modeStack.isEmpty) throw NoSuchElementException("mode stack is empty")
-        if (LexerATNSimulator.debug) println("popMode back to " + _modeStack.peek())
-        mode(_modeStack.pop())
-        return _mode
+        if (modeStack.isEmpty) throw NoSuchElementException("mode stack is empty")
+        if (LexerATNSimulator.debug) println("popMode back to " + modeStack.peek())
+        mode(modeStack.pop())
+        return mode
     }
 
     override fun setTokenFactory(factory: TokenFactory<*>?) {
-        this._factory = factory ?: CommonTokenFactory.DEFAULT
+        this.factory = factory ?: CommonTokenFactory.DEFAULT
     }
 
     override val tokenFactory: TokenFactory<*>?
-        get() = _factory
+        get() = factory
 
     /** Set the char stream and reset the lexer  */
     override fun setInputStream(input: IntStream?) {
-        this._input = null
-        this.tokenFactorySourcePair = TokenSourceCharStream(this, _input)
+        this.input = null
+        this.tokenFactorySourcePair = TokenSourceCharStream(this, this.input)
         reset()
-        this._input = input as CharStream?
-        this.tokenFactorySourcePair = TokenSourceCharStream(this, _input)
+        this.input = input as CharStream?
+        this.tokenFactorySourcePair = TokenSourceCharStream(this, this.input)
     }
 
     override val sourceName: String
-        get() = _input!!.sourceName!!
+        get() = input!!.sourceName!!
     override val inputStream: CharStream?
-        get() = _input
+        get() = input
 
     /** By default does not support multiple emits per nextToken invocation
      * for efficiency reasons.  Subclass and override this method, nextToken,
@@ -216,15 +214,15 @@ abstract class Lexer :
      */
     fun emit(): Token? {
         val t: Token? =
-            _factory.create(
+            factory.create(
                 tokenFactorySourcePair,
                 this.type,
                 _text,
                 this.channel,
-                _tokenStartCharIndex,
+                tokenStartCharIndex,
                 this.charIndex - 1,
-                _tokenStartLine,
-                _tokenStartCharPositionInLine,
+                tokenStartLine,
+                tokenStartCharPositionInLine,
             )
         emit(t)
         return t
@@ -234,13 +232,13 @@ abstract class Lexer :
         val cpos = this.charPositionInLine
         val line = this.line
         val eof: Token? =
-            _factory.create(
+            factory.create(
                 tokenFactorySourcePair,
                 Token.EOF,
                 null,
                 Token.DEFAULT_CHANNEL,
-                _input!!.index(),
-                _input!!.index() - 1,
+                input!!.index(),
+                input!!.index() - 1,
                 line,
                 cpos,
             )
@@ -261,17 +259,18 @@ abstract class Lexer :
 
     val charIndex: Int
         /** What is the index of the current character of lookahead?  */
-        get() = _input!!.index()
+        get() = input!!.index()
 
     var text: String?
         /** Return the text matched so far for the current token or any
          * text override.
          */
         get() {
-            if (_text != null) {
-                return _text
+            val currentText = _text
+            if (currentText != null) {
+                return currentText
             }
-            return interpreter!!.getText(_input!!)
+            return interpreter!!.getText(input!!)
         }
 
         /** Set the complete text of this token; it wipes any previous
@@ -285,8 +284,8 @@ abstract class Lexer :
         /** Override if emitting multiple tokens.  */
         get() = _token
 
-    fun setToken(_token: Token?) {
-        this._token = _token
+    fun setToken(token: Token?) {
+        this._token = token
     }
 
     val channelNames: Array<String>
@@ -317,18 +316,18 @@ abstract class Lexer :
         }
 
     open fun recover(e: LexerNoViableAltException?) {
-        if (_input!!.LA(1) != IntStream.EOF) {
+        if (input!!.LA(1) != IntStream.EOF) {
             // skip a char and try again
-            interpreter!!.consume(_input!!)
+            interpreter!!.consume(input!!)
         }
     }
 
     fun notifyListeners(e: LexerNoViableAltException?) {
-        val text: String = _input!!.getText(Interval.of(_tokenStartCharIndex, _input!!.index()))!!
+        val text: String = input!!.getText(Interval.of(tokenStartCharIndex, input!!.index()))!!
         val msg = "token recognition error at: '" + getErrorDisplay(text) + "'"
 
         val listener: ANTLRErrorListener = errorListenerDispatch
-        listener.syntaxError(this, null, _tokenStartLine, _tokenStartCharPositionInLine, msg, e)
+        listener.syntaxError(this, null, tokenStartLine, tokenStartCharPositionInLine, msg, e)
     }
 
     fun getErrorDisplay(s: String): String {
@@ -364,7 +363,7 @@ abstract class Lexer :
         // println("consuming char "+(char)input.LA(1)+" during recovery");
         // re.printStackTrace();
         // TODO: Do we lose character or line position information?
-        _input!!.consume()
+        input!!.consume()
     }
 
     companion object {

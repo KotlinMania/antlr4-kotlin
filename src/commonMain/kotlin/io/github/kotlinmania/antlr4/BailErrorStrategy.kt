@@ -47,7 +47,7 @@ class BailErrorStrategy : DefaultErrorStrategy() {
         recognizer: Parser?,
         e: RecognitionException?,
     ) {
-        var context: ParserRuleContext? = recognizer?._ctx
+        var context: ParserRuleContext? = recognizer?.ctx
         while (context != null) {
             context.exception = e
             context = context.parent as? ParserRuleContext
@@ -61,7 +61,7 @@ class BailErrorStrategy : DefaultErrorStrategy() {
      */
     override fun recoverInline(recognizer: Parser?): Token? {
         val e = InputMismatchException(recognizer)
-        var context: ParserRuleContext? = recognizer?._ctx
+        var context: ParserRuleContext? = recognizer?.ctx
         while (context != null) {
             context.exception = e
             context = context.parent as? ParserRuleContext

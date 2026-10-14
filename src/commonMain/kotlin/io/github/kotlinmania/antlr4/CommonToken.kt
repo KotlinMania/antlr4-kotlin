@@ -22,8 +22,9 @@ class CommonToken : WritableToken {
 
     override var text: String?
         get() {
-            if (_text != null) {
-                return _text
+            val currentText = _text
+            if (currentText != null) {
+                return currentText
             }
             val input: CharStream? = this.inputStream
             if (input == null) return null
