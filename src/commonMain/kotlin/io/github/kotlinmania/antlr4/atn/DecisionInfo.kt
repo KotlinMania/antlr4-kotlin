@@ -18,15 +18,9 @@ package io.github.kotlinmania.antlr4.atn
  * production before using the results to make changes in the grammar.
  *
  * @since 4.3
- */
-class DecisionInfo
-/**
- * Constructs a new instance of the [DecisionInfo] class to contain
- * statistics for a particular decision.
- *
  * @param decision The decision number
  */
-(
+class DecisionInfo(
     /**
      * The decision number, which is an index into [ATN.decisionToState].
      */

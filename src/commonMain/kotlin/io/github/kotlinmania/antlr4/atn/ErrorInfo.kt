@@ -18,12 +18,6 @@ import io.github.kotlinmania.antlr4.TokenStream
  *
  *
  * @since 4.3
- */
-class ErrorInfo
-/**
- * Constructs a new instance of the [ErrorInfo] class with the
- * specified detailed syntax error information.
- *
  * @param decision The decision number
  * @param configs The final configuration set reached during prediction
  * prior to reaching the [ATNSimulator.ERROR] state
@@ -34,7 +28,7 @@ class ErrorInfo
  * prediction; otherwise, `false` if the syntax error was identified
  * during SLL prediction
  */
-(
+class ErrorInfo(
     decision: Int,
     configs: ATNConfigSet?,
     input: TokenStream?,

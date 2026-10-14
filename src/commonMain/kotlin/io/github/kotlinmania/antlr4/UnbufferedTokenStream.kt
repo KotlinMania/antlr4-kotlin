@@ -213,28 +213,28 @@ abstract class UnbufferedTokenStream<T : Token?>(
     override fun index(): Int = currentTokenIndex
 
     override fun seek(index: Int) { // seek to absolute index
-        var index = index
-        if (index == currentTokenIndex) {
+        var targetIndex = index
+        if (targetIndex == currentTokenIndex) {
             return
         }
 
-        if (index > currentTokenIndex) {
-            sync(index - currentTokenIndex)
-            index = minOf(index, this.bufferStartIndex + n - 1)
+        if (targetIndex > currentTokenIndex) {
+            sync(targetIndex - currentTokenIndex)
+            targetIndex = minOf(targetIndex, this.bufferStartIndex + n - 1)
         }
 
         val bufferStartIndex = this.bufferStartIndex
-        val i = index - bufferStartIndex
-        require(i >= 0) { "cannot seek to negative index $index" }
+        val i = targetIndex - bufferStartIndex
+        require(i >= 0) { "cannot seek to negative index $targetIndex" }
         if (i >= n) {
             throw UnsupportedOperationException(
                 "seek to index outside buffer: " +
-                    index + " not in " + bufferStartIndex + ".." + (bufferStartIndex + n),
+                    targetIndex + " not in " + bufferStartIndex + ".." + (bufferStartIndex + n),
             )
         }
 
         p = i
-        currentTokenIndex = index
+        currentTokenIndex = targetIndex
         lastToken =
             if (p == 0) {
                 lastTokenBufferStart

@@ -53,7 +53,7 @@ open class DFASerializer(
         return output
     }
 
-    protected open fun getEdgeLabel(i: Int): String = vocabulary.getDisplayName(i - 1) ?: ""
+    protected open fun getEdgeLabel(i: Int): String = vocabulary.getDisplayName(i - 1).orEmpty()
 
     protected fun getStateString(s: DFAState): String? {
         val n: Int = s.stateNumber

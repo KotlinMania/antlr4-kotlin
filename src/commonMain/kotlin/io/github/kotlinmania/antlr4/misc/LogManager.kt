@@ -14,16 +14,13 @@ class LogManager {
         override fun toString(): String = "$sequence $component $msg"
     }
 
-    protected var records: MutableList<Record>? = null
+    protected val records: MutableList<Record> = mutableListOf()
 
     fun log(
         component: String?,
         msg: String?,
     ) {
-        if (records == null) {
-            records = mutableListOf()
-        }
-        records!!.add(Record(records!!.size, component, msg))
+        records.add(Record(records.size, component, msg))
     }
 
     fun log(msg: String?) {
@@ -31,7 +28,7 @@ class LogManager {
     }
 
     override fun toString(): String {
-        val currentRecords = records ?: return ""
-        return currentRecords.joinToString("\n")
+        if (records.isEmpty()) return ""
+        return records.joinToString("\n")
     }
 }

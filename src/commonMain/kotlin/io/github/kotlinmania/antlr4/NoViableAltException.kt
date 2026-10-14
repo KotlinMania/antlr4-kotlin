@@ -36,7 +36,7 @@ class NoViableAltException(
         recognizer.currentToken,
         recognizer.currentToken,
         null,
-        recognizer._ctx,
+        recognizer.ctx,
     )
 
     init {

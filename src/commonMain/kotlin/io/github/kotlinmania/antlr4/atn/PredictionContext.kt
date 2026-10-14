@@ -162,12 +162,11 @@ abstract class PredictionContext protected constructor(
             atn: ATN,
             outerContext: RuleContext?,
         ): PredictionContext {
-            var outerContext: RuleContext? = outerContext
-            if (outerContext == null) outerContext = ParserRuleContext.EMPTY
+            val resolvedOuterContext: RuleContext = outerContext ?: ParserRuleContext.EMPTY
 
             // if we are in RuleContext of start rule, s, then PredictionContext
             // is EMPTY. Nobody called us. (if we are empty, return empty)
-            if (outerContext.parent == null || outerContext === ParserRuleContext.EMPTY) {
+            if (resolvedOuterContext.parent == null || resolvedOuterContext === ParserRuleContext.EMPTY) {
                 return EmptyPredictionContext.Instance
             }
 
@@ -175,9 +174,9 @@ abstract class PredictionContext protected constructor(
             var parent: PredictionContext? = EmptyPredictionContext.Instance
             parent =
                 io.github.kotlinmania.antlr4.atn.PredictionContext.Companion
-                    .fromRuleContext(atn, outerContext.parent as? RuleContext)
+                    .fromRuleContext(atn, resolvedOuterContext.parent as? RuleContext)
 
-            val state: ATNState = atn.states.get(outerContext.invokingState)
+            val state: ATNState = atn.states.get(resolvedOuterContext.invokingState)
             val transition: RuleTransition = state.transition(0) as RuleTransition
             return SingletonPredictionContext.create(parent, transition.followState.stateNumber)
         }
@@ -224,19 +223,19 @@ abstract class PredictionContext protected constructor(
             rootIsWildcard: Boolean,
             mergeCache: DoubleKeyMap<PredictionContext, PredictionContext, PredictionContext>?,
         ): PredictionContext? {
-            var a = a
-            var b = b
+            var left = a
+            var right = b
             assert(
-                a != null && b != null, // must be empty context, never null
+                left != null && right != null, // must be empty context, never null
             )
 
             // share same graph if both same
-            if (a === b || a?.equals(b) == true) return a
+            if (left === right || left?.equals(right) == true) return left
 
-            if (a is SingletonPredictionContext && b is SingletonPredictionContext) {
+            if (left is SingletonPredictionContext && right is SingletonPredictionContext) {
                 return mergeSingletons(
-                    a,
-                    b,
+                    left,
+                    right,
                     rootIsWildcard,
                     mergeCache,
                 )
@@ -245,20 +244,20 @@ abstract class PredictionContext protected constructor(
             // At least one of a or b is array
             // If one is $ and rootIsWildcard, return $ as * wildcard
             if (rootIsWildcard) {
-                if (a is EmptyPredictionContext) return a
-                if (b is EmptyPredictionContext) return b
+                if (left is EmptyPredictionContext) return left
+                if (right is EmptyPredictionContext) return right
             }
 
             // convert singleton so both are arrays to normalize
-            if (a is SingletonPredictionContext) {
-                a = ArrayPredictionContext(a)
+            if (left is SingletonPredictionContext) {
+                left = ArrayPredictionContext(left)
             }
-            if (b is SingletonPredictionContext) {
-                b = ArrayPredictionContext(b)
+            if (right is SingletonPredictionContext) {
+                right = ArrayPredictionContext(right)
             }
             return mergeArrays(
-                a as ArrayPredictionContext,
-                b as ArrayPredictionContext,
+                left as ArrayPredictionContext,
+                right as ArrayPredictionContext,
                 rootIsWildcard,
                 mergeCache,
             )

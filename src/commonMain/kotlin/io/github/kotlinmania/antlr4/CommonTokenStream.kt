@@ -31,15 +31,10 @@ package io.github.kotlinmania.antlr4
  * [Lexer.skip] do not produce tokens at all, so input text matched by
  * such a rule will not be available as part of the token stream, regardless of
  * channel.we
- */
-class CommonTokenStream
-/**
- * Constructs a new [CommonTokenStream] using the specified token
- * source and the default token channel ([Token.DEFAULT_CHANNEL]).
  *
  * @param tokenSource The token source.
  */
-(
+class CommonTokenStream(
     tokenSource: TokenSource?,
 ) : BufferedTokenStream(tokenSource) {
     /**

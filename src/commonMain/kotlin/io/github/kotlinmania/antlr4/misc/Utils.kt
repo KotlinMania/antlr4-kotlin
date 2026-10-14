@@ -80,11 +80,13 @@ internal object CommonUtils {
                     col = 0
                     buf.append(c)
                 }
+
                 '\t' -> {
                     val n = tabSize - col % tabSize
                     col += n
                     buf.append(spaces(n))
                 }
+
                 else -> {
                     col++
                     buf.append(c)

@@ -29,7 +29,7 @@ class ParseTreePattern(
         tree: ParseTree?,
         xpath: String?,
     ): List<ParseTreeMatch> {
-        val subtrees = XPath.findAll(tree, xpath ?: "", matcher.getParser())
+        val subtrees = XPath.findAll(tree, xpath.orEmpty(), matcher.getParser())
         val matches = mutableListOf<ParseTreeMatch>()
         for (t in subtrees) {
             val match = match(t)

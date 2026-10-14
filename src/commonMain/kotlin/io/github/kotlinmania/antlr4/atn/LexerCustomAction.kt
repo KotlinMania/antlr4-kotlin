@@ -21,18 +21,10 @@ import io.github.kotlinmania.antlr4.misc.MurmurHash
  *
  * @author Sam Harwell
  * @since 4.2
+ * @param ruleIndex The rule index to use for calls to [Recognizer.action].
+ * @param actionIndex The action index to use for calls to [Recognizer.action].
  */
-class LexerCustomAction
-/**
- * Constructs a custom lexer action with the specified rule and action
- * indexes.
- *
- * @param ruleIndex The rule index to use for calls to
- * [Recognizer.action].
- * @param actionIndex The action index to use for calls to
- * [Recognizer.action].
- */
-(
+class LexerCustomAction(
     /**
      * Gets the rule index to use for calls to [Recognizer.action].
      *

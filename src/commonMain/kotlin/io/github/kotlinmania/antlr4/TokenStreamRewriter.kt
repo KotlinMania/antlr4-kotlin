@@ -158,8 +158,9 @@ class TokenStreamRewriter(
         text: Any?,
     ) : RewriteOperation(from, text) {
         override fun execute(buf: StringBuilder): Int {
-            if (text != null) {
-                buf.append(text)
+            val currentText = text
+            if (currentText != null) {
+                buf.append(currentText)
             }
             return lastIndex + 1
         }
@@ -410,13 +411,8 @@ class TokenStreamRewriter(
         lastRewriteTokenIndexes[programName] = i
     }
 
-    protected fun getProgram(name: String): MutableList<RewriteOperation?> {
-        var `is` = programs.get(name)
-        if (`is` == null) {
-            `is` = initializeProgram(name)
-        }
-        return `is`
-    }
+    protected fun getProgram(name: String): MutableList<RewriteOperation?> =
+        programs.get(name) ?: initializeProgram(name)
 
     private fun initializeProgram(name: String): MutableList<RewriteOperation?> {
         val `is`: MutableList<RewriteOperation?> =
@@ -448,8 +444,8 @@ class TokenStreamRewriter(
         if (stop > tokens.size() - 1) stop = tokens.size() - 1
         if (start < 0) start = 0
 
-        if (rewrites == null || rewrites.isEmpty()) {
-            return tokens.getText(interval) ?: ""
+        if (rewrites.isNullOrEmpty()) {
+            return tokens.getText(interval).orEmpty()
         }
         val buf: StringBuilder = StringBuilder()
 

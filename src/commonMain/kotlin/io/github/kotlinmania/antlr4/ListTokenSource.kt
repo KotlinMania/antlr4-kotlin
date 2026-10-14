@@ -53,7 +53,7 @@ class ListTokenSource(
      * This is the backing field for [.getTokenFactory] and
      * [setTokenFactory].
      */
-    private var _factory: TokenFactory<*> = CommonTokenFactory.DEFAULT
+    private var _tokenFactory: TokenFactory<*> = CommonTokenFactory.DEFAULT
 
     /**
      * Constructs a new [ListTokenSource] instance from the specified
@@ -88,10 +88,11 @@ class ListTokenSource(
          * {@inheritDoc}
          */
         get() {
+            val eof = eofToken
             if (i < tokens.size) {
                 return tokens.get(i)!!.charPositionInLine
-            } else if (eofToken != null) {
-                return eofToken!!.charPositionInLine
+            } else if (eof != null) {
+                return eof.charPositionInLine
             } else if (tokens.size > 0) {
                 // have to calculate the result from the line/column of the previous
                 // token, along with the text of the token.
@@ -128,7 +129,7 @@ class ListTokenSource(
 
                 val stop: Int = maxOf(-1, start - 1)
                 eofToken =
-                    _factory.create(
+                    _tokenFactory.create(
                         TokenSourceCharStream(this, this.inputStream),
                         Token.EOF,
                         "EOF",
@@ -157,10 +158,11 @@ class ListTokenSource(
          * {@inheritDoc}
          */
         get() {
+            val eof = eofToken
             if (i < tokens.size) {
                 return tokens.get(i)!!.line
-            } else if (eofToken != null) {
-                return eofToken!!.line
+            } else if (eof != null) {
+                return eof.line
             } else if (tokens.size > 0) {
                 // have to calculate the result from the line/column of the previous
                 // token, along with the text of the token.
@@ -189,10 +191,11 @@ class ListTokenSource(
          * {@inheritDoc}
          */
         get() {
+            val eof = eofToken
             if (i < tokens.size) {
                 return tokens.get(i)!!.inputStream
-            } else if (eofToken != null) {
-                return eofToken!!.inputStream
+            } else if (eof != null) {
+                return eof.inputStream
             } else if (tokens.size > 0) {
                 return tokens.get(tokens.size - 1)!!.inputStream
             }
@@ -205,12 +208,12 @@ class ListTokenSource(
      * {@inheritDoc}
      */
     override fun setTokenFactory(factory: TokenFactory<*>?) {
-        this._factory = factory!!
+        this._tokenFactory = factory!!
     }
 
     override val tokenFactory: TokenFactory<*>?
         /**
          * {@inheritDoc}
          */
-        get() = _factory
+        get() = _tokenFactory
 }

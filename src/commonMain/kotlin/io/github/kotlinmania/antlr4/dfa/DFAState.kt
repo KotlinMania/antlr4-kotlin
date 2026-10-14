@@ -70,8 +70,9 @@ class DFAState {
         buf.append(stateNumber).append(":").append(configs)
         if (isAcceptState) {
             buf.append("=>")
-            if (predicates != null) {
-                buf.append(predicates!!.contentToString())
+            val currentPredicates = predicates
+            if (currentPredicates != null) {
+                buf.append(currentPredicates.contentToString())
             } else {
                 buf.append(prediction)
             }

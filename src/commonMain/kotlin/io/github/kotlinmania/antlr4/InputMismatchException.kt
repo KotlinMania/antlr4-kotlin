@@ -9,7 +9,7 @@ package io.github.kotlinmania.antlr4
  * when the current input does not match the expected token.
  */
 class InputMismatchException : RecognitionException {
-    constructor(recognizer: Parser?) : super(recognizer, recognizer?.inputStream, recognizer?._ctx) {
+    constructor(recognizer: Parser?) : super(recognizer, recognizer?.inputStream, recognizer?.ctx) {
         recognizer?.let { this.offendingToken = it.currentToken }
     }
 

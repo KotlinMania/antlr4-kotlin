@@ -22,7 +22,7 @@ class FailedPredicateException(
         formatMessage(predicate, message),
         recognizer,
         recognizer.inputStream,
-        recognizer._ctx,
+        recognizer.ctx,
     ) {
     val ruleIndex: Int
     val predIndex: Int

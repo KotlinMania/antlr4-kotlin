@@ -76,13 +76,16 @@ open class XPath(
                     elements.add(pathElement)
                     i++
                 }
+
                 XPathLexer.TOKEN_REF, XPathLexer.RULE_REF, XPathLexer.WILDCARD -> {
                     elements.add(getXPathElement(el, false))
                     i++
                 }
+
                 Token.EOF -> {
                     break@loop
                 }
+
                 else -> {
                     throw IllegalArgumentException("Unknown path element $el")
                 }
@@ -101,7 +104,10 @@ open class XPath(
         val ttype = parser.getTokenType(word)
         val ruleIndex = parser.getRuleIndex(word)
         return when (token.type) {
-            XPathLexer.WILDCARD -> if (anywhere) XPathWildcardAnywhereElement() else XPathWildcardElement()
+            XPathLexer.WILDCARD -> {
+                if (anywhere) XPathWildcardAnywhereElement() else XPathWildcardElement()
+            }
+
             XPathLexer.TOKEN_REF, XPathLexer.STRING -> {
                 if (ttype == Token.INVALID_TYPE) {
                     throw IllegalArgumentException(
@@ -110,6 +116,7 @@ open class XPath(
                 }
                 if (anywhere) XPathTokenAnywhereElement(word, ttype) else XPathTokenElement(word, ttype)
             }
+
             else -> {
                 if (ruleIndex == -1) {
                     throw IllegalArgumentException(

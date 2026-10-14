@@ -5,20 +5,19 @@ import io.github.kotlinmania.antlr4.Token
 import io.github.kotlinmania.antlr4.Vocabulary
 import io.github.kotlinmania.antlr4.VocabularyImpl
 
-class IntervalSet : IntSet {
-    internal var intervals: MutableList<Interval> = ArrayList()
+class IntervalSet internal constructor(
+    intervals: MutableList<Interval>?,
+) : IntSet {
+    internal val intervals: MutableList<Interval> = intervals ?: ArrayList()
     protected var readonly: Boolean = false
 
-    internal constructor(intervals: MutableList<Interval>?) {
-        this.intervals = intervals ?: ArrayList()
-    }
+    constructor() : this(ArrayList<Interval>(2))
 
     constructor(set: IntervalSet?) : this() {
         addAll(set)
     }
 
-    constructor(vararg els: Int) {
-        intervals = ArrayList<Interval>(2)
+    constructor(vararg els: Int) : this(ArrayList<Interval>(2)) {
         for (e in els) add(e)
     }
 

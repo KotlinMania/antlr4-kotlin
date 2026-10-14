@@ -42,14 +42,14 @@ open class ANTLRInputStream : CharStream {
     }
 
     override fun LA(i: Int): Int {
-        var i = i
-        if (i == 0) return 0
-        if (i < 0) {
-            i++
-            if ((p + i - 1) < 0) return IntStream.EOF
+        var offset = i
+        if (offset == 0) return 0
+        if (offset < 0) {
+            offset++
+            if ((p + offset - 1) < 0) return IntStream.EOF
         }
-        if ((p + i - 1) >= n) return IntStream.EOF
-        return data[p + i - 1].code
+        if ((p + offset - 1) >= n) return IntStream.EOF
+        return data[p + offset - 1].code
     }
 
     fun LT(i: Int): Int = LA(i)
@@ -63,13 +63,13 @@ open class ANTLRInputStream : CharStream {
     override fun release(marker: Int) {}
 
     override fun seek(index: Int) {
-        var index = index
-        if (index <= p) {
-            p = index
+        var targetIndex = index
+        if (targetIndex <= p) {
+            p = targetIndex
             return
         }
-        index = minOf(index, n)
-        while (p < index) {
+        targetIndex = minOf(targetIndex, n)
+        while (p < targetIndex) {
             consume()
         }
     }
@@ -86,7 +86,7 @@ open class ANTLRInputStream : CharStream {
     override val sourceName: String?
         get() {
             val n = name
-            if (n == null || n.isEmpty()) {
+            if (n.isNullOrEmpty()) {
                 return IntStream.UNKNOWN_SOURCE_NAME
             }
             return name

@@ -7,7 +7,7 @@ package io.github.kotlinmania.antlr4
 
 import io.github.kotlinmania.antlr4.misc.Interval
 
-abstract class UnbufferedCharStream(
+open class UnbufferedCharStream(
     bufferSize: Int = 256,
 ) : CharStream {
     protected var data: IntArray = IntArray(bufferSize)
@@ -54,27 +54,34 @@ abstract class UnbufferedCharStream(
             } else {
                 val ch = c.toChar()
                 when {
-                    isLowSurrogate(ch) ->
+                    isLowSurrogate(ch) -> {
                         throw RuntimeException("Invalid UTF-16: low surrogate with no preceding high surrogate")
+                    }
 
                     isHighSurrogate(ch) -> {
                         val lowSurrogate = nextChar()
                         when {
-                            lowSurrogate > Char.MAX_VALUE.code ->
+                            lowSurrogate > Char.MAX_VALUE.code -> {
                                 throw RuntimeException("Invalid UTF-16: high surrogate followed by code point > U+FFFF")
+                            }
 
-                            lowSurrogate == IntStream.EOF ->
+                            lowSurrogate == IntStream.EOF -> {
                                 throw RuntimeException("Invalid UTF-16: dangling high surrogate at end of file")
+                            }
 
-                            isLowSurrogate(lowSurrogate.toChar()) ->
+                            isLowSurrogate(lowSurrogate.toChar()) -> {
                                 add(toCodePoint(ch, lowSurrogate.toChar()))
+                            }
 
-                            else ->
+                            else -> {
                                 throw RuntimeException("Invalid UTF-16: dangling high surrogate")
+                            }
                         }
                     }
 
-                    else -> add(c)
+                    else -> {
+                        add(c)
+                    }
                 }
             }
         }

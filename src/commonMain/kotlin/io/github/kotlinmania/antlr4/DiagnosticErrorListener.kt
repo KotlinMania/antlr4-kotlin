@@ -67,7 +67,7 @@ class DiagnosticErrorListener
             val c = configs ?: return
             val decision = getDecisionDescription(r, d)
             val conflictingAlts: BitSet? = getConflictingAlts(ambigAlts, c)
-            val text = r.tokenStream.getText(Interval.of(startIndex, stopIndex)) ?: ""
+            val text = r.tokenStream.getText(Interval.of(startIndex, stopIndex)).orEmpty()
             val message = "reportAmbiguity d=$decision: ambigAlts=$conflictingAlts, input='$text'"
             r.notifyErrorListeners(message)
         }
@@ -83,7 +83,7 @@ class DiagnosticErrorListener
             val r = recognizer ?: return
             val d = dfa ?: return
             val decision = getDecisionDescription(r, d)
-            val text = r.tokenStream.getText(Interval.of(startIndex, stopIndex)) ?: ""
+            val text = r.tokenStream.getText(Interval.of(startIndex, stopIndex)).orEmpty()
             val message = "reportAttemptingFullContext d=$decision, input='$text'"
             r.notifyErrorListeners(message)
         }
@@ -99,7 +99,7 @@ class DiagnosticErrorListener
             val r = recognizer ?: return
             val d = dfa ?: return
             val decision = getDecisionDescription(r, d)
-            val text = r.tokenStream.getText(Interval.of(startIndex, stopIndex)) ?: ""
+            val text = r.tokenStream.getText(Interval.of(startIndex, stopIndex)).orEmpty()
             val message = "reportContextSensitivity d=$decision, input='$text'"
             r.notifyErrorListeners(message)
         }
@@ -117,7 +117,7 @@ class DiagnosticErrorListener
             }
 
             val ruleName = ruleNames[ruleIndex]
-            if (ruleName.isNullOrEmpty()) {
+            if (ruleName.isEmpty()) {
                 return decision.toString()
             }
 

@@ -24,7 +24,7 @@ class ParseTreeMatch internal constructor(
 
     fun get(label: String): ParseTree? {
         val parseTrees = labels.get(label)
-        if (parseTrees == null || parseTrees.size == 0) {
+        if (parseTrees.isNullOrEmpty()) {
             return null
         }
         return parseTrees[parseTrees.size - 1]
@@ -32,7 +32,7 @@ class ParseTreeMatch internal constructor(
 
     fun getAll(label: String): List<ParseTree> {
         val nodes = labels.get(label)
-        return nodes ?: emptyList()
+        return nodes.orEmpty()
     }
 
     fun getLabels(): Map<String, List<ParseTree>> = labels.data.mapValues { (_, values) -> values.toList() }

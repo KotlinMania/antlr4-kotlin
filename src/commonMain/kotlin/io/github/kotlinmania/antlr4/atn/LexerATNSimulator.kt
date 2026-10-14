@@ -447,7 +447,7 @@ class LexerATNSimulator internal constructor(
         speculative: Boolean,
         treatEofAsEpsilon: Boolean,
     ): Boolean {
-        var currentAltReachedAcceptState = currentAltReachedAcceptState
+        var reachedAcceptState = currentAltReachedAcceptState
         if (io.github.kotlinmania.antlr4.atn.LexerATNSimulator.Companion.debug) {
             println("closure(" + config.toString(recog, true) + ")")
         }
@@ -469,7 +469,7 @@ class LexerATNSimulator internal constructor(
                     return true
                 } else {
                     configs.add(LexerATNConfig(config, config.state, EmptyPredictionContext.Instance))
-                    currentAltReachedAcceptState = true
+                    reachedAcceptState = true
                 }
             }
 
@@ -479,18 +479,18 @@ class LexerATNSimulator internal constructor(
                         val newContext: PredictionContext? = config.context!!.getParent(i) // "pop" return state
                         val returnState: ATNState? = atn.states.get(config.context!!.getReturnState(i))
                         val c: LexerATNConfig = LexerATNConfig(config, returnState, newContext)
-                        currentAltReachedAcceptState =
-                            closure(input, c, configs, currentAltReachedAcceptState, speculative, treatEofAsEpsilon)
+                        reachedAcceptState =
+                            closure(input, c, configs, reachedAcceptState, speculative, treatEofAsEpsilon)
                     }
                 }
             }
 
-            return currentAltReachedAcceptState
+            return reachedAcceptState
         }
 
         // optimization
         if (!config.state.onlyHasEpsilonTransitions()) {
-            if (!currentAltReachedAcceptState || !config.hasPassedThroughNonGreedyDecision()) {
+            if (!reachedAcceptState || !config.hasPassedThroughNonGreedyDecision()) {
                 configs.add(config)
             }
         }
@@ -500,12 +500,12 @@ class LexerATNSimulator internal constructor(
             val t: Transition = p.transition(i)
             val c: LexerATNConfig? = getEpsilonTarget(input, config, t, configs, speculative, treatEofAsEpsilon)
             if (c != null) {
-                currentAltReachedAcceptState =
-                    closure(input, c, configs, currentAltReachedAcceptState, speculative, treatEofAsEpsilon)
+                reachedAcceptState =
+                    closure(input, c, configs, reachedAcceptState, speculative, treatEofAsEpsilon)
             }
         }
 
-        return currentAltReachedAcceptState
+        return reachedAcceptState
     }
 
     // side-effect: can alter configs.hasSemanticContext
@@ -526,7 +526,9 @@ class LexerATNSimulator internal constructor(
                 c = LexerATNConfig(config, t.target, newContext)
             }
 
-            Transition.PRECEDENCE -> throw UnsupportedOperationException("Precedence predicates are not supported in lexers.")
+            Transition.PRECEDENCE -> {
+                throw UnsupportedOperationException("Precedence predicates are not supported in lexers.")
+            }
 
             Transition.PREDICATE -> {
                 /*  Track traversing semantic predicates. If we traverse,
@@ -584,13 +586,17 @@ class LexerATNSimulator internal constructor(
                 }
             }
 
-            Transition.EPSILON -> c = LexerATNConfig(config, t.target)
-            Transition.ATOM, Transition.RANGE, Transition.SET ->
+            Transition.EPSILON -> {
+                c = LexerATNConfig(config, t.target)
+            }
+
+            Transition.ATOM, Transition.RANGE, Transition.SET -> {
                 if (treatEofAsEpsilon) {
                     if (t.matches(IntStream.EOF, Lexer.MIN_CHAR_VALUE, Lexer.MAX_CHAR_VALUE)) {
                         c = LexerATNConfig(config, t.target)
                     }
                 }
+            }
         }
 
         return c

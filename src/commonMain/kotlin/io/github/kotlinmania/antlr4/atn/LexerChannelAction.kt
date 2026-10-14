@@ -14,13 +14,9 @@ import io.github.kotlinmania.antlr4.misc.MurmurHash
  *
  * @author Sam Harwell
  * @since 4.2
- */
-class LexerChannelAction
-/**
- * Constructs a new `channel` action with the specified channel value.
  * @param channel The channel value to pass to [Lexer.setChannel].
  */
-(
+class LexerChannelAction(
     /**
      * Gets the channel to use for the [Token] created by the lexer.
      *

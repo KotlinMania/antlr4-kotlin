@@ -22,6 +22,7 @@ tmp/
 # AST distance reports and binaries
 port_status_report.md
 high_priority_ports.md
+port_lint_proposed_changes.md
 ast_distance_*.txt
 .cache/
 *.lock
@@ -29,10 +30,11 @@ kotlin-js-store/*
 !kotlin-js-store/package.json
 !kotlin-js-store/yarn.lock
 !kotlin-js-store/wasm/
-!kotlin-js-store/wasm/package.json
 !kotlin-js-store/wasm/yarn.lock
 tools/ast_distance/ast_distance
 tools/ast_distance/build/
+tools/ast_distance
+tools/
 
 # JVM heap dumps
 *.hprof
@@ -45,16 +47,9 @@ java_pid*.hprof
 __pycache__/
 *.pyc
 
-# Android SDK (project-local tool artifact — ignore at any depth, incl. subprojects)
-.android-sdk/
+# Android SDK
+/.android-sdk/
 local.properties
-
-# Local scratch / debugging artifacts (per workspace hygiene: scratch lives
-# under automation-artifacts/, not tracked at the repo root)
-*.bak
-errors.txt
-antlr4_warnings.txt
-antlr4_current_errors.txt
 
 # Swift Package Manager / Xcode workspace state.
 #
@@ -74,8 +69,4 @@ DerivedData/
 *.xcuserstate
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
-tmp/kotlin-spec/
-tmp/antlr4/
-tmp/jflex/
-tmp/jflex-skeleton/
-tmp/kmp-parser/
+local.properties

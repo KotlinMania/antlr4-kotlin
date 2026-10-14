@@ -146,7 +146,7 @@ class VocabularyImpl internal constructor(
          * the display names of tokens.
          */
         fun fromTokenNames(tokenNames: Array<String>?): Vocabulary {
-            if (tokenNames == null || tokenNames.size == 0) {
+            if (tokenNames.isNullOrEmpty()) {
                 return io.github.kotlinmania.antlr4.VocabularyImpl.Companion.EMPTY_VOCABULARY
             }
 
