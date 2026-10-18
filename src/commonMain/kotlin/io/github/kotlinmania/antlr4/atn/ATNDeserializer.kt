@@ -6,7 +6,6 @@
 package io.github.kotlinmania.antlr4.atn
 
 import io.github.kotlinmania.antlr4.Token
-
 import io.github.kotlinmania.antlr4.misc.IntervalSet
 import io.github.kotlinmania.antlr4.misc.Pair
 
@@ -635,7 +634,9 @@ class ATNDeserializer
              * into the runtime). Used only for Java Target.
              */
             fun encodeIntsWith16BitWords(data: io.github.kotlinmania.antlr4.misc.IntegerList): io.github.kotlinmania.antlr4.misc.IntegerList {
-                val data16: io.github.kotlinmania.antlr4.misc.IntegerList = io.github.kotlinmania.antlr4.misc.IntegerList((data.size() * 1.5).toInt())
+                val data16: io.github.kotlinmania.antlr4.misc.IntegerList =
+                    io.github.kotlinmania.antlr4.misc
+                        .IntegerList((data.size() * 1.5).toInt())
                 for (i in 0..<data.size()) {
                     var v: Int = data.get(i)
                     if (v == -1) { // use two max uint16 for -1

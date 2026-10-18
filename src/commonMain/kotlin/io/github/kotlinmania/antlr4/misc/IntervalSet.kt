@@ -346,7 +346,9 @@ class IntervalSet internal constructor(
     }
 
     fun toIntList(): io.github.kotlinmania.antlr4.misc.IntegerList {
-        val values: io.github.kotlinmania.antlr4.misc.IntegerList = io.github.kotlinmania.antlr4.misc.IntegerList(size())
+        val values: io.github.kotlinmania.antlr4.misc.IntegerList =
+            io.github.kotlinmania.antlr4.misc
+                .IntegerList(size())
         val n: Int = intervals.size
         for (i in 0..<n) {
             val I: Interval = intervals[i]
