@@ -9,7 +9,7 @@ package io.github.kotlinmania.antlr4.misc
  *
  * @author Sam Harwell
  */
-class IntStack : IntList {
+class IntStack : io.github.kotlinmania.antlr4.misc.IntegerList {
     constructor()
 
     constructor(capacity: Int) : super(capacity)

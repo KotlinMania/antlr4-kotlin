@@ -9,7 +9,6 @@ package io.github.kotlinmania.antlr4.atn
 
 import io.github.kotlinmania.antlr4.Token
 import io.github.kotlinmania.antlr4.assert
-import io.github.kotlinmania.antlr4.misc.IntList
 import io.github.kotlinmania.antlr4.misc.IntervalSet
 
 /** This class represents a target neutral serializer for ATNs. An ATN is converted to a list of integers
@@ -24,13 +23,19 @@ class ATNSerializer(
 ) {
     var atn: ATN
 
-    private val data: IntList = IntList()
+    private val data: io.github.kotlinmania.antlr4.misc.IntegerList =
+        io.github.kotlinmania.antlr4.misc
+            .IntegerList()
 
     /** Note that we use a LinkedHashMap as a set to mainintain insertion order while deduplicating
      * entries with the same key.  */
     private val sets: MutableMap<IntervalSet?, Boolean?> = LinkedHashMap()
-    private val nonGreedyStates: IntList = IntList()
-    private val precedenceStates: IntList = IntList()
+    private val nonGreedyStates: io.github.kotlinmania.antlr4.misc.IntegerList =
+        io.github.kotlinmania.antlr4.misc
+            .IntegerList()
+    private val precedenceStates: io.github.kotlinmania.antlr4.misc.IntegerList =
+        io.github.kotlinmania.antlr4.misc
+            .IntegerList()
 
     init {
         checkNotNull(atn.grammarType)
@@ -62,7 +67,7 @@ class ATNSerializer(
      *
      * Convenient to pack into unsigned shorts to make as Java string.
      */
-    fun serialize(): IntList {
+    fun serialize(): io.github.kotlinmania.antlr4.misc.IntegerList {
         addPreamble()
         val nedges = addEdges()
         addNonGreedyStates()
@@ -328,7 +333,7 @@ class ATNSerializer(
 
     companion object {
         private fun serializeSets(
-            data: IntList,
+            data: io.github.kotlinmania.antlr4.misc.IntegerList,
             sets: Collection<IntervalSet?>,
         ) {
             val nSets: Int = sets.size
@@ -359,7 +364,7 @@ class ATNSerializer(
             }
         }
 
-        fun getSerialized(atn: ATN): IntList =
+        fun getSerialized(atn: ATN): io.github.kotlinmania.antlr4.misc.IntegerList =
             io.github.kotlinmania.antlr4.atn
                 .ATNSerializer(atn)
                 .serialize()
