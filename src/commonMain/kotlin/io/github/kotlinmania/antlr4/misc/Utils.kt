@@ -148,7 +148,7 @@ internal object Utils {
         return result
     }
 
-    fun toCharArray(data: IntList?): CharArray? = data?.toCharArray()
+    fun toCharArray(data: io.github.kotlinmania.antlr4.misc.IntegerList?): CharArray? = data?.toCharArray()
 
     fun toSet(bits: BitSet): IntervalSet = CommonUtils.toSet(bits)
 

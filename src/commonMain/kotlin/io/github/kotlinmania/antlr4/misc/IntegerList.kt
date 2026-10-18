@@ -332,5 +332,3 @@ open class IntegerList {
         private val MAX_ARRAY_SIZE: Int = Int.MAX_VALUE - 8
     }
 }
-
-typealias IntList = IntegerList
