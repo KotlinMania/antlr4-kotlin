@@ -54,9 +54,9 @@ project configuration.
 Validation commands:
 
 ```bash
-cmp build.gradle.kts /Volumes/stuff/Projects/kotlinmania/proc-macro-kotlin/build.gradle.kts
+cmp build.gradle.kts ../proc-macro-kotlin/build.gradle.kts
 for f in .github/workflows/*.yml; do
-  cmp "$f" "/Volumes/stuff/Projects/kotlinmania/proc-macro-kotlin/$f"
+  cmp "$f" "../proc-macro-kotlin/$f"
 done
 ```
 
@@ -168,16 +168,16 @@ pipeline.
 
 Source trees inspected:
 
-- `/Volumes/stuff/Projects/kotlinmania/proc-macro-kotlin/tmp/proc-macro`
-- `/Volumes/stuff/Projects/kotlinmania/proc-macro2-kotlin/tmp/proc-macro2`
-- `/Volumes/stuff/Projects/kotlinmania/quote-kotlin/tmp/quote`
-- `/Volumes/stuff/Projects/kotlinmania/syn-kotlin/tmp/syn`
-- `/Volumes/stuff/Projects/kotlinmania/serde-kotlin/tmp/serde`
-- `/Volumes/stuff/Projects/kotlinmania/unicode-ident-kotlin/tmp/unicode-ident`
-- `/Volumes/stuff/Projects/kotlinmania/toport/kotlin-spec`
-- `/Volumes/stuff/Projects/kotlinmania/toport/kmp-parser`
-- `/Volumes/stuff/Projects/kotlinmania/toport/jflex`
-- `/Volumes/stuff/Projects/kotlinmania/toport/jflex-skeleton`
+- `../proc-macro-kotlin/tmp/proc-macro`
+- `../proc-macro2-kotlin/tmp/proc-macro2`
+- `../quote-kotlin/tmp/quote`
+- `../syn-kotlin/tmp/syn`
+- `../serde-kotlin/tmp/serde`
+- `../unicode-ident-kotlin/tmp/unicode-ident`
+- `../toport/kotlin-spec`
+- `../toport/kmp-parser`
+- `../toport/jflex`
+- `../toport/jflex-skeleton`
 
 The `../toport` folder is the local source pool for this work. It contains
 mechanically translated Kotlin material produced with IntelliJ as well as
@@ -193,7 +193,7 @@ tmp/antlr4
 That directory is ignored and is not a tracked dependency. It currently points
 at upstream `antlr/antlr4` dev commit `7d57703`. Use it as the reference for
 mechanically translated ANTLR runtime and test files in
-`/Volumes/stuff/Projects/kotlinmania/toport/antlr4`.
+`../toport/antlr4`.
 
 Primary upstream comparison paths:
 
@@ -206,8 +206,8 @@ tmp/antlr4/tool-testsuite/test
 Primary mechanically translated Kotlin paths:
 
 ```text
-/Volumes/stuff/Projects/kotlinmania/toport/antlr4/runtime-testsuite/test
-/Volumes/stuff/Projects/kotlinmania/toport/antlr4/tool-testsuite/test
+../toport/antlr4/runtime-testsuite/test
+../toport/antlr4/tool-testsuite/test
 ```
 
 An existing Kotlin ANTLR runtime implementation is also vendored as an ignored
@@ -697,7 +697,7 @@ native file, channel, process, or device access through a narrow bridge.
 The Kotlin ANTLR grammar source is in:
 
 ```text
-/Volumes/stuff/Projects/kotlinmania/toport/kotlin-spec
+../toport/kotlin-spec
 ```
 
 Files:
@@ -739,8 +739,8 @@ The current JetBrains KMP parser and lexer sources remain useful comparison
 inputs:
 
 ```text
-/Volumes/stuff/Projects/kotlinmania/toport/kmp-parser/common/src/org/jetbrains/kotlin/kmp/lexer/KotlinLexer.kt
-/Volumes/stuff/Projects/kotlinmania/toport/kmp-parser/common/src/org/jetbrains/kotlin/kmp/parser/KotlinParser.kt
+../toport/kmp-parser/common/src/org/jetbrains/kotlin/kmp/lexer/KotlinLexer.kt
+../toport/kmp-parser/common/src/org/jetbrains/kotlin/kmp/parser/KotlinParser.kt
 ```
 
 The ANTLR-generated grammar path and the JetBrains KMP lexer path should be
@@ -756,9 +756,9 @@ sources are under `../toport` and are part of the Kotlin compiler lineage.
 Core paths:
 
 ```text
-/Volumes/stuff/Projects/kotlinmania/toport/kmp-parser
-/Volumes/stuff/Projects/kotlinmania/toport/jflex
-/Volumes/stuff/Projects/kotlinmania/toport/jflex-skeleton
+../toport/kmp-parser
+../toport/jflex
+../toport/jflex-skeleton
 ```
 
 JFlex generator inputs and mechanically translated emitter code:
@@ -1027,13 +1027,13 @@ Committed tests live in `commonTest`:
 Mechanically translated runtime tests exist under:
 
 ```text
-/Volumes/stuff/Projects/kotlinmania/toport/antlr4/runtime-testsuite/test
+../toport/antlr4/runtime-testsuite/test
 ```
 
 Mechanically translated tool tests exist under:
 
 ```text
-/Volumes/stuff/Projects/kotlinmania/toport/antlr4/tool-testsuite/test
+../toport/antlr4/tool-testsuite/test
 ```
 
 Original Java tests for comparison are in the ignored upstream clone:
@@ -1046,7 +1046,7 @@ tmp/antlr4/tool-testsuite/test
 Descriptor-driven runtime fixtures exist under:
 
 ```text
-/Volumes/stuff/Projects/kotlinmania/toport/antlr4/runtime-testsuite/resources/org/antlr/v4/test/runtime/descriptors
+../toport/antlr4/runtime-testsuite/resources/org/antlr/v4/test/runtime/descriptors
 ```
 
 Descriptor inventory:
