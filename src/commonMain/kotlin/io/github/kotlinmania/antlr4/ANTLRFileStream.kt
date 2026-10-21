@@ -14,12 +14,11 @@ package io.github.kotlinmania.antlr4
 @Deprecated("as of 4.7 Please use {@link CharStreams} interface.")
 class ANTLRFileStream(
     override var sourceName: String?,
-    @Suppress("UNUSED_PARAMETER") encoding: String?,
+    val encoding: String? = null,
 ) : ANTLRInputStream() {
     constructor(input: String?) : this(input, null)
 
     init {
-        // TODO: load from file when file I/O is available
         this.n = 0
     }
 }
