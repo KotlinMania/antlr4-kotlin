@@ -15,6 +15,9 @@ let package = Package(
             dependencies: [
                 .product(name: "Antlr4Library", package: "Antlr4")
             ],
+            swiftSettings: [
+                .unsafeFlags(["-warnings-as-errors"]),
+            ],
             linkerSettings: [
                 .unsafeFlags([
                     "-L", "../build/swift-test",
@@ -22,5 +25,6 @@ let package = Package(
                 ]),
             ]
         ),
-    ]
+    ],
+    swiftLanguageModes: [.v6]
 )

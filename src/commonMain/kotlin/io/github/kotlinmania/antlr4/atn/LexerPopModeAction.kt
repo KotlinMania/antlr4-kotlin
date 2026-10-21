@@ -52,7 +52,6 @@ class LexerPopModeAction
             return MurmurHash.finish(hash, 1)
         }
 
-        @Suppress("EqualsWhichDoesntCallSuperMethod")
         override fun equals(other: Any?): Boolean = other === this
 
         override fun toString(): String = "popMode"

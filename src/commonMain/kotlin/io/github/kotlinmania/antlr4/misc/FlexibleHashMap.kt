@@ -53,12 +53,10 @@ internal open class FlexibleHashMap<K, V>
         }
 
         override fun get(key: K): V? {
-            @Suppress("UNCHECKED_CAST")
-            val typedKey = key
-            val b = getBucket(typedKey)
+            val b = getBucket(key)
             val bucket = buckets[b] ?: return null
             for (e in bucket) {
-                if (comparator.equals(e.key, typedKey)) return e.value
+                if (comparator.equals(e.key, key)) return e.value
             }
             return null
         }
