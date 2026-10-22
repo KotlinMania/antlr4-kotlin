@@ -7,21 +7,18 @@ let package = Package(
         .macOS(.v15),
     ],
     dependencies: [
-        .package(name: "Antlr4", path: "../build/SPMPackage/macosArm64/Debug")
+        .package(name: "Template", path: "../build/SPMPackage/macosArm64/Debug")
     ],
     targets: [
         .testTarget(
             name: "SwiftTestHarnessTests",
             dependencies: [
-                .product(name: "Antlr4Library", package: "Antlr4")
-            ],
-            swiftSettings: [
-                .unsafeFlags(["-warnings-as-errors"]),
+                .product(name: "TemplateLibrary", package: "Template")
             ],
             linkerSettings: [
                 .unsafeFlags([
                     "-L", "../build/swift-test",
-                    "-lAntlr4",
+                    "-lTemplate",
                 ]),
             ]
         ),

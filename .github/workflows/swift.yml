@@ -85,11 +85,12 @@ jobs:
           FRAMEWORKS_FOLDER_PATH: Frameworks
           MACOSX_DEPLOYMENT_TARGET: "15.0"
           DEPLOYMENT_TARGET_SETTING_NAME: MACOSX_DEPLOYMENT_TARGET
+          XCODE_XCCONFIG_FILE: ${{ github.workspace }}/verification/strict-swift.xcconfig
         run: ./gradlew embedSwiftExportForXcode --no-configuration-cache
 
       - name: Run swift test against Kotlin-exported module
         working-directory: swift-test-harness
-        run: swift test -v
+        run: swift test -v -Xswiftc -swift-version -Xswiftc 6 -Xswiftc -warnings-as-errors
 
       - name: Upload Swift Export artifacts
         if: success() || failure()

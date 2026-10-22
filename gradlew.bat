@@ -53,30 +53,6 @@ goto afterSafetyNet
 goto exitWithErrorLevel
 :afterSafetyNet
 
-@rem Prepare writable Android user settings before Gradle; preserve an explicit setting.
-if defined ANDROID_USER_HOME goto androidUserHomeReady
-if defined RUNNER_TEMP set "ANDROID_USER_HOME=%RUNNER_TEMP%\kotlinmania-android-user-home"
-if defined ANDROID_USER_HOME goto androidUserHomeReady
-if defined TEMP set "ANDROID_USER_HOME=%TEMP%\kotlinmania-android-user-home"
-if defined ANDROID_USER_HOME goto androidUserHomeReady
-if defined TMP set "ANDROID_USER_HOME=%TMP%\kotlinmania-android-user-home"
-:androidUserHomeReady
-if not defined ANDROID_USER_HOME (
-  echo ERROR: Set ANDROID_USER_HOME or a writable temporary directory. 1>&2
-  "%COMSPEC%" /c exit 1
-  goto exitWithErrorLevel
-)
-if not exist "%ANDROID_USER_HOME%" mkdir "%ANDROID_USER_HOME%"
-set "ANDROID_USER_PROBE=%ANDROID_USER_HOME%\.write-check-%RANDOM%-%RANDOM%.tmp"
-echo writable>"%ANDROID_USER_PROBE%"
-if errorlevel 1 (
-  echo ERROR: ANDROID_USER_HOME is not writable. 1>&2
-  "%COMSPEC%" /c exit 1
-  goto exitWithErrorLevel
-)
-del /q "%ANDROID_USER_PROBE%"
-set "ANDROID_USER_PROBE="
-
 set DIRNAME=%~dp0
 if "%DIRNAME%"=="" set DIRNAME=.
 @rem This is normally unused
@@ -128,7 +104,7 @@ goto exitWithErrorLevel
 @rem Execute gradlew
 @rem endlocal doesn't take effect until after the line is parsed and variables are expanded
 @rem which allows us to clear the local environment before executing the java command
-endlocal & setlocal EnableExtensions & set "ANDROID_USER_HOME=%ANDROID_USER_HOME%" & "%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -jar "%APP_HOME%\gradle\wrapper\gradle-wrapper.jar" %* & call :exitWithErrorLevel & goto exitWithErrorLevel
+endlocal & "%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -jar "%APP_HOME%\gradle\wrapper\gradle-wrapper.jar" %* & call :exitWithErrorLevel & goto exitWithErrorLevel
 
 @rem This label must not be changed. We rely on old scripts being able to jump to this point.
 :exitWithErrorLevel
