@@ -20,7 +20,7 @@ kotlin {
     jvmToolchain(21)
     compilerOptions { allWarningsAsErrors.set(true) }
     android {
-        namespace = "io.github.kotlinmania.template.publicationconsumer"
+        namespace = "io.github.kotlinmania.antlr4.publicationconsumer"
         compileSdk = providers.gradleProperty("consumerCompileSdk").get().toInt()
         minSdk = 24
         withHostTestBuilder { sourceSetTreeName = "test" }
