@@ -89,7 +89,7 @@ SDK_NAME=macosx CONFIGURATION=Debug ARCHS=arm64 FRAMEWORKS_FOLDER_PATH=Framework
 MACOSX_DEPLOYMENT_TARGET=15.0 DEPLOYMENT_TARGET_SETTING_NAME=MACOSX_DEPLOYMENT_TARGET \
 ./gradlew embedSwiftExportForXcode --no-daemon --max-workers=2 --no-configuration-cache
 
-swift test --package-path swift-test-harness -v \
+swift test --package-path src/swift/swift-test-harness -v \
   -Xswiftc -swift-version -Xswiftc 6 -Xswiftc -warnings-as-errors
 ```
 
@@ -101,7 +101,7 @@ concurrently with another allocated command.
 Required evidence includes actual compiler command lines for each generated Swift
 module (KotlinRuntimeSupport, KotlinCoroutineSupport, exported project/dependency
 modules) and test modules showing Swift 6 plus warnings-as-errors. A Swift 6 tool
-version, a manifest declaration, or a Python policy regression alone is not proof
+version, a manifest declaration, or a Java policy regression alone is not proof
 of compilation. The current template harness is an import-only placeholder with
 `#expect(true)`/`XCTAssertTrue(true)`; projects need meaningful API/runtime tests
 and explicit expected test names/counts before a real-library Swift pass.
