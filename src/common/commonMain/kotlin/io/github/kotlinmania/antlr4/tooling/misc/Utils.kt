@@ -6,6 +6,7 @@
 package io.github.kotlinmania.antlr4.tooling.misc
 
 import io.github.kotlinmania.antlr4.misc.IntegerList
+import io.github.kotlinmania.antlr4.tooling.ast.GrammarAST
 import io.github.kotlinmania.io.buffered
 import io.github.kotlinmania.io.files.Path
 import io.github.kotlinmania.io.files.SystemFileSystem
@@ -80,6 +81,15 @@ object Utils {
         SystemFileSystem.sink(path).buffered().use { sink ->
             sink.writeString(buf.toString())
         }
+    }
+
+    fun <T : GrammarAST> nodesToStrings(nodes: List<T>?): List<String>? {
+        if (nodes == null) return null
+        val result = ArrayList<String>(nodes.size)
+        for (node in nodes) {
+            result.add(node.text)
+        }
+        return result
     }
 
     fun capitalize(s: String): String {

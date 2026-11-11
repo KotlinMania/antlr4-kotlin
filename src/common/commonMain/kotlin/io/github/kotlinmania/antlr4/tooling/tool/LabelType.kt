@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2012-2017 The ANTLR Project. All rights reserved.
+ * Use of this file is governed by the BSD 3-clause license that
+ * can be found in the LICENSE.txt file in the project root.
+ */
+package io.github.kotlinmania.antlr4.tooling.tool
+
+/**
+ * Kinds of element labels (`t=type`, `id=ID`, `types+=type`, `ids+=ID`, lexer `x='a'`).
+ */
+enum class LabelType {
+    RULE_LABEL,
+    TOKEN_LABEL,
+    RULE_LIST_LABEL,
+    TOKEN_LIST_LABEL,
+    LEXER_STRING_LABEL,
+}

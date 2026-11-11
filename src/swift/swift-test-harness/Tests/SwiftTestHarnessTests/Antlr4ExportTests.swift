@@ -89,6 +89,43 @@ struct Antlr4ExportTests {
         #expect(parsed.parseLength == 11)
         #expect(parsed.propertyIntervalSet.contains(el: 66560) == true)
     }
+
+    @Test("Tooling GrammarAST, ErrorManager, and AttributeDict")
+    func testToolingASTAndErrorManager() throws {
+        let ruleType = io.github.kotlinmania.antlr4.tooling.parse.ANTLRParserTypes.shared.RULE
+        let blockType = io.github.kotlinmania.antlr4.tooling.parse.ANTLRParserTypes.shared.BLOCK
+        let altType = io.github.kotlinmania.antlr4.tooling.parse.ANTLRParserTypes.shared.ALT
+        let ruleRefType = io.github.kotlinmania.antlr4.tooling.parse.ANTLRParserTypes.shared.RULE_REF
+        let tokenRefType = io.github.kotlinmania.antlr4.tooling.parse.ANTLRParserTypes.shared.TOKEN_REF
+
+        let ruleNode = io.github.kotlinmania.antlr4.tooling.ast.RuleAST(type: ruleType)
+        ruleNode.addChild(t: io.github.kotlinmania.antlr4.tooling.ast.GrammarAST(t: CommonToken(type: ruleRefType, text: "expr")))
+        let blockNode = io.github.kotlinmania.antlr4.tooling.ast.BlockAST(type: blockType)
+        let altNode = io.github.kotlinmania.antlr4.tooling.ast.AltAST(type: altType)
+        altNode.addChild(t: io.github.kotlinmania.antlr4.tooling.ast.TerminalAST(t: CommonToken(type: tokenRefType, text: "INT")))
+        blockNode.addChild(t: altNode)
+        ruleNode.addChild(t: blockNode)
+
+        #expect(ruleNode.ruleName == "expr")
+        #expect(ruleNode.isLexerRule == false)
+        #expect(ruleNode.toStringTree() == "(RULE expr (BLOCK (ALT INT)))")
+
+        let errMgr = io.github.kotlinmania.antlr4.tooling.tool.ErrorManager(tool: nil)
+        let tok = CommonToken(type: tokenRefType, text: "BAD")
+        tok.line = 7
+        tok.charPositionInLine = 2
+        let synMsg = io.github.kotlinmania.antlr4.tooling.tool.GrammarSyntaxMessage(
+            errorType: .SYNTAX_ERROR,
+            fileName: "Expr.g4",
+            offendingToken: tok,
+            detail: "missing ';'"
+        )
+        #expect(errMgr.formatMessage(msg: synMsg) == "error(50): Expr.g4:7:2: syntax error: missing ';'")
+
+        let predefined = io.github.kotlinmania.antlr4.tooling.tool.AttributeDict.Companion.shared.predefinedTokenDict
+        #expect(predefined.size() == 7)
+        #expect(predefined.get(name: "text")?.name == "text")
+    }
 }
 #elseif canImport(XCTest)
 import XCTest
@@ -173,6 +210,42 @@ final class Antlr4ExportTests: XCTestCase {
         let parsed = io.github.kotlinmania.antlr4.tooling.misc.EscapeSequenceParsing.shared.parseEscape(s: "\\p{Deseret}", startOff: 0)
         XCTAssertEqual(parsed.parseLength, 11)
         XCTAssertTrue(parsed.propertyIntervalSet.contains(el: 66560))
+    }
+
+    func testToolingASTAndErrorManager() throws {
+        let ruleType = io.github.kotlinmania.antlr4.tooling.parse.ANTLRParserTypes.shared.RULE
+        let blockType = io.github.kotlinmania.antlr4.tooling.parse.ANTLRParserTypes.shared.BLOCK
+        let altType = io.github.kotlinmania.antlr4.tooling.parse.ANTLRParserTypes.shared.ALT
+        let ruleRefType = io.github.kotlinmania.antlr4.tooling.parse.ANTLRParserTypes.shared.RULE_REF
+        let tokenRefType = io.github.kotlinmania.antlr4.tooling.parse.ANTLRParserTypes.shared.TOKEN_REF
+
+        let ruleNode = io.github.kotlinmania.antlr4.tooling.ast.RuleAST(type: ruleType)
+        ruleNode.addChild(t: io.github.kotlinmania.antlr4.tooling.ast.GrammarAST(t: CommonToken(type: ruleRefType, text: "expr")))
+        let blockNode = io.github.kotlinmania.antlr4.tooling.ast.BlockAST(type: blockType)
+        let altNode = io.github.kotlinmania.antlr4.tooling.ast.AltAST(type: altType)
+        altNode.addChild(t: io.github.kotlinmania.antlr4.tooling.ast.TerminalAST(t: CommonToken(type: tokenRefType, text: "INT")))
+        blockNode.addChild(t: altNode)
+        ruleNode.addChild(t: blockNode)
+
+        XCTAssertEqual(ruleNode.ruleName, "expr")
+        XCTAssertFalse(ruleNode.isLexerRule)
+        XCTAssertEqual(ruleNode.toStringTree(), "(RULE expr (BLOCK (ALT INT)))")
+
+        let errMgr = io.github.kotlinmania.antlr4.tooling.tool.ErrorManager(tool: nil)
+        let tok = CommonToken(type: tokenRefType, text: "BAD")
+        tok.line = 7
+        tok.charPositionInLine = 2
+        let synMsg = io.github.kotlinmania.antlr4.tooling.tool.GrammarSyntaxMessage(
+            errorType: .SYNTAX_ERROR,
+            fileName: "Expr.g4",
+            offendingToken: tok,
+            detail: "missing ';'"
+        )
+        XCTAssertEqual(errMgr.formatMessage(msg: synMsg), "error(50): Expr.g4:7:2: syntax error: missing ';'")
+
+        let predefined = io.github.kotlinmania.antlr4.tooling.tool.AttributeDict.Companion.shared.predefinedTokenDict
+        XCTAssertEqual(predefined.size(), 7)
+        XCTAssertEqual(predefined.get(name: "text")?.name, "text")
     }
 }
 #endif

@@ -5,6 +5,9 @@
  */
 package io.github.kotlinmania.antlr4.tooling.misc
 
+import io.github.kotlinmania.antlr4.CommonToken
+import io.github.kotlinmania.antlr4.tooling.ast.GrammarAST
+import io.github.kotlinmania.antlr4.tooling.parse.ANTLRParserTypes
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -95,5 +98,17 @@ class ToolMiscUtilsTest {
         assertEquals(15, map.getElement(0))
         assertEquals("beta", map.getKey(1))
         assertEquals(20, map.getElement(1))
+    }
+
+    @Test
+    fun testNodesToStrings() {
+        assertNull(Utils.nodesToStrings<GrammarAST>(null))
+        val values =
+            listOf(
+                GrammarAST(CommonToken(ANTLRParserTypes.ID, "alpha")),
+                GrammarAST(CommonToken(ANTLRParserTypes.ID, "beta")),
+                GrammarAST(CommonToken(ANTLRParserTypes.ID, "gamma")),
+            )
+        assertEquals(listOf("alpha", "beta", "gamma"), Utils.nodesToStrings(values))
     }
 }
