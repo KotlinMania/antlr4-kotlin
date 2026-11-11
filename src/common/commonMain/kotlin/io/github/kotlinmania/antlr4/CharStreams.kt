@@ -5,8 +5,26 @@
  */
 package io.github.kotlinmania.antlr4
 
+import io.github.kotlinmania.io.RawSource
+import io.github.kotlinmania.io.buffered
+import io.github.kotlinmania.io.files.Path
+import io.github.kotlinmania.io.files.SystemFileSystem
+import io.github.kotlinmania.io.readString
+
 object CharStreams {
     private const val DEFAULT_BUFFER_SIZE = 4096
+
+    /** Reads a UTF-8 file completely, retaining its path as the source name. */
+    fun fromPath(path: Path): CodePointCharStream =
+        fromStream(SystemFileSystem.source(path), path.toString())
+
+    fun fromFileName(fileName: String): CodePointCharStream = fromPath(Path(fileName))
+
+    /** Reads UTF-8 input completely and closes the supplied source. */
+    fun fromStream(
+        source: RawSource,
+        sourceName: String = IntStream.UNKNOWN_SOURCE_NAME,
+    ): CodePointCharStream = source.buffered().use { fromString(it.readString(), sourceName) }
 
     fun fromString(s: String): CodePointCharStream = fromString(s, IntStream.UNKNOWN_SOURCE_NAME)
 
