@@ -17,7 +17,7 @@ interface ErrorTemplateObject {
         get() = null
     val recognizerName: String?
         get() = null
-    val implicitLexerOwner: Boolean
+    val hasImplicitLexerOwner: Boolean
         get() = false
     val startToken: Token?
         get() = null
@@ -394,7 +394,7 @@ object MessageRenderer {
                             "name" -> obj.name
                             "typeString" -> obj.typeString
                             "recognizerName" -> obj.recognizerName
-                            "implicitLexerOwner" -> obj.implicitLexerOwner
+                            "implicitLexerOwner" -> if (obj.hasImplicitLexerOwner) true else null
                             else -> null
                         }
                     is Map<*, *> -> obj[prop]

@@ -9,7 +9,10 @@ import io.github.kotlinmania.antlr4.atn.ATN
 import io.github.kotlinmania.antlr4.atn.ATNDeserializationOptions
 import io.github.kotlinmania.antlr4.atn.ATNDeserializer
 import io.github.kotlinmania.antlr4.atn.ATNSimulator
+import io.github.kotlinmania.antlr4.atn.ParseInfo
 import io.github.kotlinmania.antlr4.atn.ParserATNSimulator
+import io.github.kotlinmania.antlr4.atn.PredictionMode
+import io.github.kotlinmania.antlr4.atn.ProfilingATNSimulator
 import io.github.kotlinmania.antlr4.misc.IntStack
 import io.github.kotlinmania.antlr4.tree.ErrorNode
 import io.github.kotlinmania.antlr4.tree.ErrorNodeImpl
@@ -85,22 +88,28 @@ abstract class Parser(
         if (buildParseTree || hasListener) {
             if (errorHandler.inErrorRecoveryMode(this)) {
                 val node = ctx?.addErrorNode(createErrorNode(ctx, o))
-                if (_parseListeners.isNotEmpty()) {
+                if (node != null && _parseListeners.isNotEmpty()) {
                     for (listener in _parseListeners) {
-                        listener.visitErrorNode(node!!)
+                        listener.visitErrorNode(node)
                     }
                 }
             } else {
-                val node = ctx?.addChild(TerminalNodeImpl(o))
-                if (_parseListeners.isNotEmpty()) {
+                val node = ctx?.addChild(createTerminalNode(ctx, o))
+                if (node != null && _parseListeners.isNotEmpty()) {
                     for (listener in _parseListeners) {
-                        listener.visitTerminal(node!!)
+                        listener.visitTerminal(node)
                     }
                 }
             }
         }
         return o
     }
+
+    /** Create terminal node during matching. */
+    open fun createTerminalNode(
+        parent: ParserRuleContext?,
+        t: Token?,
+    ): TerminalNode = TerminalNodeImpl(t)
 
     /** Create error node during recovery. */
     open fun createErrorNode(
@@ -187,7 +196,7 @@ abstract class Parser(
 
     /** reset the parser's state  */
     open fun reset() {
-        if (this.inputStream != null) this.inputStream?.seek(0)
+        inputField?.seek(0)
         errorHandler.reset(this)
         ctx = null
         this.numberOfSyntaxErrors = 0
@@ -454,6 +463,9 @@ abstract class Parser(
         this.state = state
         ctx = localctx
         ctx?.start = inputField?.LT(1)
+        if (_parseListeners.isNotEmpty()) {
+            triggerEnterRuleEvent()
+        }
     }
 
     open fun unrollRecursionContexts(parentctx: ParserRuleContext?) {
@@ -468,9 +480,9 @@ abstract class Parser(
         } else {
             ctx = parentctx
         }
-        retctx?.setParent(parentctx!! as RuleContext)
-        if (buildParseTree && parentctx != null) {
-            parentctx.addChild(retctx!!)
+        retctx?.setParent(parentctx)
+        if (buildParseTree && parentctx != null && retctx != null) {
+            parentctx.addChild(retctx)
         }
     }
 
@@ -512,6 +524,21 @@ abstract class Parser(
         if (_parseListeners.isNotEmpty()) triggerEnterRuleEvent()
     }
 
+    fun enterOuterAlt(
+        localctx: ParserRuleContext,
+        altNum: Int,
+    ) {
+        localctx.altNumber = altNum
+        if (buildParseTree && ctx !== localctx) {
+            val parent = ctx?.parent as? ParserRuleContext
+            if (parent != null) {
+                parent.removeLastChild()
+                parent.addChild(localctx)
+            }
+        }
+        ctx = localctx
+    }
+
     fun exitRule() {
         if (isMatchedEOF) {
             ctx?.stop = inputField?.LT(1)
@@ -531,10 +558,14 @@ abstract class Parser(
         val previous = ctx
         previous?.setParent(localctx)
         previous?.invokingState = state
+        previous?.stop = inputField?.LT(-1)
         ctx = localctx
         ctx?.start = previous?.start
-        if (buildParseTree) {
-            (previous?.parent as? ParserRuleContext)?.addChild(previous)
+        if (buildParseTree && previous != null) {
+            localctx.addChild(previous)
+        }
+        if (_parseListeners.isNotEmpty()) {
+            triggerEnterRuleEvent()
         }
     }
 
@@ -553,9 +584,31 @@ abstract class Parser(
 
     fun isTrace(): Boolean = tracer != null
 
+    val isProfile: Boolean
+        get() = interpreter is ProfilingATNSimulator
+
+    fun setProfile(profile: Boolean) {
+        val interp = interpreter ?: return
+        val saveMode: PredictionMode? = interp.predictionMode
+        if (profile) {
+            if (interp !is ProfilingATNSimulator) {
+                interpreter = ProfilingATNSimulator(this)
+            }
+        } else if (interp is ProfilingATNSimulator) {
+            val sim = ParserATNSimulator(this, atn, interp.decisionToDFA, interp.sharedContextCache)
+            interpreter = sim
+        }
+        interpreter?.setPredictionMode(saveMode)
+    }
+
+    override fun computeParseInfo(): ParseInfo? {
+        val interp = interpreter
+        return if (interp is ProfilingATNSimulator) ParseInfo(interp) else null
+    }
+
     protected fun addContextToParseTree() {
-        if (ctx?.parent !is ParserRuleContext) return
-        val currentCtx = ctx
-        state = currentCtx?.invokingState ?: -1
+        val currentCtx = ctx ?: return
+        val parent = currentCtx.parent as? ParserRuleContext
+        parent?.addChild(currentCtx)
     }
 }

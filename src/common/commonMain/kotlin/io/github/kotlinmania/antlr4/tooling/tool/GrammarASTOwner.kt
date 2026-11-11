@@ -39,6 +39,8 @@ interface GrammarASTOwner {
 
     fun getOptionString(key: String): String? = ast?.getOptionString(key)
 
+    fun getRegisteredTokenVocabContent(vocabName: String): String? = null
+
     fun log(
         component: String,
         msg: String,

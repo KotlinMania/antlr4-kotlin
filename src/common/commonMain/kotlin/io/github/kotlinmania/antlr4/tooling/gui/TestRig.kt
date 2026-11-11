@@ -18,6 +18,8 @@ import io.github.kotlinmania.antlr4.ParserRuleContext
 import io.github.kotlinmania.antlr4.TokenStream
 import io.github.kotlinmania.antlr4.atn.PredictionMode
 import io.github.kotlinmania.antlr4.misc.InterpreterDataReader
+import io.github.kotlinmania.antlr4.tooling.tool.Grammar
+import io.github.kotlinmania.antlr4.tooling.tool.LexerGrammar
 import io.github.kotlinmania.io.files.Path
 import io.github.kotlinmania.io.files.SystemFileSystem
 
@@ -130,6 +132,10 @@ class TestRig(
         val interpPair = resolveInterpreterData(gName, ruleName)
         if (interpPair != null) {
             return processInterpreterData(interpPair.first, interpPair.second, ruleName)
+        }
+
+        if (gName.endsWith(".g4") && SystemFileSystem.exists(Path(gName))) {
+            return processGrammarFile(gName, ruleName)
         }
 
         val dynamicRunner = grammarFileRunner
@@ -278,6 +284,40 @@ class TestRig(
                     parserData.atn ?: throw IllegalStateException("Missing parser ATN"),
                     CommonTokenStream(lexer),
                 )
+            }
+        return runAcrossInputFiles(lexer, parser, null)
+    }
+
+    private fun processGrammarFile(
+        grammarFile: String,
+        ruleName: String,
+    ): List<TestRigRunResult> {
+        val loaded =
+            Grammar.load(grammarFile)
+                ?: throw IllegalArgumentException("Failed to load grammar file '$grammarFile'.")
+        if (!loaded.isLexer && loaded.implicitLexer == null && loaded.isCombined) {
+            throw IllegalStateException("Combined grammar '$grammarFile' has no implicit lexer.")
+        }
+        val lexer: Lexer =
+            when {
+                loaded is LexerGrammar -> loaded.createLexerInterpreter(CharStreams.fromString(""))
+                loaded.isCombined -> loaded.createLexerInterpreter(CharStreams.fromString(""))
+                else -> {
+                    val siblingLexerPath = grammarFile.replace("Parser.g4", "Lexer.g4")
+                    require(siblingLexerPath != grammarFile && SystemFileSystem.exists(Path(siblingLexerPath))) {
+                        "Parser grammar '$grammarFile' requires companion '$siblingLexerPath' for TestRig execution."
+                    }
+                    val lexerGrammar =
+                        Grammar.load(siblingLexerPath) as? LexerGrammar
+                            ?: throw IllegalStateException("Failed to load companion lexer '$siblingLexerPath'.")
+                    lexerGrammar.createLexerInterpreter(CharStreams.fromString(""))
+                }
+            }
+        val parser =
+            if (ruleName == LEXER_START_RULE_NAME || loaded.isLexer) {
+                null
+            } else {
+                loaded.createGrammarParserInterpreter(CommonTokenStream(lexer))
             }
         return runAcrossInputFiles(lexer, parser, null)
     }

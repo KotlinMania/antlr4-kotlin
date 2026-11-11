@@ -7,14 +7,24 @@ package io.github.kotlinmania.antlr4.tooling.ast
 
 import io.github.kotlinmania.antlr4.Token
 import io.github.kotlinmania.antlr4.tooling.analysis.LeftRecursiveRuleAltInfo
+import io.github.kotlinmania.antlr4.tooling.tool.Alternative
 import io.github.kotlinmania.antlr4.tooling.tool.AttributeResolver
 
 /**
  * AST node representing a rule or subrule alternative (`ALT` or `LEXER_ALT_ACTION`).
  */
 class AltAST : GrammarASTWithOptions {
+    /** Outermost [Alternative] associated with this node during semantic analysis. */
+    var alt: Alternative? = null
+
     /** Outermost alternative symbol scope when resolved during semantic analysis. */
-    var altResolver: AttributeResolver? = null
+    var altResolver: AttributeResolver?
+        get() = alt
+        set(value) {
+            if (value is Alternative?) {
+                alt = value
+            }
+        }
 
     /** Left-recursion transformation metadata when transformed from a left-recursive rule. */
     var leftRecursiveAltInfo: LeftRecursiveRuleAltInfo? = null
@@ -23,7 +33,7 @@ class AltAST : GrammarASTWithOptions {
     var altLabel: GrammarAST? = null
 
     constructor(node: AltAST) : super(node) {
-        this.altResolver = node.altResolver
+        this.alt = node.alt
         this.altLabel = node.altLabel
         this.leftRecursiveAltInfo = node.leftRecursiveAltInfo
     }

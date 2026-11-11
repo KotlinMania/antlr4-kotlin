@@ -52,7 +52,7 @@ open class LeftRecursiveRuleWalker {
     }
 
     /**
-     * Matches `rec_rule` on [ruleNode] and returns `true` iff the rule matches the permitted
+     * Matches `recRule` on [ruleNode] and returns `true` iff the rule matches the permitted
      * left-recursive preamble structure and contains at least one left-recursive (`binary` or `suffix`)
      * outer alternative.
      */
@@ -86,7 +86,7 @@ open class LeftRecursiveRuleWalker {
             }
         }
 
-        // ARG_ACTION on rule definition is forbidden in LeftRecursiveRuleWalker.g (`// no arg_action!`)
+        // ARG_ACTION on rule definition is forbidden in LeftRecursiveRuleWalker.g (`// no argAction!`)
         if (ruleNode.getChild(idx)?.type == ANTLRParserTypes.ARG_ACTION) {
             return false
         }

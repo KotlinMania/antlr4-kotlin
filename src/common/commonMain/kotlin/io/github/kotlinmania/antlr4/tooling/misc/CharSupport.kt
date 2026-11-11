@@ -202,6 +202,9 @@ object CharSupport {
         return s[0].uppercaseChar() + s.substring(1)
     }
 
+    fun codePointToString(codePoint: Int): String =
+        StringBuilder().appendCodePointCompat(codePoint).toString()
+
     fun getIntervalSetEscapedString(intervalSet: IntervalSet): String {
         val buf = StringBuilder()
         val iter = intervalSet.getIntervals().iterator()

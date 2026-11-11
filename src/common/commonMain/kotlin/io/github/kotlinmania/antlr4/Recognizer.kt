@@ -92,7 +92,9 @@ abstract class Recognizer<Symbol, ATNInterpreter : ATNSimulator> {
     abstract val atn: ATN
 
     val parseInfo: ParseInfo?
-        get() = null
+        get() = computeParseInfo()
+
+    internal open fun computeParseInfo(): ParseInfo? = null
 
     fun getErrorHeader(e: RecognitionException): String {
         val line: Int = e.offendingToken?.line ?: 0

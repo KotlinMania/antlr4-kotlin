@@ -280,7 +280,7 @@ open class ParserInterpreter(
      * a decision state (instance of DecisionState). It gives an opportunity
      * for subclasses to track interesting things.
      */
-    protected fun visitDecisionState(p: DecisionState): Int {
+    protected open fun visitDecisionState(p: DecisionState): Int {
         var predictedAlt = 1
         if (p.numberOfTransitions > 1) {
             errorHandler.sync(this)
@@ -298,7 +298,7 @@ open class ParserInterpreter(
     /** Provide simple "factory" for InterpreterRuleContext's.
      * @since 4.5.1
      */
-    protected fun createInterpreterRuleContext(
+    protected open fun createInterpreterRuleContext(
         parent: ParserRuleContext?,
         invokingStateNumber: Int,
         ruleIndex: Int,
@@ -367,6 +367,12 @@ open class ParserInterpreter(
         overrideDecisionInputIndex = tokenIndex
         overrideDecisionAlt = forcedAlt
     }
+
+    val decisionOverrideRoot: InterpreterRuleContext?
+        get() = overrideDecisionRoot
+
+    open fun createTempInterpreter(tokens: TokenStream?): ParserInterpreter =
+        ParserInterpreter(grammarFileName, vocabulary, ruleNames.orEmpty(), atn, tokens)
 
     /** Rely on the error handler for this parser but, if no tokens are consumed
      * to recover, add an error node. Otherwise, nothing is seen in the parse

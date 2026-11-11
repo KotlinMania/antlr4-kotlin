@@ -110,9 +110,9 @@ open class ParserRuleContext : RuleContext {
     constructor(parent: ParserRuleContext?, invokingStateNumber: Int) : super(parent, invokingStateNumber)
 
     // Double dispatch methods for listeners
-    fun enterRule(listener: ParseTreeListener?) {}
+    open fun enterRule(listener: ParseTreeListener?) {}
 
-    fun exitRule(listener: ParseTreeListener?) {}
+    open fun exitRule(listener: ParseTreeListener?) {}
 
     /** Add a parse tree node to this as a child.  Works for
      * internal and leaf nodes. Does not set parent link;

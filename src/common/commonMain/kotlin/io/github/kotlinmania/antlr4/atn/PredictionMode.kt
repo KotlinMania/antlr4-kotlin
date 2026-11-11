@@ -46,12 +46,22 @@ enum class PredictionMode {
 
     companion object {
         fun hasSLLConflictTerminatingPrediction(
-            mode: PredictionMode,
+            mode: PredictionMode?,
             configs: ATNConfigSet,
         ): Boolean {
-            if (configs.hasSemanticContext) return false
-            val altsets = getConflictingAltSubsets(configs)
-            return if (mode == SLL) hasConflictingAltSet(altsets) else hasConflictingAltSet(altsets) && !allSubsetsConflict(altsets)
+            if (allConfigsInRuleStopStates(configs)) {
+                return true
+            }
+            var effectiveConfigs = configs
+            if (mode == SLL && effectiveConfigs.hasSemanticContext) {
+                val dup = ATNConfigSet()
+                for (c in effectiveConfigs) {
+                    dup.add(ATNConfig(c, SemanticContext.Empty.Instance))
+                }
+                effectiveConfigs = dup
+            }
+            val altsets = getConflictingAltSubsets(effectiveConfigs)
+            return hasConflictingAltSet(altsets) && !hasStateAssociatedWithOneAlt(effectiveConfigs)
         }
 
         fun evalSemanticContext(
@@ -85,8 +95,7 @@ enum class PredictionMode {
             return predictions.nextSetBit(0)
         }
 
-        fun resolvesToJustOneViableAlt(altsets: Collection<BitSet>): Int =
-            if (allSubsetsConflict(altsets)) getSingleViableAlt(altsets) else getUniqueAlt(altsets)
+        fun resolvesToJustOneViableAlt(altsets: Collection<BitSet>): Int = getSingleViableAlt(altsets)
 
         fun allSubsetsConflict(altsets: Collection<BitSet>): Boolean = !hasNonConflictingAltSet(altsets)
 

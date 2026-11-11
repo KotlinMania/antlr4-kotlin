@@ -22,6 +22,11 @@ class TokenVocabParser(
     fun load(): Map<String, Int> {
         val tokens = LinkedHashMap<String, Int>()
         val vocabName = g.getOptionString("tokenVocab") ?: return tokens
+        val registeredContent = g.getRegisteredTokenVocabContent(vocabName)
+        if (registeredContent != null) {
+            parseTokensContent(vocabName, registeredContent, tokens)
+            return tokens
+        }
         withHostFileSystemOrNull {
             val fullPath = resolveImportedVocabPath(vocabName)
             if (!SystemFileSystem.exists(fullPath)) {
@@ -49,47 +54,55 @@ class TokenVocabParser(
                 SystemFileSystem.source(fullPath).buffered().use { source ->
                     source.readString()
                 }
-            var maxTokenType = -1
-            var lineNum = 1
-            for (rawLine in content.lines()) {
-                val tokenDef = rawLine.trimEnd('\r')
-                if (tokenDef.isEmpty()) {
-                    continue
-                }
-                val match = TOKEN_DEF_PATTERN.matchEntire(tokenDef)
-                if (match != null) {
-                    val tokenId = match.groupValues[1]
-                    val tokenTypeStr = match.groupValues[2]
-                    val parsedType = tokenTypeStr.toIntOrNull()
-                    val tokenType =
-                        if (parsedType == null) {
-                            g.errorManager?.toolError(
-                                ErrorType.TOKENS_FILE_SYNTAX_ERROR,
-                                "$vocabName$VOCAB_FILE_EXTENSION",
-                                " bad token type: $tokenTypeStr",
-                                lineNum,
-                            )
-                            -1
-                        } else {
-                            parsedType
-                        }
-                    g.log("grammar", "import $tokenId=$tokenType")
-                    tokens[tokenId] = tokenType
-                    if (tokenType > maxTokenType) {
-                        maxTokenType = tokenType
-                    }
-                    lineNum++
-                } else {
-                    g.errorManager?.toolError(
-                        ErrorType.TOKENS_FILE_SYNTAX_ERROR,
-                        "$vocabName$VOCAB_FILE_EXTENSION",
-                        " bad token def: $tokenDef",
-                        lineNum,
-                    )
-                }
-            }
+            parseTokensContent(vocabName, content, tokens)
         }
         return tokens
+    }
+
+    private fun parseTokensContent(
+        vocabName: String,
+        content: String,
+        tokens: MutableMap<String, Int>,
+    ) {
+        var maxTokenType = -1
+        var lineNum = 1
+        for (rawLine in content.lines()) {
+            val tokenDef = rawLine.trimEnd('\r')
+            if (tokenDef.isEmpty()) {
+                continue
+            }
+            val match = TOKEN_DEF_PATTERN.matchEntire(tokenDef)
+            if (match != null) {
+                val tokenId = match.groupValues[1]
+                val tokenTypeStr = match.groupValues[2]
+                val parsedType = tokenTypeStr.toIntOrNull()
+                val tokenType =
+                    if (parsedType == null) {
+                        g.errorManager?.toolError(
+                            ErrorType.TOKENS_FILE_SYNTAX_ERROR,
+                            "$vocabName$VOCAB_FILE_EXTENSION",
+                            " bad token type: $tokenTypeStr",
+                            lineNum,
+                        )
+                        -1
+                    } else {
+                        parsedType
+                    }
+                g.log("grammar", "import $tokenId=$tokenType")
+                tokens[tokenId] = tokenType
+                if (tokenType > maxTokenType) {
+                    maxTokenType = tokenType
+                }
+                lineNum++
+            } else {
+                g.errorManager?.toolError(
+                    ErrorType.TOKENS_FILE_SYNTAX_ERROR,
+                    "$vocabName$VOCAB_FILE_EXTENSION",
+                    " bad token def: $tokenDef",
+                    lineNum,
+                )
+            }
+        }
     }
 
     fun getImportedVocabFileName(): String? {

@@ -368,6 +368,7 @@ abstract class Lexer :
 
     companion object {
         const val DEFAULT_MODE: Int = 0
+        const val EOF: Int = -1
         val MORE: Int = -2
         val SKIP: Int = -3
 

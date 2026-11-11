@@ -18,7 +18,7 @@ package io.github.kotlinmania.antlr4
  * parser, this class (with slightly more memory overhead per node) is used to
  * provide equivalent functionality.
  */
-class InterpreterRuleContext : ParserRuleContext {
+open class InterpreterRuleContext : ParserRuleContext {
     /** This is the backing field for [.getRuleIndex].  */
     var altNum: Int = -1
     override var ruleIndex: Int = -1
