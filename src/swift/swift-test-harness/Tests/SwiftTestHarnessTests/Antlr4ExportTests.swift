@@ -167,41 +167,46 @@ struct Antlr4ExportTests {
         let combined = io.github.kotlinmania.antlr4.tooling.tool.Grammar(
             grammarText: """
             grammar Calc;
+            s : expr EOF ;
             expr : expr '*' expr
                  | expr '+' expr
                  | INT
+                 | ID
                  ;
+            ID : [a-z]+ ;
             INT : [0-9]+ ;
             WS : [ \\t\\r\\n]+ -> skip ;
             """
         )
         let lexerGrammar = try #require(combined.implicitLexer)
-        let lexInterp = lexerGrammar.createLexerInterpreter(input: ANTLRInputStream(input: "1 + 2 * 3"))
+        let lexInterp = lexerGrammar.createLexerInterpreter(input: ANTLRInputStream(input: "1 + 2 * a"))
         let tokenStream = CommonTokenStream(tokenSource: lexInterp)
         let parserInterp = combined.createGrammarParserInterpreter(tokenStream: tokenStream)
         let exprRule = try #require(combined.getRule(name: "expr"))
         let tree = try #require(parserInterp.parse(startRuleIndex: exprRule.index))
-        #expect(tree.toStringTree(parser: parserInterp) == "(expr:2 (expr:3 1) + (expr:1 (expr:3 2) * (expr:3 3)))")
+        #expect(tree.toStringTree(parser: parserInterp) == "(expr:2 (expr:3 1) + (expr:1 (expr:3 2) * (expr:4 a)))")
 
         let dotGen = io.github.kotlinmania.antlr4.tooling.tool.DOTGenerator(grammar: combined)
         let startState = combined.getATN().ruleToStartState[Int(exprRule.index)]
         let dot = dotGen.getDOT(startState: startState)
         #expect(dot?.contains("digraph ATN") == true)
 
-        let guiInterp = io.github.kotlinmania.antlr4.tooling.gui.Interpreter(args: ["Calc.g4", "expr", "-tree"])
+        let guiInterp = io.github.kotlinmania.antlr4.tooling.gui.Interpreter(args: ["Calc.g4", "s", "-tree"])
         let info = guiInterp.interpGrammarText(
             grammarText: """
             grammar Calc;
-            expr : expr '+' INT | INT ;
+            s : expr EOF ;
+            expr : expr '+' INT | INT | ID ;
+            ID : [a-z]+ ;
             INT : [0-9]+ ;
             WS : [ \\t]+ -> skip ;
             """,
             lexerGrammarText: nil,
             charStream: ANTLRInputStream(input: "10 + 20"),
-            enableProfile: false
+            enableProfile: true
         )
         #expect(info != nil)
-        #expect(guiInterp.lastRenderedTree == "(expr:1 (expr:2 10) + 20)")
+        #expect(guiInterp.lastRenderedTree == "(s:1 (expr:1 (expr:2 10) + 20) <EOF>)")
     }
 }
 #elseif canImport(XCTest)
@@ -363,41 +368,46 @@ final class Antlr4ExportTests: XCTestCase {
         let combined = io.github.kotlinmania.antlr4.tooling.tool.Grammar(
             grammarText: """
             grammar Calc;
+            s : expr EOF ;
             expr : expr '*' expr
                  | expr '+' expr
                  | INT
+                 | ID
                  ;
+            ID : [a-z]+ ;
             INT : [0-9]+ ;
             WS : [ \\t\\r\\n]+ -> skip ;
             """
         )
         let lexerGrammar = try XCTUnwrap(combined.implicitLexer)
-        let lexInterp = lexerGrammar.createLexerInterpreter(input: ANTLRInputStream(input: "1 + 2 * 3"))
+        let lexInterp = lexerGrammar.createLexerInterpreter(input: ANTLRInputStream(input: "1 + 2 * a"))
         let tokenStream = CommonTokenStream(tokenSource: lexInterp)
         let parserInterp = combined.createGrammarParserInterpreter(tokenStream: tokenStream)
         let exprRule = try XCTUnwrap(combined.getRule(name: "expr"))
         let tree = try XCTUnwrap(parserInterp.parse(startRuleIndex: exprRule.index))
-        XCTAssertEqual(tree.toStringTree(parser: parserInterp), "(expr:2 (expr:3 1) + (expr:1 (expr:3 2) * (expr:3 3)))")
+        XCTAssertEqual(tree.toStringTree(parser: parserInterp), "(expr:2 (expr:3 1) + (expr:1 (expr:3 2) * (expr:4 a)))")
 
         let dotGen = io.github.kotlinmania.antlr4.tooling.tool.DOTGenerator(grammar: combined)
         let startState = combined.getATN().ruleToStartState[Int(exprRule.index)]
         let dot = dotGen.getDOT(startState: startState)
         XCTAssertEqual(dot?.contains("digraph ATN"), true)
 
-        let guiInterp = io.github.kotlinmania.antlr4.tooling.gui.Interpreter(args: ["Calc.g4", "expr", "-tree"])
+        let guiInterp = io.github.kotlinmania.antlr4.tooling.gui.Interpreter(args: ["Calc.g4", "s", "-tree"])
         let info = guiInterp.interpGrammarText(
             grammarText: """
             grammar Calc;
-            expr : expr '+' INT | INT ;
+            s : expr EOF ;
+            expr : expr '+' INT | INT | ID ;
+            ID : [a-z]+ ;
             INT : [0-9]+ ;
             WS : [ \\t]+ -> skip ;
             """,
             lexerGrammarText: nil,
             charStream: ANTLRInputStream(input: "10 + 20"),
-            enableProfile: false
+            enableProfile: true
         )
         XCTAssertNotNil(info)
-        XCTAssertEqual(guiInterp.lastRenderedTree, "(expr:1 (expr:2 10) + 20)")
+        XCTAssertEqual(guiInterp.lastRenderedTree, "(s:1 (expr:1 (expr:2 10) + 20) <EOF>)")
     }
 }
 #endif
