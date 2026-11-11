@@ -5,12 +5,43 @@
  */
 package io.github.kotlinmania.antlr4.tooling.tool
 
+import io.github.kotlinmania.antlr4.TokenStream
+import io.github.kotlinmania.antlr4.tooling.ast.GrammarRootAST
+
 /**
- * Grammar context contract exposed to [io.github.kotlinmania.antlr4.tooling.ast.GrammarAST] nodes
- * and [LabelElementPair] for option validation and lexer/parser label classification.
+ * Grammar context contract exposed to [io.github.kotlinmania.antlr4.tooling.ast.GrammarAST] nodes,
+ * [LabelElementPair], and `.g4` parse/transform helpers.
  */
 interface GrammarASTOwner {
+    val name: String?
+        get() = null
+
     val fileName: String?
+
     val isLexer: Boolean
+
     val errorManager: ErrorManager?
+
+    val ast: GrammarRootAST?
+        get() = null
+
+    val originalTokenStream: TokenStream?
+        get() = ast?.tokenStream
+
+    val libDirectory: String?
+        get() = null
+
+    val outputDirectory: String?
+        get() = null
+
+    val grammarEncoding: String?
+        get() = null
+
+    fun getOptionString(key: String): String? = ast?.getOptionString(key)
+
+    fun log(
+        component: String,
+        msg: String,
+    ) {
+    }
 }

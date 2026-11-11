@@ -18,6 +18,12 @@ class RuleAST : GrammarASTWithOptions {
 
     constructor(type: Int) : super(type)
 
+    constructor(
+        type: Int,
+        t: Token?,
+        text: String?,
+    ) : super(type, t, text)
+
     val isLexerRule: Boolean
         get() {
             val name = ruleName ?: return false

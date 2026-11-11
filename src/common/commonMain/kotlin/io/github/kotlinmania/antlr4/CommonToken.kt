@@ -7,8 +7,8 @@ package io.github.kotlinmania.antlr4
 
 import io.github.kotlinmania.antlr4.misc.Interval
 
-class CommonToken : WritableToken {
-    override var type: Int
+open class CommonToken : WritableToken {
+    override var type: Int = Token.INVALID_TYPE
 
     override var line: Int = 0
 

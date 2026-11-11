@@ -126,6 +126,41 @@ struct Antlr4ExportTests {
         #expect(predefined.size() == 7)
         #expect(predefined.get(name: "text")?.name == "text")
     }
+
+    @Test("Tooling ANTLRParser, ScopeParser, and ActionSplitter")
+    func testToolingGrammarParserScopeAndActionSplitter() throws {
+        let gStream = ANTLRInputStream(input: "grammar Expr; expr : expr '+' INT | INT ; INT : [0-9]+ ;")
+        let gLexer = io.github.kotlinmania.antlr4.tooling.parse.ANTLRLexer(input: gStream)
+        let gTokens = CommonTokenStream(tokenSource: gLexer)
+        let gParser = io.github.kotlinmania.antlr4.tooling.parse.ANTLRParser(input: gTokens)
+        let spec = gParser.grammarSpec()
+        #expect(spec.tree.grammarName == "Expr")
+        #expect(
+            spec.tree.toStringTree() ==
+                "(COMBINED_GRAMMAR Expr (RULES (RULE expr (BLOCK (ALT expr '+' INT) (ALT INT))) (RULE INT (BLOCK (ALT (+ (BLOCK (ALT [0-9]))))))))"
+        )
+
+        let attrs = io.github.kotlinmania.antlr4.tooling.parse.ScopeParser.shared.parseTypedArgList(
+            action: nil,
+            s: "x:Int = 10, name:String",
+            g: nil
+        )
+        #expect(attrs.size() == 2)
+        #expect(attrs.get(name: "x")?.type == "Int")
+        #expect(attrs.get(name: "x")?.initValue == "10")
+        #expect(attrs.get(name: "name")?.type == "String")
+
+        let splitter = io.github.kotlinmania.antlr4.tooling.parse.ActionSplitter(
+            input: ANTLRInputStream(input: "$expr.text + $a::count"),
+            delegate: io.github.kotlinmania.antlr4.tooling.semantics.BlankActionSplitterListener(),
+            initialLine: 1,
+            initialCharPositionInLine: 0
+        )
+        let chunks = splitter.getActionTokens()
+        #expect(chunks.count == 3)
+        #expect(chunks[0].type == io.github.kotlinmania.antlr4.tooling.parse.ActionSplitter.Companion.shared.QUALIFIED_ATTR)
+        #expect(chunks[2].type == io.github.kotlinmania.antlr4.tooling.parse.ActionSplitter.Companion.shared.NONLOCAL_ATTR)
+    }
 }
 #elseif canImport(XCTest)
 import XCTest
@@ -246,6 +281,40 @@ final class Antlr4ExportTests: XCTestCase {
         let predefined = io.github.kotlinmania.antlr4.tooling.tool.AttributeDict.Companion.shared.predefinedTokenDict
         XCTAssertEqual(predefined.size(), 7)
         XCTAssertEqual(predefined.get(name: "text")?.name, "text")
+    }
+
+    func testToolingGrammarParserScopeAndActionSplitter() throws {
+        let gStream = ANTLRInputStream(input: "grammar Expr; expr : expr '+' INT | INT ; INT : [0-9]+ ;")
+        let gLexer = io.github.kotlinmania.antlr4.tooling.parse.ANTLRLexer(input: gStream)
+        let gTokens = CommonTokenStream(tokenSource: gLexer)
+        let gParser = io.github.kotlinmania.antlr4.tooling.parse.ANTLRParser(input: gTokens)
+        let spec = gParser.grammarSpec()
+        XCTAssertEqual(spec.tree.grammarName, "Expr")
+        XCTAssertEqual(
+            spec.tree.toStringTree(),
+            "(COMBINED_GRAMMAR Expr (RULES (RULE expr (BLOCK (ALT expr '+' INT) (ALT INT))) (RULE INT (BLOCK (ALT (+ (BLOCK (ALT [0-9]))))))))"
+        )
+
+        let attrs = io.github.kotlinmania.antlr4.tooling.parse.ScopeParser.shared.parseTypedArgList(
+            action: nil,
+            s: "x:Int = 10, name:String",
+            g: nil
+        )
+        XCTAssertEqual(attrs.size(), 2)
+        XCTAssertEqual(attrs.get(name: "x")?.type, "Int")
+        XCTAssertEqual(attrs.get(name: "x")?.initValue, "10")
+        XCTAssertEqual(attrs.get(name: "name")?.type, "String")
+
+        let splitter = io.github.kotlinmania.antlr4.tooling.parse.ActionSplitter(
+            input: ANTLRInputStream(input: "$expr.text + $a::count"),
+            delegate: io.github.kotlinmania.antlr4.tooling.semantics.BlankActionSplitterListener(),
+            initialLine: 1,
+            initialCharPositionInLine: 0
+        )
+        let chunks = splitter.getActionTokens()
+        XCTAssertEqual(chunks.count, 3)
+        XCTAssertEqual(chunks[0].type, io.github.kotlinmania.antlr4.tooling.parse.ActionSplitter.Companion.shared.QUALIFIED_ATTR)
+        XCTAssertEqual(chunks[2].type, io.github.kotlinmania.antlr4.tooling.parse.ActionSplitter.Companion.shared.NONLOCAL_ATTR)
     }
 }
 #endif

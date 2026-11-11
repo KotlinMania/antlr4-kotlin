@@ -6,6 +6,8 @@
 package io.github.kotlinmania.antlr4.tooling.parse
 
 import io.github.kotlinmania.antlr4.Token
+import io.github.kotlinmania.antlr4.tooling.ast.GrammarAST
+import io.github.kotlinmania.antlr4.tooling.ast.GrammarASTWithOptions
 
 /**
  * Canonical token and AST node type constants for ANTLR4 `.g4` lexing, parsing, and AST walking.
@@ -98,6 +100,9 @@ object ANTLRParserTypes {
     const val RULES: Int = 79
     const val SET: Int = 80
     const val WILDCARD: Int = 81
+    const val PRIVATE: Int = 82
+    const val PROTECTED: Int = 83
+    const val PUBLIC: Int = 84
 
     const val COMMENTS_CHANNEL: Int = 2
 
@@ -185,6 +190,9 @@ object ANTLRParserTypes {
             "RULES",
             "SET",
             "WILDCARD",
+            "PRIVATE",
+            "PROTECTED",
+            "PUBLIC",
         )
 
     fun tokenName(type: Int): String =
@@ -195,4 +203,32 @@ object ANTLRParserTypes {
         } else {
             type.toString()
         }
+
+    fun isTokenName(id: String): Boolean = id.isNotEmpty() && id[0].isUpperCase()
+
+    fun setNodeOptions(
+        node: GrammarAST?,
+        options: GrammarAST?,
+    ) {
+        if (options == null || node !is GrammarASTWithOptions) {
+            return
+        }
+        if (node.childCount == 0 || options.childCount == 0) {
+            return
+        }
+        for (i in 0 until options.childCount) {
+            val child = options.getChild(i) ?: continue
+            if (child.type == ASSIGN) {
+                val optionKey = child.getChild(0)?.text
+                if (optionKey != null) {
+                    node.setOption(optionKey, child.getChild(1))
+                }
+            } else {
+                val optionKey = child.text
+                if (optionKey.isNotEmpty()) {
+                    node.setOption(optionKey, null)
+                }
+            }
+        }
+    }
 }
