@@ -13,12 +13,15 @@ import io.github.kotlinmania.antlr4.tooling.misc.FrequencySet
 import io.github.kotlinmania.antlr4.tooling.misc.MutableInt
 import io.github.kotlinmania.antlr4.tooling.parse.ANTLRParserTypes
 import io.github.kotlinmania.antlr4.tooling.parse.GrammarTreeVisitor
+import io.github.kotlinmania.antlr4.tooling.tool.Grammar
 
 /**
  * Pure-Kotlin tree visitor computing minimum and maximum element frequencies within a rule or
  * alternative AST so [RuleFunction] knows whether to generate scalar vs list context getters.
  */
-open class ElementFrequenciesVisitor : GrammarTreeVisitor() {
+open class ElementFrequenciesVisitor(
+    private val grammar: Grammar? = null,
+) : GrammarTreeVisitor() {
     internal val frequencies: ArrayDeque<FrequencySet<String>> = ArrayDeque()
     private val minFrequencies: ArrayDeque<FrequencySet<String>> = ArrayDeque()
 
@@ -46,6 +49,16 @@ open class ElementFrequenciesVisitor : GrammarTreeVisitor() {
         if (ref.type == ANTLRParserTypes.TOKEN_REF && ref.text != "EOF") {
             frequencies.last().add(ref.text)
             minFrequencies.last().add(ref.text)
+        }
+    }
+
+    override fun stringRef(ref: TerminalAST) {
+        val g = grammar ?: return
+        if (inContext("... SEMPRED ...")) return
+        val sym = g.getTokenName(ref.text)
+        if (sym != null && !sym.startsWith("T__")) {
+            frequencies.last().add(sym)
+            minFrequencies.last().add(sym)
         }
     }
 
@@ -227,7 +240,7 @@ open class ElementFrequenciesVisitor : GrammarTreeVisitor() {
         ): FrequencySet<String> {
             val result = copy(a)
             for ((k, vb) in b.asMap()) {
-                for (step in 0 until vb.v) {
+                repeat(vb.v) {
                     result.add(k)
                 }
             }

@@ -9,15 +9,32 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class UnicodeEscapesTest {
-    @Test fun latinJavaEscape() = checkEscape("\\u0061", 0x0061, "Java")
-    @Test fun latinPythonEscape() = checkEscape("\\u0061", 0x0061, "Python3")
-    @Test fun latinSwiftEscape() = checkEscape("\\u{0061}", 0x0061, "Swift")
-    @Test fun bmpJavaEscape() = checkEscape("\\uABCD", 0xABCD, "Java")
-    @Test fun bmpPythonEscape() = checkEscape("\\uABCD", 0xABCD, "Python3")
-    @Test fun bmpSwiftEscape() = checkEscape("\\u{ABCD}", 0xABCD, "Swift")
-    @Test fun smpJavaEscape() = checkEscape("\\uD83D\\uDCA9", 0x1F4A9, "Java")
-    @Test fun smpPythonEscape() = checkEscape("\\U0001F4A9", 0x1F4A9, "Python3")
-    @Test fun smpSwiftEscape() = checkEscape("\\u{1F4A9}", 0x1F4A9, "Swift")
+    @Test
+    fun latinJavaEscape() = checkEscape("\\u0061", 0x0061, "Java")
+
+    @Test
+    fun latinPythonEscape() = checkEscape("\\u0061", 0x0061, "Python3")
+
+    @Test
+    fun latinSwiftEscape() = checkEscape("\\u{0061}", 0x0061, "Swift")
+
+    @Test
+    fun bmpJavaEscape() = checkEscape("\\uABCD", 0xABCD, "Java")
+
+    @Test
+    fun bmpPythonEscape() = checkEscape("\\uABCD", 0xABCD, "Python3")
+
+    @Test
+    fun bmpSwiftEscape() = checkEscape("\\u{ABCD}", 0xABCD, "Swift")
+
+    @Test
+    fun smpJavaEscape() = checkEscape("\\uD83D\\uDCA9", 0x1F4A9, "Java")
+
+    @Test
+    fun smpPythonEscape() = checkEscape("\\U0001F4A9", 0x1F4A9, "Python3")
+
+    @Test
+    fun smpSwiftEscape() = checkEscape("\\u{1F4A9}", 0x1F4A9, "Swift")
 
     @Test
     fun everyTargetUsesItsOriginalEscapeSyntax() {

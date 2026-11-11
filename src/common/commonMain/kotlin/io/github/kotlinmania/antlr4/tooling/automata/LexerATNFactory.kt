@@ -71,10 +71,11 @@ class LexerATNFactory(
         for ((idx, lexerAct) in indexToActionMap) {
             actionList[idx] = lexerAct
         }
-        atn.mutableLexerActions = actionList
+        atn.mutableLexerActions.clear()
+        atn.mutableLexerActions.addAll(actionList)
 
         for (modeName in modes) {
-            val rules = lexerGrammar.modes[modeName] ?: emptyList()
+            val rules = lexerGrammar.modes[modeName].orEmpty()
             val startState = atn.mutableModeNameToStartState[modeName]
             for (r in rules) {
                 if (!r.isFragment) {
@@ -195,7 +196,7 @@ class LexerATNFactory(
         }
 
         val isKotlinTarget = g.language == "Kotlin"
-        val argText = arg?.text ?: ""
+        val argText = arg?.text.orEmpty()
         val rendered =
             when (cmdName) {
                 "skip" -> if (isKotlinTarget) "skip()" else "skip();"
@@ -604,9 +605,9 @@ class LexerATNFactory(
                                         sb.append(" | ")
                                     }
                                     if (child is RangeAST) {
-                                        sb.append(child.getChild(0)?.text ?: "")
+                                        sb.append(child.getChild(0)?.text.orEmpty())
                                         sb.append("..")
-                                        sb.append(child.getChild(1)?.text ?: "")
+                                        sb.append(child.getChild(1)?.text.orEmpty())
                                     } else {
                                         sb.append(child.text)
                                     }

@@ -23,14 +23,14 @@ open class AbstractParseTreeVisitor<T> : ParseTreeVisitor<T> {
 
     override fun visitErrorNode(node: ErrorNode?): T? = defaultResult()
 
-    protected fun defaultResult(): T? = null
+    protected open fun defaultResult(): T? = null
 
-    protected fun aggregateResult(
+    protected open fun aggregateResult(
         aggregate: T?,
         nextResult: T?,
     ): T? = nextResult
 
-    protected fun shouldVisitNextChild(
+    protected open fun shouldVisitNextChild(
         node: RuleNode?,
         currentResult: T?,
     ): Boolean = true

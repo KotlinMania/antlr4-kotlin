@@ -78,9 +78,9 @@ object InterpreterDataReader {
                 if (mode.isNullOrEmpty()) break
                 modes.add(mode)
             }
-            line = reader.readLineOrNull() ?: throw RuntimeException("Unexpected data entry")
         }
 
+        line = reader.readLineOrNull() ?: throw RuntimeException("Unexpected data entry")
         if (line != "atn:") throw RuntimeException("Unexpected data entry")
         line = reader.readLineOrNull() ?: throw RuntimeException("Unexpected data entry")
         val elements = line.substring(1, line.length - 1).split(",")

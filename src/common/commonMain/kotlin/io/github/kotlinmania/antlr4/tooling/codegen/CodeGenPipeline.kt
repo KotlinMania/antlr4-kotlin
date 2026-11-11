@@ -49,9 +49,18 @@ class CodeGenPipeline(
                 gen.writeRecognizer(lexerOut, header = false)
             }
         } else {
-            val parserOut = gen.generateParser(header = false)
-            if (g.tool.errMgr.numErrors == errorCountBefore) {
-                gen.writeRecognizer(parserOut, header = false)
+            if (target.supportsSplitParser() && g.tool.genSplitParser) {
+                for (slice in listOf(SourceType.SOURCE_LEAN, SourceType.SOURCE_CONTEXTS, SourceType.SOURCE_DFA)) {
+                    val sliceOut = gen.generateParser(slice)
+                    if (g.tool.errMgr.numErrors == errorCountBefore) {
+                        gen.writeRecognizer(sliceOut, slice)
+                    }
+                }
+            } else {
+                val parserOut = gen.generateParser(header = false)
+                if (g.tool.errMgr.numErrors == errorCountBefore) {
+                    gen.writeRecognizer(parserOut, header = false)
+                }
             }
 
             if (g.tool.genListener) {

@@ -7,7 +7,9 @@ package io.github.kotlinmania.antlr4.tooling.misc
 
 /** A generic graph used to topologically sort grammar dependencies. */
 class Graph<T> {
-    class Node<T>(var payload: T) {
+    class Node<T>(
+        var payload: T,
+    ) {
         private val mutableEdges: MutableList<Node<T>> = mutableListOf()
 
         val edges: List<Node<T>>

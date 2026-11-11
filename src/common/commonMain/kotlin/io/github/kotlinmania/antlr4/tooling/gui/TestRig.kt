@@ -267,7 +267,7 @@ class TestRig(
             LexerInterpreter(
                 grammarName ?: "Lexer.interp",
                 lexerData.vocabulary ?: throw IllegalStateException("Missing lexer vocabulary"),
-                lexerData.ruleNames ?: emptyList(),
+                lexerData.ruleNames.orEmpty(),
                 lexerData.channels ?: listOf("DEFAULT_TOKEN_CHANNEL", "HIDDEN"),
                 lexerData.modes ?: listOf("DEFAULT_MODE"),
                 lexerData.atn ?: throw IllegalStateException("Missing lexer ATN"),
@@ -280,7 +280,7 @@ class TestRig(
                 ParserInterpreter(
                     grammarName ?: "Parser.interp",
                     parserData.vocabulary ?: throw IllegalStateException("Missing parser vocabulary"),
-                    parserData.ruleNames ?: emptyList(),
+                    parserData.ruleNames.orEmpty(),
                     parserData.atn ?: throw IllegalStateException("Missing parser ATN"),
                     CommonTokenStream(lexer),
                 )

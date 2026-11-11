@@ -35,15 +35,13 @@ class GrammarToken : CommonToken {
 
     override var charPositionInLine: Int
         get() {
-            if (originalTokenIndex == -1) {
-                return super.charPositionInLine
+            if (originalTokenIndex >= 0) {
+                val original = g.originalTokenStream?.get(originalTokenIndex)
+                if (original != null) {
+                    return original.charPositionInLine
+                }
             }
-            val original = g.originalTokenStream?.get(originalTokenIndex) ?: return super.charPositionInLine
-            return if (super.line == 1) {
-                original.charPositionInLine + super.charPositionInLine
-            } else {
-                super.charPositionInLine
-            }
+            return super.charPositionInLine
         }
         set(value) {
             super.charPositionInLine = value
@@ -51,11 +49,13 @@ class GrammarToken : CommonToken {
 
     override var line: Int
         get() {
-            if (originalTokenIndex == -1) {
-                return super.line
+            if (originalTokenIndex >= 0) {
+                val original = g.originalTokenStream?.get(originalTokenIndex)
+                if (original != null) {
+                    return original.line
+                }
             }
-            val original = g.originalTokenStream?.get(originalTokenIndex) ?: return super.line
-            return original.line + super.line - 1
+            return super.line
         }
         set(value) {
             super.line = value
@@ -72,7 +72,7 @@ class GrammarToken : CommonToken {
             if (originalTokenIndex >= 0) {
                 val original = g.originalTokenStream?.get(originalTokenIndex)
                 if (original != null) {
-                    return original.startIndex + super.startIndex
+                    return original.startIndex
                 }
             }
             return super.startIndex

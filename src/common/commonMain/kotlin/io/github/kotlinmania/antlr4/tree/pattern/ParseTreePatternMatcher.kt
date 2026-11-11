@@ -18,16 +18,16 @@ import io.github.kotlinmania.antlr4.tree.RuleNode
 import io.github.kotlinmania.antlr4.tree.TerminalNode
 
 open class ParseTreePatternMatcher(
-    private val lexer: Lexer,
-    parser: Parser,
+    private val lexer: Lexer?,
+    parser: Parser?,
 ) {
-    private class CannotInvokeStartRule(
+    internal class CannotInvokeStartRule(
         message: String?,
     ) : RuntimeException(message)
 
-    private class StartRuleDoesNotConsumeFullPattern : RuntimeException()
+    internal class StartRuleDoesNotConsumeFullPattern : RuntimeException()
 
-    private val parser: Parser = parser
+    private val parser: Parser? = parser
 
     protected var start: String = "<"
     protected var stop: String = ">"
@@ -59,7 +59,8 @@ open class ParseTreePatternMatcher(
         pattern: ParseTreePattern,
     ): Boolean {
         val labels = MultiMap<String, ParseTree>()
-        val mismatchedNode = matchImpl(tree, pattern.getPatternTree()!!, labels)
+        val patternTree = requireNotNull(pattern.getPatternTree()) { "patternTree cannot be null" }
+        val mismatchedNode = matchImpl(tree, patternTree, labels)
         return mismatchedNode == null
     }
 
@@ -77,7 +78,8 @@ open class ParseTreePatternMatcher(
         pattern: ParseTreePattern,
     ): ParseTreeMatch {
         val labels = MultiMap<String, ParseTree>()
-        val mismatchedNode = matchImpl(tree, pattern.getPatternTree()!!, labels)
+        val patternTree = requireNotNull(pattern.getPatternTree()) { "patternTree cannot be null" }
+        val mismatchedNode = matchImpl(tree, patternTree, labels)
         return ParseTreeMatch(tree, pattern, labels, mismatchedNode)
     }
 
@@ -85,16 +87,18 @@ open class ParseTreePatternMatcher(
         pattern: String,
         patternRuleIndex: Int,
     ): ParseTreePattern {
+        val activeParser = requireNotNull(parser) { "parser cannot be null" }
+        val bypassAtn = requireNotNull(activeParser.aTNWithBypassAlts) { "bypass ATN cannot be null" }
         val tokenList = tokenize(pattern)
         val tokenSrc = ListTokenSource(tokenList)
         val tokens = CommonTokenStream(tokenSrc)
 
         val parserInterp =
             ParserInterpreter(
-                parser.grammarFileName,
-                parser.vocabulary,
-                parser.ruleNames?.toList().orEmpty(),
-                parser.aTNWithBypassAlts!!,
+                activeParser.grammarFileName,
+                activeParser.vocabulary,
+                activeParser.ruleNames?.toList().orEmpty(),
+                bypassAtn,
                 tokens,
             )
 
@@ -118,9 +122,9 @@ open class ParseTreePatternMatcher(
         return ParseTreePattern(this, pattern, patternRuleIndex, tree)
     }
 
-    fun getLexer(): Lexer = lexer
+    fun getLexer(): Lexer? = lexer
 
-    fun getParser(): Parser = parser
+    fun getParser(): Parser? = parser
 
     private fun matchImpl(
         tree: ParseTree,
@@ -204,20 +208,23 @@ open class ParseTreePatternMatcher(
     }
 
     fun tokenize(pattern: String): List<Token> {
+        val activeParser = requireNotNull(parser) { "parser cannot be null" }
+        val activeLexer = requireNotNull(lexer) { "lexer cannot be null" }
         val chunks = split(pattern)
         val tokens = mutableListOf<Token>()
 
         for (chunk in chunks) {
             if (chunk is TagChunk) {
                 if (chunk.tag[0].isUpperCase()) {
-                    val ttype = parser.getTokenType(chunk.tag)
+                    val ttype = activeParser.getTokenType(chunk.tag)
                     require(ttype != Token.INVALID_TYPE) { "Unknown token ${chunk.tag} in pattern: $pattern" }
                     val t = TokenTagToken(chunk.tag, ttype, chunk.label)
                     tokens.add(t)
                 } else if (chunk.tag[0].isLowerCase()) {
-                    val ruleIndex = parser.getRuleIndex(chunk.tag)
+                    val ruleIndex = activeParser.getRuleIndex(chunk.tag)
                     require(ruleIndex != -1) { "Unknown rule ${chunk.tag} in pattern: $pattern" }
-                    val ruleImaginaryTokenType = parser.aTNWithBypassAlts!!.ruleToTokenType[ruleIndex]
+                    val bypassAtn = requireNotNull(activeParser.aTNWithBypassAlts) { "bypass ATN cannot be null" }
+                    val ruleImaginaryTokenType = bypassAtn.ruleToTokenType[ruleIndex]
                     tokens.add(RuleTagToken(chunk.tag, ruleImaginaryTokenType, chunk.label))
                 } else {
                     throw IllegalArgumentException("invalid tag: ${chunk.tag} in pattern: $pattern")
@@ -225,11 +232,11 @@ open class ParseTreePatternMatcher(
             } else {
                 val textChunk = chunk as TextChunk
                 val input = ANTLRInputStream(textChunk.text)
-                lexer.setInputStream(input)
-                var t = lexer.nextToken()
+                activeLexer.setInputStream(input)
+                var t = activeLexer.nextToken()
                 while (t.type != Token.EOF) {
                     tokens.add(t)
-                    t = lexer.nextToken()
+                    t = activeLexer.nextToken()
                 }
             }
         }

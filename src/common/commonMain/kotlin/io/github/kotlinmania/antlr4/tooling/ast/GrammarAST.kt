@@ -74,7 +74,7 @@ open class GrammarAST {
         get() {
             val overrideVal = textOverride
             if (overrideVal != null) return overrideVal
-            return token?.text ?: ""
+            return token?.text.orEmpty()
         }
         set(value) {
             ensureWritableToken().text = value
@@ -82,11 +82,11 @@ open class GrammarAST {
 
     open val line: Int
         get() {
-            val tok = token
-            if (tok == null || tok.line == 0) {
+            val tokLine = token?.line ?: 0
+            if (tokLine == 0) {
                 return if (childNodes.isNotEmpty()) childNodes[0].line else 0
             }
-            return tok.line
+            return tokLine
         }
 
     open val charPositionInLine: Int

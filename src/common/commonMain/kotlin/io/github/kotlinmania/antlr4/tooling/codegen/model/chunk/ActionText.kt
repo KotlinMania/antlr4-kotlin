@@ -12,5 +12,5 @@ class ActionText(
     ctx: StructDecl?,
     var text: String?,
 ) : ActionChunk(ctx) {
-    override fun toString(): String = text ?: ""
+    override fun toString(): String = text.orEmpty()
 }

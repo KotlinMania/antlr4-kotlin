@@ -27,6 +27,8 @@ open class KotlinTarget(
 
     override fun wantsJavaSerializedATN(): Boolean = false
 
+    override fun supportsSplitParser(): Boolean = true
+
     override fun escapeWord(word: String): String = "`$word`"
 
     override fun getImplicitTokenLabel(tokenName: String): String {
@@ -75,15 +77,57 @@ open class KotlinTarget(
 
         val KOTLIN_KEYWORDS: Set<String> =
             setOf(
-                "as", "break", "class", "continue", "do", "else", "false", "for",
-                "fun", "if", "in", "interface", "is", "null", "object", "package",
-                "return", "super", "this", "throw", "true", "try", "typealias",
-                "typeof", "val", "var", "when", "while",
+                "as",
+                "break",
+                "class",
+                "continue",
+                "do",
+                "else",
+                "false",
+                "for",
+                "fun",
+                "if",
+                "in",
+                "interface",
+                "is",
+                "null",
+                "object",
+                "package",
+                "return",
+                "super",
+                "this",
+                "throw",
+                "true",
+                "try",
+                "typealias",
+                "typeof",
+                "val",
+                "var",
+                "when",
+                "while",
                 // ParserRuleContext / Recognizer member names that could collide
-                "ctx", "state", "ruleIndex", "ruleNames", "vocabulary", "atn",
-                "serializedATN", "grammarFileName", "tokenStream", "inputStream",
-                "errorHandler", "interpreter", "parent", "invokingState", "children",
-                "start", "stop", "exception", "text", "type", "channel", "mode",
+                "ctx",
+                "state",
+                "ruleIndex",
+                "ruleNames",
+                "vocabulary",
+                "atn",
+                "serializedATN",
+                "grammarFileName",
+                "tokenStream",
+                "inputStream",
+                "errorHandler",
+                "interpreter",
+                "parent",
+                "invokingState",
+                "children",
+                "start",
+                "stop",
+                "exception",
+                "text",
+                "type",
+                "channel",
+                "mode",
             )
     }
 }

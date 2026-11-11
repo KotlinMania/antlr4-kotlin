@@ -15,7 +15,12 @@ open class Decl(
     val decl: String? = null,
 ) : SrcOp(factory) {
     val escapedName: String =
-        factory?.generator?.target?.escapeIfNeeded(name).orEmpty().ifEmpty { name }
+        factory
+            ?.generator
+            ?.target
+            ?.escapeIfNeeded(name)
+            .orEmpty()
+            .ifEmpty { name }
 
     var isImplicit: Boolean = false
     var ctx: StructDecl? = null

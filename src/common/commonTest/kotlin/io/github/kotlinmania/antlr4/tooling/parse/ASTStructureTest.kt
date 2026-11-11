@@ -485,7 +485,7 @@ class ASTStructureTest {
                     options: GrammarAST?,
                     block: GrammarAST,
                 ) {
-                    discoveredRules.add("${currentModeName}:${id.text}")
+                    discoveredRules.add("$currentModeName:${id.text}")
                 }
 
                 override fun modeDef(

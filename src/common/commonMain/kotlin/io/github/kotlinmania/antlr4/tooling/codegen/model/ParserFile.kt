@@ -18,6 +18,9 @@ class ParserFile(
     val exportMacro: String?
     val genListener: Boolean
     val genVisitor: Boolean
+    var genLean: Boolean = false
+    var genContexts: Boolean = false
+    var genDFA: Boolean = false
 
     @ModelElement
     var parser: Parser? = null

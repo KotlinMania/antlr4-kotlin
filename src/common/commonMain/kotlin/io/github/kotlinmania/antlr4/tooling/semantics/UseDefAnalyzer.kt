@@ -33,7 +33,7 @@ object UseDefAnalyzer {
 
     fun actionIsContextDependent(actionAST: ActionAST): Boolean {
         val tok = actionAST.token ?: return false
-        val stream = CharStreams.fromString(tok.text ?: "")
+        val stream = CharStreams.fromString(tok.text.orEmpty())
         var dependent = false
         val listener =
             object : BlankActionSplitterListener() {
@@ -93,7 +93,7 @@ object UseDefAnalyzer {
         g: LexerGrammar,
         modeName: String,
     ): Map<Rule, Set<Rule>> =
-        getRuleDependenciesForRules(g, g.modes[modeName] ?: emptyList())
+        getRuleDependenciesForRules(g, g.modes[modeName].orEmpty())
 
     fun getRuleDependenciesForRules(
         g: Grammar,

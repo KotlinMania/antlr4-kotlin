@@ -100,7 +100,9 @@ open class ParserATNFactory(
                     g.tool.errMgr.grammarError(
                         ErrorType.EPSILON_OPTIONAL,
                         g.fileName,
-                        record.rule.ast?.getChild(0)?.token,
+                        record.rule.ast
+                            ?.getChild(0)
+                            ?.token,
                         record.rule.name,
                     )
                     continue@optionalCheck
@@ -129,7 +131,9 @@ open class ParserATNFactory(
                 g.tool.errMgr.grammarError(
                     errorType,
                     g.fileName,
-                    record.rule.ast?.getChild(0)?.token,
+                    record.rule.ast
+                        ?.getChild(0)
+                        ?.token,
                     record.rule.name,
                 )
             }
@@ -137,7 +141,9 @@ open class ParserATNFactory(
                 g.tool.errMgr.grammarError(
                     ErrorType.EOF_CLOSURE,
                     g.fileName,
-                    record.rule.ast?.getChild(0)?.token,
+                    record.rule.ast
+                        ?.getChild(0)
+                        ?.token,
                     record.rule.name,
                 )
             }
@@ -319,9 +325,8 @@ open class ParserATNFactory(
         return ATNFactory.Handle(left, right)
     }
 
-    override fun actionFromText(action: String): ATNFactory.Handle {
+    override fun actionFromText(action: String): ATNFactory.Handle =
         throw UnsupportedOperationException("This element is not valid in parsers.")
-    }
 
     override fun block(
         blkAST: BlockAST,
@@ -546,8 +551,10 @@ open class ParserATNFactory(
 
     fun createRuleStartAndStopATNStates() {
         val count = g.rules.size
-        atn.mutableRuleToStartState = MutableList(count) { null }
-        atn.mutableRuleToStopState = MutableList(count) { null }
+        atn.mutableRuleToStartState.clear()
+        repeat(count) { atn.mutableRuleToStartState.add(null) }
+        atn.mutableRuleToStopState.clear()
+        repeat(count) { atn.mutableRuleToStopState.add(null) }
         for (r in g.rules.values) {
             val start = registerNewState(RuleStartState())
             val stop = registerNewState(RuleStopState())
@@ -611,20 +618,17 @@ open class ParserATNFactory(
     override fun lexerAltCommands(
         alt: ATNFactory.Handle,
         cmds: ATNFactory.Handle,
-    ): ATNFactory.Handle {
+    ): ATNFactory.Handle =
         throw UnsupportedOperationException("This element is not allowed in parsers.")
-    }
 
     override fun lexerCallCommand(
         id: GrammarAST,
         arg: GrammarAST,
-    ): ATNFactory.Handle? {
+    ): ATNFactory.Handle? =
         throw UnsupportedOperationException("This element is not allowed in parsers.")
-    }
 
-    override fun lexerCommand(id: GrammarAST): ATNFactory.Handle? {
+    override fun lexerCommand(id: GrammarAST): ATNFactory.Handle? =
         throw UnsupportedOperationException("This element is not allowed in parsers.")
-    }
 
     companion object {
         /**

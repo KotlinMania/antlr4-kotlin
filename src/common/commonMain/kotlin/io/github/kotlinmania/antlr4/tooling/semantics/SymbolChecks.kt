@@ -69,7 +69,7 @@ class SymbolChecks(
 
     fun checkActionRedefinitions(actions: List<GrammarAST>?) {
         if (actions == null) return
-        var scope: String = g.defaultActionScope ?: ""
+        var scope: String = g.defaultActionScope.orEmpty()
         for (ampersandAST in actions) {
             val nameNode = ampersandAST.getChild(0) ?: continue
             val name: String
@@ -382,7 +382,7 @@ class SymbolChecks(
                     ignore = true
                     break
                 }
-                val text = tok.text ?: ""
+                val text = tok.text.orEmpty()
                 if (text.length >= 2) {
                     currentValue.append(text.substring(1, text.length - 1))
                 }

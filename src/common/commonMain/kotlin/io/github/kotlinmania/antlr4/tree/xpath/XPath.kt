@@ -25,9 +25,9 @@ open class XPath(
             tree: ParseTree?,
             xpath: String,
             parser: Parser,
-        ): Collection<ParseTree> {
+        ): List<ParseTree> {
             val p = XPath(parser, xpath)
-            return p.evaluate(tree!!)
+            return p.evaluate(requireNotNull(tree) { "tree must not be null" })
         }
     }
 
@@ -128,9 +128,9 @@ open class XPath(
         }
     }
 
-    fun evaluate(t: ParseTree?): Collection<ParseTree> {
+    fun evaluate(t: ParseTree?): List<ParseTree> {
         val dummyRoot = ParserRuleContext()
-        dummyRoot.addAnyChild(t!!)
+        dummyRoot.addAnyChild(requireNotNull(t) { "tree must not be null" })
         var work: MutableCollection<ParseTree> = mutableListOf(dummyRoot)
         var i = 0
         while (i < elements.size) {
@@ -144,6 +144,6 @@ open class XPath(
             i++
             work = next
         }
-        return work
+        return work.toList()
     }
 }

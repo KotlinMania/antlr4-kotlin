@@ -7,7 +7,6 @@ package io.github.kotlinmania.antlr4.tooling.parse
 
 import io.github.kotlinmania.antlr4.CommonToken
 import io.github.kotlinmania.antlr4.InputMismatchException
-import io.github.kotlinmania.antlr4.IntStream
 import io.github.kotlinmania.antlr4.NoViableAltException
 import io.github.kotlinmania.antlr4.Parser
 import io.github.kotlinmania.antlr4.RecognitionException
@@ -281,7 +280,7 @@ open class ANTLRParser(
     }
 
     private fun mismatchIsMissingToken(follow: IntervalSet): Boolean {
-        var effective = IntervalSet().apply { addAll(follow) }
+        val effective = IntervalSet().apply { addAll(follow) }
         if (effective.contains(ANTLRParserTypes.EOR_TOKEN_TYPE)) {
             val viable = combineFollows(true)
             effective.addAll(viable)
@@ -1284,7 +1283,7 @@ open class ANTLRParser(
                 val t2 = lt(2)
                 val missingSemi =
                     V4ParserException(
-                        "unterminated rule (missing ';') detected at '${t1?.text ?: ""} ${t2?.text ?: ""}'",
+                        "unterminated rule (missing ';') detected at '${t1?.text.orEmpty()} ${t2?.text.orEmpty()}'",
                         tokenStream,
                         t1,
                     )
@@ -1557,7 +1556,7 @@ open class ANTLRParser(
                 val t2 = lt(2)
                 val missingSemi =
                     V4ParserException(
-                        "unterminated rule (missing ';') detected at '${t1?.text ?: ""} ${t2?.text ?: ""}'",
+                        "unterminated rule (missing ';') detected at '${t1?.text.orEmpty()} ${t2?.text.orEmpty()}'",
                         tokenStream,
                         t1,
                     )
@@ -2083,9 +2082,9 @@ open class ANTLRParser(
             }
             val fullText =
                 if (startTok != null && lastTok != null) {
-                    tokenStream.getText(startTok, lastTok) ?: (first.tree?.text ?: "")
+                    tokenStream.getText(startTok, lastTok) ?: first.tree?.text.orEmpty()
                 } else {
-                    first.tree?.text ?: ""
+                    first.tree?.text.orEmpty()
                 }
             return finalizeReturn(GrammarAST(ANTLRParserTypes.ID, startTok, fullText), startTok)
         } catch (ce: ParserControlException) {

@@ -13,13 +13,10 @@ import io.github.kotlinmania.antlr4.tooling.tool.ErrorType
  * Base class for [GrammarAST] nodes capable of carrying grammar/rule/block/element options.
  */
 abstract class GrammarASTWithOptions : GrammarAST {
-    internal var optionMap: MutableMap<String, GrammarAST?>? = null
+    internal val optionMap: MutableMap<String, GrammarAST?> = LinkedHashMap()
 
     constructor(node: GrammarASTWithOptions) : super(node) {
-        val existing = node.optionMap
-        if (existing != null) {
-            this.optionMap = LinkedHashMap(existing)
-        }
+        optionMap.putAll(node.optionMap)
     }
 
     constructor(t: Token?) : super(t)
@@ -41,12 +38,7 @@ abstract class GrammarASTWithOptions : GrammarAST {
         key: String,
         node: GrammarAST?,
     ) {
-        var map = optionMap
-        if (map == null) {
-            map = LinkedHashMap()
-            optionMap = map
-        }
-        map[key] = node
+        optionMap[key] = node
     }
 
     open fun getOptionString(key: String): String? {
@@ -74,13 +66,13 @@ abstract class GrammarASTWithOptions : GrammarAST {
     /**
      * Gets AST node holding value for option [key]; ignores default options and command-line forced options.
      */
-    fun getOptionAST(key: String): GrammarAST? = optionMap?.get(key)
+    fun getOptionAST(key: String): GrammarAST? = optionMap[key]
 
     val numberOfOptions: Int
-        get() = optionMap?.size ?: 0
+        get() = optionMap.size
 
     val options: Map<String, GrammarAST?>
-        get() = optionMap ?: emptyMap()
+        get() = optionMap
 
     abstract override fun dupNode(): GrammarASTWithOptions
 }

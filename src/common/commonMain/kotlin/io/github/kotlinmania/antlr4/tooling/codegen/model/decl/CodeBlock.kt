@@ -17,8 +17,8 @@ open class CodeBlock(
     val altNum: Int = 0,
 ) : SrcOp(factory) {
     internal var mutableLocals: OrderedHashSet<Decl>? = null
-    internal var mutablePreamble: MutableList<SrcOp>? = null
-    internal var mutableOps: MutableList<SrcOp>? = null
+    internal val mutablePreamble: MutableList<SrcOp> = ArrayList()
+    internal val mutableOps: MutableList<SrcOp> = ArrayList()
 
     @ModelElement
     val locals: List<Decl>?
@@ -26,11 +26,11 @@ open class CodeBlock(
 
     @ModelElement
     val preamble: List<SrcOp>?
-        get() = mutablePreamble
+        get() = mutablePreamble.ifEmpty { null }
 
     @ModelElement
     val ops: List<SrcOp>?
-        get() = mutableOps
+        get() = mutableOps.ifEmpty { null }
 
     fun addLocalDecl(d: Decl) {
         var set = mutableLocals
@@ -43,41 +43,21 @@ open class CodeBlock(
     }
 
     fun addPreambleOp(op: SrcOp) {
-        var list = mutablePreamble
-        if (list == null) {
-            list = ArrayList()
-            mutablePreamble = list
-        }
-        list.add(op)
+        mutablePreamble.add(op)
     }
 
     fun addOp(op: SrcOp) {
-        var list = mutableOps
-        if (list == null) {
-            list = ArrayList()
-            mutableOps = list
-        }
-        list.add(op)
+        mutableOps.add(op)
     }
 
     fun insertOp(
         i: Int,
         op: SrcOp,
     ) {
-        var list = mutableOps
-        if (list == null) {
-            list = ArrayList()
-            mutableOps = list
-        }
-        list.add(i, op)
+        mutableOps.add(i, op)
     }
 
     fun addOps(newOps: List<SrcOp>) {
-        var list = mutableOps
-        if (list == null) {
-            list = ArrayList()
-            mutableOps = list
-        }
-        list.addAll(newOps)
+        mutableOps.addAll(newOps)
     }
 }

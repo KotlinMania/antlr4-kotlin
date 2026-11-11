@@ -67,7 +67,7 @@ class GrammarTransformPipeline(
 
         val rulesContainer = root.getFirstChildWithType(ANTLRParserTypes.RULES) ?: return
         val rootRuleNames = HashSet<String>()
-        for (r in rulesContainer.getNodesWithType(ANTLRParserTypes.RULE)) {
+        for (r in root.getNodesWithType(ANTLRParserTypes.RULE)) {
             val rName = r.getChild(0)?.text
             if (rName != null) rootRuleNames.add(rName)
         }

@@ -68,7 +68,7 @@ open class Grammar :
     var originalGrammar: Grammar? = null
     var parent: Grammar? = null
 
-    internal var mutableImportedGrammars: MutableList<Grammar>? = null
+    internal var mutableImportedGrammars: List<Grammar>? = null
     val importedGrammars: List<Grammar>?
         get() = mutableImportedGrammars
 
@@ -91,7 +91,7 @@ open class Grammar :
     val decisionDFAs: Map<Int, DFA>
         get() = mutableDecisionDFAs
 
-    internal var decisionLOOK: MutableList<List<IntervalSet?>>? = null
+    internal var decisionLOOK: List<List<IntervalSet?>>? = null
 
     val tool: Tool
 
@@ -137,7 +137,7 @@ open class Grammar :
 
     internal val mutableModes: MultiMap<String, Rule> = MultiMap()
 
-    private var indexToPredMapCache: LinkedHashMap<Int, PredAST>? = null
+    private var indexToPredMapCache: Map<Int, PredAST>? = null
 
     override val errorManager: ErrorManager
         get() = tool.errMgr
@@ -399,7 +399,7 @@ open class Grammar :
             if (isCombined || (isLexer && implicitLexer != null)) {
                 suffix = getGrammarTypeToFileNameSuffix(type)
             }
-            return (qualifiedName ?: "") + suffix
+            return qualifiedName.orEmpty() + suffix
         }
 
     fun getStringLiteralLexerRuleName(lit: String?): String =
@@ -565,11 +565,10 @@ open class Grammar :
         }
 
     fun getPredicateDisplayString(pred: SemanticContext.Predicate): String {
-        var cache = indexToPredMapCache
-        if (cache == null) {
-            cache = LinkedHashMap(indexToPredicateMap)
-            indexToPredMapCache = cache
-        }
+        val cache =
+            indexToPredMapCache ?: LinkedHashMap(indexToPredicateMap).also {
+                indexToPredMapCache = it
+            }
         return cache[pred.predIndex]?.text ?: pred.toString()
     }
 

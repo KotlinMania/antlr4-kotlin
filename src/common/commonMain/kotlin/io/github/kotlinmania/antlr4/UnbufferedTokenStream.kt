@@ -7,7 +7,7 @@ package io.github.kotlinmania.antlr4
 
 import io.github.kotlinmania.antlr4.misc.Interval
 
-abstract class UnbufferedTokenStream<T : Token?>(
+open class UnbufferedTokenStream<T : Token?>(
     override var tokenSource: TokenSource,
     bufferSize: Int,
 ) : TokenStream {
@@ -81,7 +81,7 @@ abstract class UnbufferedTokenStream<T : Token?>(
                     bufferStartIndex + ".." + (bufferStartIndex + n),
             )
         }
-        return tokens[index - bufferStartIndex]!!
+        return requireNotNull(tokens[index - bufferStartIndex])
     }
 
     override fun LT(k: Int): Token? {
@@ -96,7 +96,7 @@ abstract class UnbufferedTokenStream<T : Token?>(
         }
 
         if (index >= n) {
-            assert(n > 0 && tokens[n - 1]!!.type == Token.EOF)
+            check(n > 0 && tokens[n - 1]?.type == Token.EOF)
             return tokens[n - 1]
         }
 
@@ -107,6 +107,19 @@ abstract class UnbufferedTokenStream<T : Token?>(
 
     override val text: String?
         get() = ""
+
+    override fun getText(ctx: RuleContext?): String? =
+        if (ctx == null) "" else getText(ctx.sourceInterval)
+
+    override fun getText(
+        start: Token?,
+        stop: Token?,
+    ): String? =
+        if (start != null && stop != null) {
+            getText(Interval.of(start.tokenIndex, stop.tokenIndex))
+        } else {
+            throw UnsupportedOperationException("The specified start and stop symbols are not supported.")
+        }
 
     fun textForContext(ctx: RuleContext): String = getText(ctx.sourceInterval)
 

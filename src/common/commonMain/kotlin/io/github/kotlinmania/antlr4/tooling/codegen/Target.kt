@@ -76,6 +76,8 @@ abstract class Target(
 
     open fun wantsJavaSerializedATN(): Boolean = false
 
+    open fun supportsSplitParser(): Boolean = false
+
     open fun isATNSerializedAsInts(): Boolean = !wantsJavaSerializedATN()
 
     protected open fun escapeWord(word: String): String = "${word}Symbol"
@@ -86,6 +88,15 @@ abstract class Target(
     open fun getRecognizerFileName(header: Boolean = false): String {
         val recName = gen.grammar.recognizerName ?: gen.grammar.name ?: "Recognizer"
         return "$recName$fileExtension"
+    }
+
+    open fun getRecognizerFileName(sourceType: SourceType): String {
+        val recName = gen.grammar.recognizerName ?: gen.grammar.name ?: "Recognizer"
+        return when (sourceType) {
+            SourceType.SOURCE_CONTEXTS -> "${recName}Contexts$fileExtension"
+            SourceType.SOURCE_DFA -> "${recName}DFA$fileExtension"
+            else -> getRecognizerFileName(sourceType == SourceType.HEADER)
+        }
     }
 
     open fun getListenerFileName(header: Boolean = false): String {

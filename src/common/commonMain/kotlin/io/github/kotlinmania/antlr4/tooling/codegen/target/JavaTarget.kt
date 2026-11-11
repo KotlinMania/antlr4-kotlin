@@ -23,6 +23,8 @@ open class JavaTarget(
 
     override fun wantsJavaSerializedATN(): Boolean = true
 
+    override fun supportsSplitParser(): Boolean = true
+
     override fun escapeWord(word: String): String = "${word}_"
 
     override fun grammarSymbolCausesIssueInGeneratedCode(idNode: GrammarAST): Boolean =
@@ -31,15 +33,61 @@ open class JavaTarget(
     companion object {
         val JAVA_KEYWORDS: Set<String> =
             setOf(
-                "abstract", "assert", "boolean", "break", "byte", "case", "catch",
-                "char", "class", "const", "continue", "default", "do", "double",
-                "else", "enum", "extends", "false", "final", "finally", "float",
-                "for", "goto", "if", "implements", "import", "instanceof", "int",
-                "interface", "long", "native", "new", "null", "package", "private",
-                "protected", "public", "return", "short", "static", "strictfp",
-                "super", "switch", "synchronized", "this", "throw", "throws",
-                "transient", "true", "try", "void", "volatile", "while",
-                "rule", "parserRule",
+                "abstract",
+                "assert",
+                "boolean",
+                "break",
+                "byte",
+                "case",
+                "catch",
+                "char",
+                "class",
+                "const",
+                "continue",
+                "default",
+                "do",
+                "double",
+                "else",
+                "enum",
+                "extends",
+                "false",
+                "final",
+                "finally",
+                "float",
+                "for",
+                "goto",
+                "if",
+                "implements",
+                "import",
+                "instanceof",
+                "int",
+                "interface",
+                "long",
+                "native",
+                "new",
+                "null",
+                "package",
+                "private",
+                "protected",
+                "public",
+                "return",
+                "short",
+                "static",
+                "strictfp",
+                "super",
+                "switch",
+                "synchronized",
+                "this",
+                "throw",
+                "throws",
+                "transient",
+                "true",
+                "try",
+                "void",
+                "volatile",
+                "while",
+                "rule",
+                "parserRule",
             )
     }
 }

@@ -94,7 +94,8 @@ class ATNDeserializer
                 atn.ruleToTokenType = IntArray(nrules)
             }
 
-            atn.mutableRuleToStartState = MutableList(nrules) { null }
+            atn.mutableRuleToStartState.clear()
+            repeat(nrules) { atn.mutableRuleToStartState.add(null) }
             for (i in 0..<nrules) {
                 val s = data[p++]
                 val startState: RuleStartState? = atn.states.get(s) as RuleStartState?
@@ -105,7 +106,8 @@ class ATNDeserializer
                 }
             }
 
-            atn.mutableRuleToStopState = MutableList(nrules) { null }
+            atn.mutableRuleToStopState.clear()
+            repeat(nrules) { atn.mutableRuleToStopState.add(null) }
             for (state in atn.states) {
                 if (state !is RuleStopState) {
                     continue
@@ -220,7 +222,8 @@ class ATNDeserializer
             //
             if (atn.grammarType === ATNType.LEXER) {
                 val nactions = data[p++]
-                atn.mutableLexerActions = MutableList(nactions) { null }
+                atn.mutableLexerActions.clear()
+                repeat(nactions) { atn.mutableLexerActions.add(null) }
                 for (i in 0..<nactions) {
                     val actionType: LexerActionType = LexerActionType.values()[data[p++]]
                     val data1 = data[p++]

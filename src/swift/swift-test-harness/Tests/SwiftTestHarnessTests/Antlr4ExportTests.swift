@@ -242,6 +242,74 @@ struct Antlr4ExportTests {
         #expect(visitorCode.contains("fun visitBinOp(ctx: SwiftCalcParser.BinOpContext): T?"))
         #expect(listenerCode.contains("fun enterBinOp(ctx: SwiftCalcParser.BinOpContext)"))
     }
+
+    @Test("Runtime XPath, ParseTreePatternMatcher, TokenStreamRewriter, and split-parser Tool")
+    func testRuntimeXPathPatternMatcherRewriterAndSplitParser() throws {
+        let grammar = io.github.kotlinmania.antlr4.tooling.tool.Grammar(
+            grammarText: """
+            grammar Assign;
+            s : ID '=' expr ';' ;
+            expr : expr '+' INT | INT | ID ;
+            ID : [a-z]+ ;
+            INT : [0-9]+ ;
+            WS : [ \\t]+ -> channel(HIDDEN) ;
+            """
+        )
+        let lexerGrammar = try #require(grammar.implicitLexer)
+        let lexInterp = lexerGrammar.createLexerInterpreter(input: ANTLRInputStream(input: "x = 42 ;"))
+        let tokens = CommonTokenStream(tokenSource: lexInterp)
+        let parserInterp = grammar.createParserInterpreter(tokenStream: tokens)
+        let sRule = try #require(grammar.getRule(name: "s"))
+        let tree = try #require(parserInterp.parse(startRuleIndex: sRule.index))
+
+        let pattern = parserInterp.compileParseTreePattern(
+            pattern: "<id:ID> = <expr> ;",
+            patternRuleIndex: sRule.index
+        )
+        let match = pattern.match(tree: tree)
+        #expect(match.succeeded() == true)
+        #expect(match.get(label: "id")?.text == "x")
+
+        let xpathMatches = io.github.kotlinmania.antlr4.tree.xpath.XPath.Companion.shared.findAll(
+            tree: tree,
+            xpath: "//ID",
+            parser: parserInterp
+        )
+        #expect(xpathMatches.count == 1)
+
+        let rewriter = TokenStreamRewriter(tokens: tokens)
+        rewriter.insertBefore(index: 0, text: "val ")
+        rewriter.replace(index: 4, text: "99")
+        #expect(rewriter.text == "val x = 99 ;")
+
+        let splitTool = io.github.kotlinmania.antlr4.tooling.tool.Tool(
+            args: ["-split-parser", "-visitor", "SplitSample.g4"]
+        )
+        splitTool.writeFilesToDisk = false
+        splitTool.removeListeners()
+        splitTool.registerVirtualGrammar(
+            fileName: "SplitSample.g4",
+            content: """
+            grammar SplitSample;
+            s : expr EOF ;
+            expr : ID '+' INT #Add
+                 | INT        #Lit
+                 ;
+            ID  : [a-z]+ ;
+            INT : [0-9]+ ;
+            WS  : [ \\t\\r\\n]+ -> skip ;
+            """
+        )
+        splitTool.processGrammarsOnCommandLine()
+        #expect(splitTool.numErrors == 0)
+        let splitOutputs = splitTool.virtualOutputs
+        let leanParser = try #require(splitOutputs["SplitSampleParser.kt"])
+        let contextsFile = try #require(splitOutputs["SplitSampleParserContexts.kt"])
+        let dfaFile = try #require(splitOutputs["SplitSampleParserDFA.kt"])
+        #expect(leanParser.contains("open class SplitSampleParser"))
+        #expect(contextsFile.contains("class AddContext"))
+        #expect(dfaFile.contains("decisionToDFA"))
+    }
 }
 #elseif canImport(XCTest)
 import XCTest
@@ -475,6 +543,73 @@ final class Antlr4ExportTests: XCTestCase {
         XCTAssertTrue(lexerCode.contains("open class SwiftCalcLexer(input: CharStream?) : Lexer(input)"))
         XCTAssertTrue(visitorCode.contains("fun visitBinOp(ctx: SwiftCalcParser.BinOpContext): T?"))
         XCTAssertTrue(listenerCode.contains("fun enterBinOp(ctx: SwiftCalcParser.BinOpContext)"))
+    }
+
+    func testRuntimeXPathPatternMatcherRewriterAndSplitParser() throws {
+        let grammar = io.github.kotlinmania.antlr4.tooling.tool.Grammar(
+            grammarText: """
+            grammar Assign;
+            s : ID '=' expr ';' ;
+            expr : expr '+' INT | INT | ID ;
+            ID : [a-z]+ ;
+            INT : [0-9]+ ;
+            WS : [ \\t]+ -> channel(HIDDEN) ;
+            """
+        )
+        let lexerGrammar = try XCTUnwrap(grammar.implicitLexer)
+        let lexInterp = lexerGrammar.createLexerInterpreter(input: ANTLRInputStream(input: "x = 42 ;"))
+        let tokens = CommonTokenStream(tokenSource: lexInterp)
+        let parserInterp = grammar.createParserInterpreter(tokenStream: tokens)
+        let sRule = try XCTUnwrap(grammar.getRule(name: "s"))
+        let tree = try XCTUnwrap(parserInterp.parse(startRuleIndex: sRule.index))
+
+        let pattern = parserInterp.compileParseTreePattern(
+            pattern: "<id:ID> = <expr> ;",
+            patternRuleIndex: sRule.index
+        )
+        let match = pattern.match(tree: tree)
+        XCTAssertTrue(match.succeeded())
+        XCTAssertEqual(match.get(label: "id")?.text, "x")
+
+        let xpathMatches = io.github.kotlinmania.antlr4.tree.xpath.XPath.Companion.shared.findAll(
+            tree: tree,
+            xpath: "//ID",
+            parser: parserInterp
+        )
+        XCTAssertEqual(xpathMatches.count, 1)
+
+        let rewriter = TokenStreamRewriter(tokens: tokens)
+        rewriter.insertBefore(index: 0, text: "val ")
+        rewriter.replace(index: 4, text: "99")
+        XCTAssertEqual(rewriter.text, "val x = 99 ;")
+
+        let splitTool = io.github.kotlinmania.antlr4.tooling.tool.Tool(
+            args: ["-split-parser", "-visitor", "SplitSample.g4"]
+        )
+        splitTool.writeFilesToDisk = false
+        splitTool.removeListeners()
+        splitTool.registerVirtualGrammar(
+            fileName: "SplitSample.g4",
+            content: """
+            grammar SplitSample;
+            s : expr EOF ;
+            expr : ID '+' INT #Add
+                 | INT        #Lit
+                 ;
+            ID  : [a-z]+ ;
+            INT : [0-9]+ ;
+            WS  : [ \\t\\r\\n]+ -> skip ;
+            """
+        )
+        splitTool.processGrammarsOnCommandLine()
+        XCTAssertEqual(splitTool.numErrors, 0)
+        let splitOutputs = splitTool.virtualOutputs
+        let leanParser = try XCTUnwrap(splitOutputs["SplitSampleParser.kt"])
+        let contextsFile = try XCTUnwrap(splitOutputs["SplitSampleParserContexts.kt"])
+        let dfaFile = try XCTUnwrap(splitOutputs["SplitSampleParserDFA.kt"])
+        XCTAssertTrue(leanParser.contains("open class SplitSampleParser"))
+        XCTAssertTrue(contextsFile.contains("class AddContext"))
+        XCTAssertTrue(dfaFile.contains("decisionToDFA"))
     }
 }
 #endif

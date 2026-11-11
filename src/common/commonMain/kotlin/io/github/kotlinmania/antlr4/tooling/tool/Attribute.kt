@@ -46,11 +46,11 @@ class Attribute {
         val currentInit = initValue
         val currentType = type
         if (currentInit != null) {
-            return if (currentType != null) "${name}:$currentType=$currentInit" else "${name}=$currentInit"
+            return if (currentType != null) "$name:$currentType=$currentInit" else "$name=$currentInit"
         }
         if (currentType != null) {
-            return "${name}:$currentType"
+            return "$name:$currentType"
         }
-        return name ?: ""
+        return name.orEmpty()
     }
 }

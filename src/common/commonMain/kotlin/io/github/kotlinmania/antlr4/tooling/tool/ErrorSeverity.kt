@@ -8,7 +8,9 @@ package io.github.kotlinmania.antlr4.tooling.tool
 /**
  * Defines message severity levels and their display text.
  */
-enum class ErrorSeverity(val text: String) {
+enum class ErrorSeverity(
+    val text: String,
+) {
     INFO("info"),
     WARNING("warning"),
     WARNING_ONE_OFF("warning"),

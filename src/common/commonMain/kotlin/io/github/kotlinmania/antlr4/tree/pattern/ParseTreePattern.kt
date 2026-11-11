@@ -21,15 +21,18 @@ class ParseTreePattern(
         this.patternTree = patternTree
     }
 
-    fun match(tree: ParseTree?): ParseTreeMatch = matcher.match(tree!!, this)
+    fun match(tree: ParseTree?): ParseTreeMatch =
+        matcher.match(requireNotNull(tree) { "tree cannot be null" }, this)
 
-    fun matches(tree: ParseTree?): Boolean = matcher.matches(tree!!, this)
+    fun matches(tree: ParseTree?): Boolean =
+        matcher.matches(requireNotNull(tree) { "tree cannot be null" }, this)
 
     fun findAll(
         tree: ParseTree?,
         xpath: String?,
     ): List<ParseTreeMatch> {
-        val subtrees = XPath.findAll(tree, xpath.orEmpty(), matcher.getParser())
+        val activeParser = requireNotNull(matcher.getParser()) { "parser cannot be null" }
+        val subtrees = XPath.findAll(tree, xpath.orEmpty(), activeParser)
         val matches = mutableListOf<ParseTreeMatch>()
         for (t in subtrees) {
             val match = match(t)

@@ -184,7 +184,11 @@ object UnicodeData {
         propertyCodeOrAlias.lowercase().replace('-', '_')
 
     private fun stripSeparators(s: String): String =
-        s.lowercase().replace("-", "").replace("_", "").replace(" ", "")
+        s
+            .lowercase()
+            .replace("-", "")
+            .replace("_", "")
+            .replace(" ", "")
 
     /**
      * Given a Unicode property (general category code, binary property name, script name,

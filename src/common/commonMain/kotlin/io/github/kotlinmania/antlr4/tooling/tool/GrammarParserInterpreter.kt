@@ -57,12 +57,12 @@ class GrammarParserInterpreter : ParserInterpreter {
         atn: ATN,
         input: TokenStream?,
     ) : super(
-            g.fileName ?: Grammar.GRAMMAR_FROM_STRING_NAME,
-            g.getVocabulary(),
-            g.ruleNames,
-            atn,
-            input,
-        ) {
+        g.fileName ?: Grammar.GRAMMAR_FROM_STRING_NAME,
+        g.getVocabulary(),
+        g.ruleNames,
+        atn,
+        input,
+    ) {
         this.g = g
         this.decisionStatesThatSetOuterAltNumInContext = findOuterMostDecisionStates()
         val stateCount = maxOf(atn.states.size, g.atn?.states?.size ?: 0)

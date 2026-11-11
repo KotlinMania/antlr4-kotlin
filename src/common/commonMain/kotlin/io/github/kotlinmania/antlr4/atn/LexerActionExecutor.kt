@@ -146,7 +146,7 @@ class LexerActionExecutor internal constructor(
                     requiresSeek = false
                 }
 
-                lexerAction.execute(lexer!!)
+                lexerAction.execute(requireNotNull(lexer) { "lexer cannot be null" })
             }
         } finally {
             if (requiresSeek) {
@@ -188,16 +188,16 @@ class LexerActionExecutor internal constructor(
             lexerActionExecutor: LexerActionExecutor?,
             lexerAction: LexerAction?,
         ): LexerActionExecutor {
+            val action = requireNotNull(lexerAction) { "lexerAction cannot be null" }
             if (lexerActionExecutor == null) {
-                return LexerActionExecutor(arrayOf(lexerAction!!))
+                return LexerActionExecutor(arrayOf(action))
             }
 
+            val existing = lexerActionExecutor.lexerActions
             val lexerActions: Array<LexerAction> =
-                lexerActionExecutor.lexerActions
-                    .copyOf(lexerActionExecutor.lexerActions.size + 1)
-                    .map { it!! }
-                    .toTypedArray()
-            lexerActions[lexerActions.size - 1] = lexerAction!!
+                Array(existing.size + 1) { index ->
+                    if (index < existing.size) existing[index] else action
+                }
             return LexerActionExecutor(lexerActions)
         }
     }

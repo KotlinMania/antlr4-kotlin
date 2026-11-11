@@ -18,5 +18,8 @@ open class ThrowRecognitionException(
     val grammarLine: Int = ast.line
     val grammarCharPosInLine: Int = ast.charPositionInLine
     val grammarFile: String =
-        factory.grammar.fileName.orEmpty().substringAfterLast('/').substringAfterLast('\\')
+        factory.grammar.fileName
+            .orEmpty()
+            .substringAfterLast('/')
+            .substringAfterLast('\\')
 }

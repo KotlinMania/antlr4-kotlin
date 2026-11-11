@@ -192,7 +192,7 @@ class LeftRecursiveRuleAnalyzer(
                 opAltStrings.add("{$pred}?<$precOpt=$prec> ${altInfo.altText.orEmpty()}")
             }
 
-            val retClause = retvals?.let { " returns [${it.text}]" } ?: ""
+            val retClause = retvals?.let { " returns [${it.text}]" }.orEmpty()
             val primariesJoined =
                 mutablePrefixAndOtherAlts.joinToString("\n        | ") { "${it.altText.orEmpty()} " }
             val opsJoined = opAltStrings.joinToString("\n        | ")

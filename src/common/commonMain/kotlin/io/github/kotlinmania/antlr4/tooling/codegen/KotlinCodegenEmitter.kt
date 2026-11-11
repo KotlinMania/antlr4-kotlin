@@ -12,7 +12,6 @@ import io.github.kotlinmania.antlr4.tooling.codegen.model.BaseListenerFile
 import io.github.kotlinmania.antlr4.tooling.codegen.model.BaseVisitorFile
 import io.github.kotlinmania.antlr4.tooling.codegen.model.CaptureNextToken
 import io.github.kotlinmania.antlr4.tooling.codegen.model.CaptureNextTokenType
-import io.github.kotlinmania.antlr4.tooling.codegen.model.CodeBlockForAlt
 import io.github.kotlinmania.antlr4.tooling.codegen.model.CodeBlockForOuterMostAlt
 import io.github.kotlinmania.antlr4.tooling.codegen.model.DispatchMethod
 import io.github.kotlinmania.antlr4.tooling.codegen.model.ExceptionClause
@@ -321,29 +320,55 @@ internal object KotlinCodegenEmitter {
         p: Parser,
     ) {
         val vis = visibilityPrefix(p.accessLevel)
+        if (file.genContexts) {
+            sb.appendLine("${vis}open class ${p.name}Contexts {")
+            val ctxSuper = file.contextSuperClass?.let { renderChunk(it, "localCtx") } ?: "ParserRuleContext"
+            var first = true
+            for (rf in p.funcs) {
+                if (!first) sb.appendLine()
+                first = false
+                renderRuleContextStruct(sb, file, p, rf, rf.ruleCtx, ctxSuper)
+                val altCtxs = rf.altLabelCtxs
+                if (altCtxs != null) {
+                    for (altStruct in altCtxs.values) {
+                        sb.appendLine()
+                        renderAltLabelStruct(sb, file, p, altStruct, rf.ruleCtx.name)
+                    }
+                }
+            }
+            sb.appendLine("}")
+            return
+        }
+        if (file.genDFA) {
+            sb.appendLine("${vis}object ${p.name}DFA {")
+            renderRecognizerCompanionBody(sb, p, isLexer = false, indent = "    ")
+            sb.appendLine("}")
+            return
+        }
         val superCls = p.superClass?.let { renderChunk(it, "localCtx") } ?: "Parser"
         sb.appendLine("${vis}open class ${p.name}(input: TokenStream?) : $superCls(input) {")
+        val dfaRef = if (file.genLean) "${p.name}DFA." else ""
         sb.appendLine("    init {")
-        sb.appendLine("        interpreter = ParserATNSimulator(this, ATN_DATA, decisionToDFA, sharedContextCache)")
+        sb.appendLine("        interpreter = ParserATNSimulator(this, ${dfaRef}ATN_DATA, ${dfaRef}decisionToDFA, ${dfaRef}sharedContextCache)")
         sb.appendLine("    }")
         sb.appendLine()
         sb.appendLine("    override val grammarFileName: String")
         sb.appendLine("        get() = ${quoteString(p.grammarFileName)}")
         sb.appendLine()
         sb.appendLine("    override val tokenNames: List<String>")
-        sb.appendLine("        get() = TOKEN_NAMES")
+        sb.appendLine("        get() = ${dfaRef}TOKEN_NAMES")
         sb.appendLine()
         sb.appendLine("    override val ruleNames: List<String>")
-        sb.appendLine("        get() = RULE_NAMES")
+        sb.appendLine("        get() = ${dfaRef}RULE_NAMES")
         sb.appendLine()
         sb.appendLine("    override val vocabulary: Vocabulary")
-        sb.appendLine("        get() = VOCABULARY")
+        sb.appendLine("        get() = ${dfaRef}VOCABULARY")
         sb.appendLine()
         sb.appendLine("    override val serializedATN: String")
-        sb.appendLine("        get() = SERIALIZED_ATN")
+        sb.appendLine("        get() = ${dfaRef}SERIALIZED_ATN")
         sb.appendLine()
         sb.appendLine("    override val atn: ATN")
-        sb.appendLine("        get() = ATN_DATA")
+        sb.appendLine("        get() = ${dfaRef}ATN_DATA")
 
         val membersAction = file.namedActions["members"]
         if (membersAction != null) {
@@ -355,7 +380,11 @@ internal object KotlinCodegenEmitter {
             sb.appendLine()
             sb.appendLine("    object Tokens {")
             for ((tokName, tokType) in p.tokens) {
-                val escaped = p.factory?.generator?.target?.escapeIfNeeded(tokName) ?: tokName
+                val escaped =
+                    p.factory
+                        ?.generator
+                        ?.target
+                        ?.escapeIfNeeded(tokName) ?: tokName
                 sb.appendLine("        const val $escaped: Int = $tokType")
             }
             sb.appendLine("    }")
@@ -363,13 +392,15 @@ internal object KotlinCodegenEmitter {
 
         val ctxSuper = file.contextSuperClass?.let { renderChunk(it, "localCtx") } ?: "ParserRuleContext"
         for (rf in p.funcs) {
-            sb.appendLine()
-            renderRuleContextStruct(sb, file, p, rf, rf.ruleCtx, ctxSuper)
-            val altCtxs = rf.altLabelCtxs
-            if (altCtxs != null) {
-                for (altStruct in altCtxs.values) {
-                    sb.appendLine()
-                    renderAltLabelStruct(sb, file, p, altStruct, rf.ruleCtx.name)
+            if (!file.genLean) {
+                sb.appendLine()
+                renderRuleContextStruct(sb, file, p, rf, rf.ruleCtx, ctxSuper)
+                val altCtxs = rf.altLabelCtxs
+                if (altCtxs != null) {
+                    for (altStruct in altCtxs.values) {
+                        sb.appendLine()
+                        renderAltLabelStruct(sb, file, p, altStruct, rf.ruleCtx.name)
+                    }
                 }
             }
             sb.appendLine()
@@ -381,8 +412,10 @@ internal object KotlinCodegenEmitter {
             renderSempredDispatch(sb, p.sempredFuncs, isLexer = false)
         }
 
-        sb.appendLine()
-        renderRecognizerCompanion(sb, p, isLexer = false)
+        if (!file.genLean) {
+            sb.appendLine()
+            renderRecognizerCompanion(sb, p, isLexer = false)
+        }
         sb.appendLine("}")
     }
 
@@ -432,7 +465,11 @@ internal object KotlinCodegenEmitter {
             sb.appendLine()
             sb.appendLine("    object Tokens {")
             for ((tokName, tokType) in l.tokens) {
-                val escaped = l.factory?.generator?.target?.escapeIfNeeded(tokName) ?: tokName
+                val escaped =
+                    l.factory
+                        ?.generator
+                        ?.target
+                        ?.escapeIfNeeded(tokName) ?: tokName
                 sb.appendLine("        const val $escaped: Int = $tokType")
             }
             sb.appendLine("    }")
@@ -442,7 +479,11 @@ internal object KotlinCodegenEmitter {
             sb.appendLine()
             sb.appendLine("    object Channels {")
             for ((chName, chVal) in l.channels) {
-                val escaped = l.factory?.generator?.target?.escapeIfNeeded(chName) ?: chName
+                val escaped =
+                    l.factory
+                        ?.generator
+                        ?.target
+                        ?.escapeIfNeeded(chName) ?: chName
                 sb.appendLine("        const val $escaped: Int = $chVal")
             }
             sb.appendLine("    }")
@@ -454,7 +495,11 @@ internal object KotlinCodegenEmitter {
             sb.appendLine("    object Modes {")
             var idx = 1
             for (modeName in nonDefaultModes) {
-                val escaped = l.factory?.generator?.target?.escapeIfNeeded(modeName) ?: modeName
+                val escaped =
+                    l.factory
+                        ?.generator
+                        ?.target
+                        ?.escapeIfNeeded(modeName) ?: modeName
                 sb.appendLine("        const val $escaped: Int = $idx")
                 idx++
             }
@@ -660,9 +705,10 @@ internal object KotlinCodegenEmitter {
     ) {
         val ruleConst = ruleIndexConstName(rf.name)
         val argParams =
-            rf.args?.joinToString(", ") { arg ->
-                "${arg.escapedName}: ${mapKotlinType(arg.type, nonNull = false)}"
-            }.orEmpty()
+            rf.args
+                ?.joinToString(", ") { arg ->
+                    "${arg.escapedName}: ${mapKotlinType(arg.type, nonNull = false)}"
+                }.orEmpty()
         val ctorArgs =
             if (rf.args.isNullOrEmpty()) {
                 ""
@@ -843,7 +889,7 @@ internal object KotlinCodegenEmitter {
                 } else {
                     sb.appendLine("$indent    errorHandler.recoverInline(this)")
                 }
-                sb.appendLine("${indent}} else {")
+                sb.appendLine("$indent} else {")
                 sb.appendLine("$indent    if (tokenStream.LA(1) == Token.EOF) isMatchedEOF = true")
                 sb.appendLine("$indent    errorHandler.reportMatch(this)")
                 sb.appendLine("$indent    consume()")
@@ -863,7 +909,7 @@ internal object KotlinCodegenEmitter {
                 } else {
                     sb.appendLine("$indent    errorHandler.recoverInline(this)")
                 }
-                sb.appendLine("${indent}} else {")
+                sb.appendLine("$indent} else {")
                 sb.appendLine("$indent    if (tokenStream.LA(1) == Token.EOF) isMatchedEOF = true")
                 sb.appendLine("$indent    errorHandler.reportMatch(this)")
                 sb.appendLine("$indent    consume()")
@@ -1031,7 +1077,7 @@ internal object KotlinCodegenEmitter {
                     sb.appendLine("$indent    state = ${op.stateNumber}")
                 }
                 renderOps(sb, op.iteration, "$indent    ", localCtxExpr, rf)
-                sb.appendLine("${indent}} while ($cond)")
+                sb.appendLine("$indent} while ($cond)")
             }
 
             is OptionalBlock -> {
@@ -1407,8 +1453,19 @@ internal object KotlinCodegenEmitter {
         }
 
         sb.appendLine("    companion object {")
+        renderRecognizerCompanionBody(sb, rec, isLexer, indent = "        ", dfaPrivate = true)
+        sb.appendLine("    }")
+    }
+
+    private fun renderRecognizerCompanionBody(
+        sb: StringBuilder,
+        rec: io.github.kotlinmania.antlr4.tooling.codegen.model.Recognizer,
+        isLexer: Boolean,
+        indent: String,
+        dfaPrivate: Boolean = false,
+    ) {
         for (r in rec.rules) {
-            sb.appendLine("        const val ${ruleIndexConstName(r.name)}: Int = ${r.index}")
+            sb.appendLine("${indent}const val ${ruleIndexConstName(r.name)}: Int = ${r.index}")
         }
         if (rec.rules.isNotEmpty()) {
             sb.appendLine()
@@ -1420,7 +1477,7 @@ internal object KotlinCodegenEmitter {
             } else {
                 "listOf(" + rec.ruleNames.joinToString(", ") { quoteString(it) } + ")"
             }
-        sb.appendLine("        val RULE_NAMES: List<String> = $ruleNamesInit")
+        sb.appendLine("${indent}val RULE_NAMES: List<String> = $ruleNamesInit")
 
         if (isLexer && rec is Lexer) {
             val allChannels = ArrayList<String>()
@@ -1429,7 +1486,7 @@ internal object KotlinCodegenEmitter {
             for (chName in rec.channels.keys) {
                 allChannels.add(chName)
             }
-            sb.appendLine("        val CHANNEL_NAMES: List<String> = listOf(${allChannels.joinToString(", ") { quoteString(it) }})")
+            sb.appendLine("${indent}val CHANNEL_NAMES: List<String> = listOf(${allChannels.joinToString(", ") { quoteString(it) }})")
             val modeList = rec.modes.toList()
             val modesInit =
                 if (modeList.isEmpty()) {
@@ -1437,7 +1494,7 @@ internal object KotlinCodegenEmitter {
                 } else {
                     "listOf(${modeList.joinToString(", ") { quoteString(it) }})"
                 }
-            sb.appendLine("        val MODE_NAMES: List<String> = $modesInit")
+            sb.appendLine("${indent}val MODE_NAMES: List<String> = $modesInit")
         }
 
         val litInit =
@@ -1452,42 +1509,42 @@ internal object KotlinCodegenEmitter {
             } else {
                 "listOf(" + rec.symbolicNames.joinToString(", ") + ")"
             }
-        sb.appendLine("        private val LITERAL_NAMES: List<String> = $litInit")
-        sb.appendLine("        private val SYMBOLIC_NAMES: List<String> = $symInit")
-        sb.appendLine("        val VOCABULARY: Vocabulary = VocabularyImpl(LITERAL_NAMES, SYMBOLIC_NAMES)")
+        sb.appendLine("${indent}private val LITERAL_NAMES: List<String> = $litInit")
+        sb.appendLine("${indent}private val SYMBOLIC_NAMES: List<String> = $symInit")
+        sb.appendLine("${indent}val VOCABULARY: Vocabulary = VocabularyImpl(LITERAL_NAMES, SYMBOLIC_NAMES)")
         sb.appendLine(
-            "        val TOKEN_NAMES: List<String> = List(VOCABULARY.maxTokenType + 1) { idx -> " +
+            "${indent}val TOKEN_NAMES: List<String> = List(VOCABULARY.maxTokenType + 1) { idx -> " +
                 "VOCABULARY.getLiteralName(idx) ?: VOCABULARY.getSymbolicName(idx) ?: \"<INVALID>\" }",
         )
         sb.appendLine()
 
         val atnModel: SerializedATN? = rec.atn
         val ints = atnModel?.serializedInts ?: IntArray(0)
-        sb.appendLine("        private val SERIALIZED_ATN_INTS: IntArray = intArrayOf(")
+        sb.appendLine("${indent}private val SERIALIZED_ATN_INTS: IntArray = intArrayOf(")
         val chunkSize = 16
         var idx = 0
         while (idx < ints.size) {
             val end = minOf(ints.size, idx + chunkSize)
             val slice = (idx until end).joinToString(", ") { i -> ints[i].toString() }
-            sb.appendLine("            $slice,")
+            sb.appendLine("$indent    $slice,")
             idx = end
         }
-        sb.appendLine("        )")
+        sb.appendLine("$indent)")
         sb.appendLine(
-            "        val SERIALIZED_ATN: String = run {\n" +
-                "            val list = IntegerList(SERIALIZED_ATN_INTS.size)\n" +
-                "            list.addAll(SERIALIZED_ATN_INTS)\n" +
-                "            val words16 = ATNDeserializer.encodeIntsWith16BitWords(list)\n" +
-                "            CharArray(words16.size()) { i -> words16.get(i).toChar() }.concatToString()\n" +
-                "        }",
+            "${indent}val SERIALIZED_ATN: String = run {\n" +
+                "$indent    val list = IntegerList(SERIALIZED_ATN_INTS.size)\n" +
+                "$indent    list.addAll(SERIALIZED_ATN_INTS)\n" +
+                "$indent    val words16 = ATNDeserializer.encodeIntsWith16BitWords(list)\n" +
+                "$indent    CharArray(words16.size()) { i -> words16.get(i).toChar() }.concatToString()\n" +
+                "$indent}",
         )
-        sb.appendLine("        val ATN_DATA: ATN = ATNDeserializer().deserialize(SERIALIZED_ATN_INTS)")
+        sb.appendLine("${indent}val ATN_DATA: ATN = ATNDeserializer().deserialize(SERIALIZED_ATN_INTS)")
+        val dfaVis = if (dfaPrivate) "private " else "internal "
         sb.appendLine(
-            "        private val decisionToDFA: List<DFA> = " +
+            "$indent${dfaVis}val decisionToDFA: List<DFA> = " +
                 "List(ATN_DATA.numberOfDecisions) { d -> DFA(ATN_DATA.getDecisionState(d), d) }",
         )
-        sb.appendLine("        private val sharedContextCache: PredictionContextCache = PredictionContextCache()")
-        sb.appendLine("    }")
+        sb.appendLine("$indent${dfaVis}val sharedContextCache: PredictionContextCache = PredictionContextCache()")
     }
 
     private fun io.github.kotlinmania.antlr4.tooling.codegen.model.Recognizer.funcsNeedAdaptivePredict(
@@ -1508,13 +1565,13 @@ internal object KotlinCodegenEmitter {
             imports.add("io.github.kotlinmania.antlr4.TokenStream")
             imports.add("io.github.kotlinmania.antlr4.atn.ParserATNSimulator")
         }
-        imports.add("io.github.kotlinmania.antlr4.Vocabulary")
-        imports.add("io.github.kotlinmania.antlr4.VocabularyImpl")
-        imports.add("io.github.kotlinmania.antlr4.atn.ATN")
-        imports.add("io.github.kotlinmania.antlr4.atn.ATNDeserializer")
-        imports.add("io.github.kotlinmania.antlr4.atn.PredictionContextCache")
-        imports.add("io.github.kotlinmania.antlr4.dfa.DFA")
-        imports.add("io.github.kotlinmania.antlr4.misc.IntegerList")
+        if (containsWord(body, "Vocabulary")) imports.add("io.github.kotlinmania.antlr4.Vocabulary")
+        if (containsWord(body, "VocabularyImpl")) imports.add("io.github.kotlinmania.antlr4.VocabularyImpl")
+        if (containsWord(body, "ATN")) imports.add("io.github.kotlinmania.antlr4.atn.ATN")
+        if (containsWord(body, "ATNDeserializer")) imports.add("io.github.kotlinmania.antlr4.atn.ATNDeserializer")
+        if (containsWord(body, "PredictionContextCache")) imports.add("io.github.kotlinmania.antlr4.atn.PredictionContextCache")
+        if (containsWord(body, "DFA")) imports.add("io.github.kotlinmania.antlr4.dfa.DFA")
+        if (containsWord(body, "IntegerList")) imports.add("io.github.kotlinmania.antlr4.misc.IntegerList")
 
         if (containsWord(body, "ParserRuleContext")) imports.add("io.github.kotlinmania.antlr4.ParserRuleContext")
         if (containsWord(body, "RuleContext")) imports.add("io.github.kotlinmania.antlr4.RuleContext")
@@ -1533,9 +1590,9 @@ internal object KotlinCodegenEmitter {
     ): Boolean {
         var idx = text.indexOf(word)
         while (idx >= 0) {
-            val beforeOk = idx == 0 || !text[idx - 1].isLetterOrDigit() && text[idx - 1] != '_'
+            val beforeOk = idx == 0 || (!text[idx - 1].isLetterOrDigit() && text[idx - 1] != '_')
             val afterPos = idx + word.length
-            val afterOk = afterPos == text.length || !text[afterPos].isLetterOrDigit() && text[afterPos] != '_'
+            val afterOk = afterPos == text.length || (!text[afterPos].isLetterOrDigit() && text[afterPos] != '_')
             if (beforeOk && afterOk) return true
             idx = text.indexOf(word, idx + 1)
         }
@@ -1547,7 +1604,11 @@ internal object KotlinCodegenEmitter {
         tokenName: String,
     ): String {
         if (tokenName == "EOF") return "Token.EOF"
-        val escaped = struct.factory?.generator?.target?.escapeIfNeeded(tokenName) ?: tokenName
+        val escaped =
+            struct.factory
+                ?.generator
+                ?.target
+                ?.escapeIfNeeded(tokenName) ?: tokenName
         return "Tokens.$escaped"
     }
 

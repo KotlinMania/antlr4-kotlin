@@ -22,7 +22,7 @@ class BuildDependencyGenerator(
             val headerExt = headerFileExtension(lang)
             val supportsSplit = g.tool.genSplitParser && supportsSplitParser(lang)
 
-            val grammarName = g.name ?: ""
+            val grammarName = g.name.orEmpty()
             val recName = g.recognizerName ?: grammarName
 
             if (headerExt != null) {
@@ -140,7 +140,7 @@ class BuildDependencyGenerator(
     fun renderDependencies(): String {
         val inputs = dependenciesFileList
         val outputs = generatedFileList
-        val grammarFile = g.fileName ?: ""
+        val grammarFile = g.fileName.orEmpty()
         return buildString {
             if (!inputs.isNullOrEmpty()) {
                 append(grammarFile).append(": ").append(inputs.joinToString(", ")).append("\n")

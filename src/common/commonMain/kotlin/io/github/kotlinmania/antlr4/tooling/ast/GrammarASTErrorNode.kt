@@ -46,7 +46,7 @@ class GrammarASTErrorNode(
             if (begin < 0 || begin >= stream.size()) {
                 return "<EOF>"
             }
-            return stream.getText(Interval.of(begin, end)) ?: ""
+            return stream.getText(Interval.of(begin, end)).orEmpty()
         }
         set(_) {}
 

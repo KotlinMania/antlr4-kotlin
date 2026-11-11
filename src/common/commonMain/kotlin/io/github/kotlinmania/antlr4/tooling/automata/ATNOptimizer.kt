@@ -80,7 +80,12 @@ object ATNOptimizer {
                     continue
                 }
 
-                val blockEndState = decision.transition(interval.a).target.transition(0).target
+                val blockEndState =
+                    decision
+                        .transition(interval.a)
+                        .target
+                        .transition(0)
+                        .target
                 val matchSet = IntervalSet()
                 for (j in interval.a..interval.b) {
                     val matchTransition = decision.transition(j).target.transition(0)
@@ -129,7 +134,7 @@ object ATNOptimizer {
                     }
 
                 decision.transition(interval.a).target.setTransition(0, newTransition)
-                for (j in interval.a + 1..interval.b) {
+                repeat(interval.b - interval.a) {
                     val removed = decision.removeTransition(interval.a + 1)
                     atn.removeState(removed.target)
                 }

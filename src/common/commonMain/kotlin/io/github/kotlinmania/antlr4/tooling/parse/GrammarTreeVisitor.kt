@@ -676,8 +676,8 @@ open class GrammarTreeVisitor {
         }
     }
 
-    open fun optionValue(tree: GrammarAST): String {
-        return withNode(tree) {
+    open fun optionValue(tree: GrammarAST): String =
+        withNode(tree) {
             enterOptionValue(tree)
             try {
                 tree.token?.text ?: tree.text
@@ -685,7 +685,6 @@ open class GrammarTreeVisitor {
                 exitOptionValue(tree)
             }
         }
-    }
 
     open fun delegateGrammars(tree: GrammarAST) {
         withNode(tree) {

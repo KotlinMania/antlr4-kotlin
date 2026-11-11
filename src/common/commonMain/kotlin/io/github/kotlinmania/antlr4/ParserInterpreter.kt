@@ -6,6 +6,8 @@
 package io.github.kotlinmania.antlr4
 
 import io.github.kotlinmania.antlr4.atn.ATN
+import io.github.kotlinmania.antlr4.atn.ATNDeserializer
+import io.github.kotlinmania.antlr4.atn.ATNSerializer
 import io.github.kotlinmania.antlr4.atn.ATNState
 import io.github.kotlinmania.antlr4.atn.ActionTransition
 import io.github.kotlinmania.antlr4.atn.AtomTransition
@@ -42,13 +44,18 @@ open class ParserInterpreter(
     override val atn: ATN,
     input: TokenStream?,
 ) : Parser(input) {
-    protected var decisionToDFA: MutableList<DFA> // not shared like it is for generated parsers
+    protected val decisionToDFA: MutableList<DFA> // not shared like it is for generated parsers
     protected val sharedContextCache: PredictionContextCache = PredictionContextCache()
 
     override var tokenNames: List<String> = emptyList()
         internal set
     override var ruleNames: List<String>? = null
         internal set
+
+    override val serializedATN: String by lazy {
+        val data16 = ATNDeserializer.encodeIntsWith16BitWords(ATNSerializer.getSerialized(atn))
+        CharArray(data16.size()) { i -> data16.get(i).toChar() }.concatToString()
+    }
 
     /** This stack corresponds to the _parentctx, _parentState pair of locals
      * that would exist on call stack frames with a recursive descent parser;

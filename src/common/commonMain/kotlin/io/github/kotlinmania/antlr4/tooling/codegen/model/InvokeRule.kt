@@ -23,7 +23,8 @@ class InvokeRule(
     factory: ParserFactory,
     ast: GrammarAST,
     labelAST: GrammarAST?,
-) : RuleElement(factory, ast), LabeledOp {
+) : RuleElement(factory, ast),
+    LabeledOp {
     val name: String = ast.text
     val escapedName: String = factory.generator.target.escapeIfNeeded(name)
     val ctxName: String

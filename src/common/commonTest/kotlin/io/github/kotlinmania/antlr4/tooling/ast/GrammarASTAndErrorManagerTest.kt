@@ -26,7 +26,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotSame
-import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -62,8 +61,16 @@ class GrammarASTAndErrorManagerTest {
             CommonTokenStream(
                 ListTokenSource(
                     listOf(
-                        CommonToken(ANTLRParserTypes.GRAMMAR, "grammar").apply { tokenIndex = 0; line = 1; charPositionInLine = 0 },
-                        CommonToken(ANTLRParserTypes.TOKEN_REF, "Expr").apply { tokenIndex = 1; line = 1; charPositionInLine = 8 },
+                        CommonToken(ANTLRParserTypes.GRAMMAR, "grammar").apply {
+                            tokenIndex = 0
+                            line = 1
+                            charPositionInLine = 0
+                        },
+                        CommonToken(ANTLRParserTypes.TOKEN_REF, "Expr").apply {
+                            tokenIndex = 1
+                            line = 1
+                            charPositionInLine = 8
+                        },
                     ),
                 ),
             )
@@ -159,7 +166,11 @@ class GrammarASTAndErrorManagerTest {
         lexerRule.setOption("superClass", validOpt)
         assertEquals("BaseLexer", lexerRule.getOptionString("superClass"))
 
-        val badOptTok = CommonToken(ANTLRParserTypes.STRING_LITERAL, "'\\uZZZZ'").apply { line = 4; charPositionInLine = 12 }
+        val badOptTok =
+            CommonToken(ANTLRParserTypes.STRING_LITERAL, "'\\uZZZZ'").apply {
+                line = 4
+                charPositionInLine = 12
+            }
         lexerRule.setOption("bad", GrammarAST(badOptTok))
         assertEquals("", lexerRule.getOptionString("bad"))
         assertEquals(1, ctx.errMgr.numErrors)
@@ -251,7 +262,11 @@ class GrammarASTAndErrorManagerTest {
         )
 
         // GNU & VS2005 formats
-        val tok = CommonToken(ANTLRParserTypes.ID, "x").apply { line = 10; charPositionInLine = 3 }
+        val tok =
+            CommonToken(ANTLRParserTypes.ID, "x").apply {
+                line = 10
+                charPositionInLine = 3
+            }
         errMgr.setFormat("gnu")
         errMgr.syntaxError(ErrorType.SYNTAX_ERROR, "Sample.g4", tok, "unexpected token")
         assertEquals(
@@ -284,7 +299,11 @@ class GrammarASTAndErrorManagerTest {
         assertEquals(errorsBefore + 1, errMgr.numErrors)
 
         // Left-recursion cycles template rendering (single and multiple cycles)
-        val startTok = CommonToken(ANTLRParserTypes.RULE_REF, "a").apply { line = 2; charPositionInLine = 0 }
+        val startTok =
+            CommonToken(ANTLRParserTypes.RULE_REF, "a").apply {
+                line = 2
+                charPositionInLine = 0
+            }
         val cycle = listOf(TestRuleObj("a", startTok), TestRuleObj("b"))
         errMgr.leftRecursionCycles("Cycle.g4", listOf(cycle))
         assertEquals(
@@ -308,7 +327,12 @@ class GrammarASTAndErrorManagerTest {
 
         val args = AttributeDict(AttributeDict.DictType.ARG)
         args.add(Attribute("x").apply { type = "Int" })
-        args.add(Attribute("shared").apply { type = "String"; initValue = "\"hi\"" })
+        args.add(
+            Attribute("shared").apply {
+                type = "String"
+                initValue = "\"hi\""
+            },
+        )
         assertEquals("shared:String=\"hi\"", args.get("shared").toString())
 
         val locals = AttributeDict(AttributeDict.DictType.LOCAL)

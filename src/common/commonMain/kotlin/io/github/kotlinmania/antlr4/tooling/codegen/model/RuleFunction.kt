@@ -24,7 +24,6 @@ import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.RuleContextListDe
 import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.StructDecl
 import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.TokenDecl
 import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.TokenListDecl
-import io.github.kotlinmania.antlr4.tooling.misc.FrequencySet
 import io.github.kotlinmania.antlr4.tooling.parse.ANTLRParserTypes
 import io.github.kotlinmania.antlr4.tooling.tool.LabelElementPair
 import io.github.kotlinmania.antlr4.tooling.tool.LabelType
@@ -53,7 +52,7 @@ open class RuleFunction(
     val locals: List<Decl>
         get() = mutableLocals.elements()
 
-    internal var mutableArgs: MutableList<AttributeDecl>? = null
+    internal var mutableArgs: List<AttributeDecl>? = null
 
     @ModelElement
     val args: List<AttributeDecl>?
@@ -62,7 +61,7 @@ open class RuleFunction(
     @ModelElement
     var ruleCtx: StructDecl
 
-    internal var mutableAltLabelCtxs: LinkedHashMap<String, AltLabelStructDecl>? = null
+    internal var mutableAltLabelCtxs: Map<String, AltLabelStructDecl>? = null
 
     @ModelElement
     val altLabelCtxs: Map<String, AltLabelStructDecl>?
@@ -165,7 +164,7 @@ open class RuleFunction(
         var firstAlt = true
 
         for (ast in altASTs) {
-            val visitor = ElementFrequenciesVisitor()
+            val visitor = ElementFrequenciesVisitor(ownerFactory.grammar)
             val (minFreq, maxFreq) = visitor.computeMinAndMaxForAlt(ast)
 
             for ((key, count) in maxFreq.asMap()) {
@@ -194,10 +193,14 @@ open class RuleFunction(
 
             val refNodes =
                 ast.getNodesWithType(
-                    io.github.kotlinmania.antlr4.misc.IntervalSet.of(
-                        ANTLRParserTypes.RULE_REF,
-                        ANTLRParserTypes.RULE_REF,
-                    ).apply { add(ANTLRParserTypes.TOKEN_REF) },
+                    io.github.kotlinmania.antlr4.misc.IntervalSet
+                        .of(
+                            ANTLRParserTypes.RULE_REF,
+                            ANTLRParserTypes.RULE_REF,
+                        ).apply {
+                            add(ANTLRParserTypes.TOKEN_REF)
+                            add(ANTLRParserTypes.STRING_LITERAL)
+                        },
                 )
             allElements.addAll(refNodes)
         }
@@ -226,9 +229,31 @@ open class RuleFunction(
                     val optional = !nonOptional.contains(name)
                     decls.add(ContextTokenGetterDecl(ownerFactory, name, optional))
                 }
+            } else if (t.type == ANTLRParserTypes.STRING_LITERAL && !hasSempredAncestor(t)) {
+                val sym = ownerFactory.grammar.getTokenName(name)
+                if (sym != null && !sym.startsWith("T__")) {
+                    if (needsList.contains(sym)) {
+                        decls.add(ContextTokenListGetterDecl(ownerFactory, sym))
+                        decls.add(ContextTokenListIndexedGetterDecl(ownerFactory, sym))
+                    } else {
+                        val optional = !nonOptional.contains(sym)
+                        decls.add(ContextTokenGetterDecl(ownerFactory, sym, optional))
+                    }
+                }
             }
         }
         return decls
+    }
+
+    private fun hasSempredAncestor(node: GrammarAST): Boolean {
+        var cur = node.parent
+        while (cur != null) {
+            if (cur.type == ANTLRParserTypes.SEMPRED) {
+                return true
+            }
+            cur = cur.parent
+        }
+        return false
     }
 
     fun getEffectiveAltLabelContexts(controller: io.github.kotlinmania.antlr4.tooling.codegen.OutputModelController): Map<Int, AltLabelStructDecl> {

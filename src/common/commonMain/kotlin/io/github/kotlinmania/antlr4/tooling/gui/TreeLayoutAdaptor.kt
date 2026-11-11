@@ -64,7 +64,7 @@ class TreeLayoutAdaptor(
             }
     }
 
-    fun isLeaf(node: Tree?): Boolean = node == null || node.childCount == 0
+    fun isLeaf(node: Tree?): Boolean = (node?.childCount ?: 0) == 0
 
     fun isChildOfParent(
         node: Tree,

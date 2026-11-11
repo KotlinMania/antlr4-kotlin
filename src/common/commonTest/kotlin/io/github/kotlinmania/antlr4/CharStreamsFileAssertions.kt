@@ -2,15 +2,19 @@ package io.github.kotlinmania.antlr4
 
 import io.github.kotlinmania.antlr4.atn.ATN
 import io.github.kotlinmania.antlr4.atn.ATNType
+import io.github.kotlinmania.antlr4.misc.InterpreterDataReader
 import io.github.kotlinmania.antlr4.misc.Interval
 import io.github.kotlinmania.antlr4.misc.LogManager
-import io.github.kotlinmania.antlr4.misc.TestRig as RuntimeTestRig
 import io.github.kotlinmania.antlr4.misc.Utils
 import io.github.kotlinmania.antlr4.tooling.gui.GrammarRegistration
 import io.github.kotlinmania.antlr4.tooling.gui.LexerFactory
 import io.github.kotlinmania.antlr4.tooling.gui.ParserFactory
 import io.github.kotlinmania.antlr4.tooling.gui.StartRuleInvoker
-import io.github.kotlinmania.antlr4.tooling.gui.TestRig as ToolTestRig
+import io.github.kotlinmania.antlr4.tooling.tool.ANTLRMessage
+import io.github.kotlinmania.antlr4.tooling.tool.ANTLRToolListener
+import io.github.kotlinmania.antlr4.tooling.tool.ErrorType
+import io.github.kotlinmania.antlr4.tooling.tool.Grammar
+import io.github.kotlinmania.antlr4.tooling.tool.Tool
 import io.github.kotlinmania.antlr4.tree.TerminalNodeImpl
 import io.github.kotlinmania.io.buffered
 import io.github.kotlinmania.io.files.FileNotFoundException
@@ -21,6 +25,8 @@ import kotlin.random.Random
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import io.github.kotlinmania.antlr4.misc.TestRig as RuntimeTestRig
+import io.github.kotlinmania.antlr4.tooling.gui.TestRig as ToolTestRig
 
 internal object CharStreamsFileAssertions {
     fun readsUtf8FileAndPreservesSourcePath() {
@@ -94,7 +100,7 @@ internal object CharStreamsFileAssertions {
                     object : ParserRuleContext(null, -1) {
                         override var ruleIndex: Int = 0
                     }
-                val tok = tokenStream.LT(1)!!
+                val tok = requireNotNull(tokenStream.LT(1))
                 ctx.start = tok
                 ctx.stop = tok
                 ctx.addChild(TerminalNodeImpl(tok))
@@ -142,6 +148,113 @@ internal object CharStreamsFileAssertions {
             SystemFileSystem.delete(inputPath, mustExist = false)
             SystemFileSystem.delete(psPath, mustExist = false)
             SystemFileSystem.delete(logPath, mustExist = false)
+        }
+    }
+
+    fun compositeGrammarLibAndOutdirResolutionAndInterpreterDataFile() {
+        val rootTmp = Path("tmp")
+        SystemFileSystem.createDirectories(rootTmp)
+        val suffix = Random.nextLong().toULong().toString(16)
+        val rawBaseDir = Path(rootTmp, "composite-$suffix")
+        SystemFileSystem.createDirectories(rawBaseDir)
+        val baseDir = SystemFileSystem.resolve(rawBaseDir)
+        val subDir = Path(baseDir, "sub")
+        val outDir = Path(baseDir, "out")
+        val onlyOutDir = Path(baseDir, "onlyOut")
+        val interpPath = Path(baseDir, "Calc.interp")
+        SystemFileSystem.createDirectories(subDir)
+        SystemFileSystem.createDirectories(outDir)
+        SystemFileSystem.createDirectories(onlyOutDir)
+
+        val subordinate =
+            "parser grammar S;\n" +
+                "a : B ;\n"
+        val master =
+            "grammar M;\n" +
+                "import S;\n" +
+                "s : a ;\n" +
+                "B : 'b' ;\n" +
+                "WS : (' '|'\\n') -> skip ;\n"
+        val mLexer =
+            "lexer grammar MLexer;\n" +
+                "B : 'b' ;\n" +
+                "WS : (' '|'\\n') -> skip ;\n"
+        val mParser =
+            "parser grammar MParser;\n" +
+                "import S;\n" +
+                "options { tokenVocab=MLexer; }\n" +
+                "s : a ;\n"
+
+        fun runDiskTool(args: List<String>): Pair<Tool, List<ANTLRMessage>> {
+            val errors = ArrayList<ANTLRMessage>()
+            val tool = Tool(args)
+            tool.removeListeners()
+            tool.addListener(
+                object : ANTLRToolListener {
+                    override fun info(msg: String?) {}
+
+                    override fun error(msg: ANTLRMessage) {
+                        errors.add(msg)
+                    }
+
+                    override fun warning(msg: ANTLRMessage) {}
+                },
+            )
+            tool.processGrammarsOnCommandLine()
+            return tool to errors
+        }
+
+        try {
+            val g = Grammar("grammar Calc;\ns : ID '+' INT ;\nID : [a-z]+ ;\nINT : [0-9]+ ;\n")
+            val interpData = Tool.generateInterpreterData(g)
+            Utils.writeFile(interpPath.toString(), interpData, "UTF-8")
+            val parsedInterp = InterpreterDataReader.parseFile(interpPath.toString())
+            assertEquals(listOf("s"), parsedInterp.ruleNames)
+            assertEquals("ID", parsedInterp.vocabulary?.getSymbolicName(2))
+
+            val subPath = Path(subDir, "S.g4")
+            val masterPath = Path(baseDir, "M.g4")
+            val onlyOutSubPath = Path(onlyOutDir, "S.g4")
+            val mLexerPath = Path(baseDir, "MLexer.g4")
+            val mParserPath = Path(baseDir, "MParser.g4")
+
+            Utils.writeFile(subPath.toString(), subordinate, "UTF-8")
+            Utils.writeFile(masterPath.toString(), master, "UTF-8")
+            Utils.writeFile(onlyOutSubPath.toString(), subordinate, "UTF-8")
+            Utils.writeFile(mLexerPath.toString(), mLexer, "UTF-8")
+            Utils.writeFile(mParserPath.toString(), mParser, "UTF-8")
+
+            val (subTool, subErrors) =
+                runDiskTool(listOf("-lib", subDir.toString(), "-o", outDir.toString(), masterPath.toString()))
+            assertEquals(0, subErrors.size)
+            assertEquals(0, subTool.numErrors)
+            assertTrue(SystemFileSystem.exists(Path(outDir, "MParser.kt")))
+
+            val (_, notInOutErrors) =
+                runDiskTool(listOf("-o", onlyOutDir.toString(), masterPath.toString()))
+            assertTrue(notInOutErrors.any { it.errorType == ErrorType.CANNOT_FIND_IMPORTED_GRAMMAR })
+
+            val (_, lexerErrors) =
+                runDiskTool(listOf("-o", outDir.toString(), mLexerPath.toString()))
+            assertEquals(0, lexerErrors.size)
+            assertTrue(SystemFileSystem.exists(Path(outDir, "MLexer.tokens")))
+
+            val (_, parserErrors) =
+                runDiskTool(listOf("-o", outDir.toString(), "-lib", subDir.toString(), mParserPath.toString()))
+            assertEquals(0, parserErrors.size)
+            assertTrue(SystemFileSystem.exists(Path(outDir, "MParser.kt")))
+        } finally {
+            fun cleanupTree(target: Path) {
+                if (!SystemFileSystem.exists(target)) return
+                val meta = SystemFileSystem.metadataOrNull(target)
+                if (meta?.isDirectory == true) {
+                    for (child in SystemFileSystem.list(target)) {
+                        cleanupTree(child)
+                    }
+                }
+                SystemFileSystem.delete(target, mustExist = false)
+            }
+            cleanupTree(baseDir)
         }
     }
 

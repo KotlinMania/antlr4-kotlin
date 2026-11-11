@@ -8,7 +8,9 @@ package io.github.kotlinmania.antlr4.tooling.tool
 /**
  * Default [ANTLRToolListener] formatting messages through [ErrorManager] and writing them out.
  */
-class DefaultToolListener(val errMgr: ErrorManager) : ANTLRToolListener {
+class DefaultToolListener(
+    val errMgr: ErrorManager,
+) : ANTLRToolListener {
     override fun info(msg: String?) {
         if (msg == null) return
         val formatted =

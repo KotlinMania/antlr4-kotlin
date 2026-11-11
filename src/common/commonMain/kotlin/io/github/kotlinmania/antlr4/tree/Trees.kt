@@ -117,12 +117,12 @@ object Trees {
     fun findAllTokenNodes(
         t: ParseTree,
         ttype: Int,
-    ): Collection<ParseTree> = findAllNodes(t, ttype, true)
+    ): List<ParseTree> = findAllNodes(t, ttype, true)
 
     fun findAllRuleNodes(
         t: ParseTree,
         ruleIndex: Int,
-    ): Collection<ParseTree> = findAllNodes(t, ruleIndex, false)
+    ): List<ParseTree> = findAllNodes(t, ruleIndex, false)
 
     fun findAllNodes(
         t: ParseTree,

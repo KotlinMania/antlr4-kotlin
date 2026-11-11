@@ -110,7 +110,7 @@ class TestRigAndPostScriptTest {
             val stream = tokenStream
             root.start = stream.LT(1)
             val leftAtom = AtomContext(root)
-            val first = stream.LT(1)!!
+            val first = requireNotNull(stream.LT(1))
             leftAtom.start = first
             leftAtom.stop = first
             leftAtom.addChild(TerminalNodeImpl(first))
@@ -118,12 +118,12 @@ class TestRigAndPostScriptTest {
             stream.consume()
 
             while (stream.LA(1) == 2) {
-                val plus = stream.LT(1)!!
+                val plus = requireNotNull(stream.LT(1))
                 root.addChild(TerminalNodeImpl(plus))
                 stream.consume()
 
                 val rightAtom = AtomContext(root)
-                val id = stream.LT(1)!!
+                val id = requireNotNull(stream.LT(1))
                 rightAtom.start = id
                 rightAtom.stop = id
                 rightAtom.addChild(TerminalNodeImpl(id))

@@ -32,7 +32,8 @@ open class Rule(
     val numberOfAlts: Int,
     val mode: String? = null,
     val caseInsensitive: Boolean = false,
-) : AttributeResolver, ErrorTemplateObject {
+) : AttributeResolver,
+    ErrorTemplateObject {
     var modifiers: List<GrammarAST>? = null
 
     var args: AttributeDict? = null
@@ -55,9 +56,10 @@ open class Rule(
 
     var isStartRule: Boolean = true
 
-    internal var alt: Array<Alternative?> = Array(numberOfAlts + 1) { idx ->
-        if (idx == 0) null else Alternative(this, idx)
-    }
+    internal var alt: Array<Alternative?> =
+        Array(numberOfAlts + 1) { idx ->
+            if (idx == 0) null else Alternative(this, idx)
+        }
 
     val alternatives: List<Alternative>
         get() {

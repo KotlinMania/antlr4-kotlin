@@ -129,7 +129,7 @@ class TokenVocabParser(
             }
         }
 
-        val grammarFile = g.fileName ?: ""
+        val grammarFile = g.fileName.orEmpty()
         val lastSep = maxOf(grammarFile.lastIndexOf('/'), grammarFile.lastIndexOf('\\'))
         val fileDirectory = if (lastSep == -1) "." else grammarFile.substring(0, lastSep)
         return Path(fileDirectory, "$vocabName$VOCAB_FILE_EXTENSION")

@@ -8,11 +8,9 @@ package io.github.kotlinmania.antlr4.tooling.codegen
 import io.github.kotlinmania.antlr4.tooling.codegen.model.Action
 import io.github.kotlinmania.antlr4.tooling.codegen.model.BaseListenerFile
 import io.github.kotlinmania.antlr4.tooling.codegen.model.BaseVisitorFile
-import io.github.kotlinmania.antlr4.tooling.codegen.model.Lexer
 import io.github.kotlinmania.antlr4.tooling.codegen.model.LexerFile
 import io.github.kotlinmania.antlr4.tooling.codegen.model.ListenerFile
 import io.github.kotlinmania.antlr4.tooling.codegen.model.OutputModelObject
-import io.github.kotlinmania.antlr4.tooling.codegen.model.Parser
 import io.github.kotlinmania.antlr4.tooling.codegen.model.ParserFile
 import io.github.kotlinmania.antlr4.tooling.codegen.model.RuleFunction
 import io.github.kotlinmania.antlr4.tooling.codegen.model.SerializedJavaATN
@@ -50,6 +48,20 @@ import io.github.kotlinmania.antlr4.tooling.codegen.model.chunk.TokenPropertyRef
 import io.github.kotlinmania.antlr4.tooling.codegen.model.chunk.TokenPropertyRefType
 import io.github.kotlinmania.antlr4.tooling.codegen.model.chunk.TokenRef
 import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.AltLabelStructDecl
+import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.AttributeDecl
+import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.ContextGetterDecl
+import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.ContextRuleGetterDecl
+import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.ContextRuleListGetterDecl
+import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.ContextRuleListIndexedGetterDecl
+import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.ContextTokenGetterDecl
+import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.ContextTokenListGetterDecl
+import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.ContextTokenListIndexedGetterDecl
+import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.RuleContextDecl
+import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.RuleContextListDecl
+import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.StructDecl
+import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.TokenDecl
+import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.TokenListDecl
+import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.TokenTypeDecl
 
 /**
  * Pure-Kotlin, template-free emitter matching upstream `Java.stg` conventions for `language=Java`
@@ -78,14 +90,46 @@ internal object JavaCodegenEmitter {
             sb.appendLine("package $pkg;")
         }
         file.namedActions["header"]?.let { sb.appendLine(renderChunks(it.chunks)) }
-        sb.appendLine("import org.antlr.v4.runtime.atn.*;")
-        sb.appendLine("import org.antlr.v4.runtime.dfa.DFA;")
-        sb.appendLine("import org.antlr.v4.runtime.*;")
-        sb.appendLine("import org.antlr.v4.runtime.misc.*;")
-        sb.appendLine("import org.antlr.v4.runtime.tree.*;")
-        sb.appendLine("import java.util.List;")
-        sb.appendLine("import java.util.Iterator;")
-        sb.appendLine("import java.util.ArrayList;")
+        if (file.genContexts) {
+            sb.appendLine("import org.antlr.v4.runtime.*;")
+            sb.appendLine("import org.antlr.v4.runtime.tree.*;")
+            sb.appendLine("import java.util.List;")
+            sb.appendLine("import java.util.ArrayList;")
+            sb.appendLine()
+            sb.appendLine("public class ${p.name}Contexts {")
+            val ctxSuper = file.contextSuperClass?.let { renderChunk(it) } ?: "ParserRuleContext"
+            for (rf in p.funcs) {
+                renderStructDecl(sb, p.name, rf.ruleCtx, ctxSuper, inContextsFile = true)
+                rf.altLabelCtxs?.values?.forEach { altStruct ->
+                    renderAltLabelStructDecl(sb, p.name, altStruct, rf.ruleCtx.name)
+                }
+            }
+            sb.appendLine("}")
+            return sb.toString()
+        }
+        if (file.genDFA) {
+            sb.appendLine("import org.antlr.v4.runtime.atn.*;")
+            sb.appendLine("import org.antlr.v4.runtime.dfa.DFA;")
+            sb.appendLine()
+            sb.appendLine("public class ${p.name}DFA {")
+            renderSerializedJavaATN(sb, p.atn as? SerializedJavaATN)
+            sb.appendLine("}")
+            return sb.toString()
+        }
+        if (file.genLean) {
+            sb.appendLine("import org.antlr.v4.runtime.atn.*;")
+            sb.appendLine("import org.antlr.v4.runtime.dfa.DFA;")
+            sb.appendLine("import org.antlr.v4.runtime.*;")
+        } else {
+            sb.appendLine("import org.antlr.v4.runtime.atn.*;")
+            sb.appendLine("import org.antlr.v4.runtime.dfa.DFA;")
+            sb.appendLine("import org.antlr.v4.runtime.*;")
+            sb.appendLine("import org.antlr.v4.runtime.misc.*;")
+            sb.appendLine("import org.antlr.v4.runtime.tree.*;")
+            sb.appendLine("import java.util.List;")
+            sb.appendLine("import java.util.Iterator;")
+            sb.appendLine("import java.util.ArrayList;")
+        }
         sb.appendLine()
         val superCls = p.superClass?.let { renderChunk(it) } ?: "Parser"
         sb.appendLine("public class ${p.name} extends $superCls {")
@@ -100,10 +144,21 @@ internal object JavaCodegenEmitter {
             sb.appendLine("\t\t$ruleConsts;")
         }
         file.namedActions["members"]?.let { sb.appendLine(renderChunks(it.chunks)) }
-        for (rf in p.funcs) {
-            renderRuleSummary(sb, rf)
+        if (!file.genLean) {
+            val ctxSuper = file.contextSuperClass?.let { renderChunk(it) } ?: "ParserRuleContext"
+            for (rf in p.funcs) {
+                renderStructDecl(sb, p.name, rf.ruleCtx, ctxSuper, inContextsFile = false)
+                rf.altLabelCtxs?.values?.forEach { altStruct ->
+                    renderAltLabelStructDecl(sb, p.name, altStruct, rf.ruleCtx.name)
+                }
+            }
         }
-        renderSerializedJavaATN(sb, p.atn as? SerializedJavaATN)
+        for (rf in p.funcs) {
+            renderRuleSummary(sb, rf, if (file.genLean) "${p.name}Contexts." else "")
+        }
+        if (!file.genLean) {
+            renderSerializedJavaATN(sb, p.atn as? SerializedJavaATN)
+        }
         sb.appendLine("}")
         return sb.toString()
     }
@@ -186,11 +241,93 @@ internal object JavaCodegenEmitter {
         return sb.toString()
     }
 
+    private fun renderStructDecl(
+        sb: StringBuilder,
+        parserName: String,
+        struct: StructDecl,
+        ctxSuper: String,
+        inContextsFile: Boolean,
+    ) {
+        sb.appendLine("\tpublic static class ${struct.escapedName} extends $ctxSuper {")
+        renderJavaStructAttrsAndGetters(sb, parserName, struct)
+        if (struct.ctorAttrs.isNotEmpty()) {
+            sb.appendLine("\t\tpublic ${struct.escapedName}(ParserRuleContext parent, int invokingState) { super(parent, invokingState); }")
+            val params =
+                struct.ctorAttrs.joinToString(", ") { a ->
+                    val ad = a as? AttributeDecl
+                    "${ad?.type ?: "Object"} ${a.escapedName}"
+                }
+            sb.appendLine("\t\tpublic ${struct.escapedName}(ParserRuleContext parent, int invokingState, $params) {")
+            sb.appendLine("\t\t\tsuper(parent, invokingState);")
+            for (a in struct.ctorAttrs) {
+                sb.appendLine("\t\t\tthis.${a.escapedName} = ${a.escapedName};")
+            }
+            sb.appendLine("\t\t}")
+        } else {
+            sb.appendLine("\t\tpublic ${struct.escapedName}(ParserRuleContext parent, int invokingState) { super(parent, invokingState); }")
+        }
+        val prefix = if (inContextsFile) "$parserName." else ""
+        sb.appendLine("\t\t@Override public int getRuleIndex() { return ${prefix}RULE_${struct.derivedFromName}; }")
+        sb.appendLine("\t}")
+    }
+
+    private fun renderAltLabelStructDecl(
+        sb: StringBuilder,
+        parserName: String,
+        struct: AltLabelStructDecl,
+        parentCtxName: String,
+    ) {
+        sb.appendLine("\tpublic static class ${struct.escapedName} extends $parentCtxName {")
+        renderJavaStructAttrsAndGetters(sb, parserName, struct)
+        sb.appendLine("\t\tpublic ${struct.escapedName}($parentCtxName ctx) { copyFrom(ctx); }")
+        sb.appendLine("\t}")
+    }
+
+    private fun renderJavaStructAttrsAndGetters(
+        sb: StringBuilder,
+        parserName: String,
+        struct: StructDecl,
+    ) {
+        for (a in struct.attrs) {
+            when (a) {
+                is TokenListDecl -> sb.appendLine("\t\tpublic List<Token> ${a.escapedName} = new ArrayList<Token>();")
+                is TokenDecl -> sb.appendLine("\t\tpublic Token ${a.escapedName};")
+                is TokenTypeDecl -> sb.appendLine("\t\tpublic int ${a.escapedName};")
+                is RuleContextListDecl -> sb.appendLine("\t\tpublic List<${a.ctxName}> ${a.escapedName} = new ArrayList<${a.ctxName}>();")
+                is RuleContextDecl -> sb.appendLine("\t\tpublic ${a.ctxName} ${a.escapedName};")
+                is AttributeDecl -> {
+                    val initSuffix = if (a.initValue != null) " = ${a.initValue}" else ""
+                    sb.appendLine("\t\tpublic ${a.type ?: "Object"} ${a.escapedName}$initSuffix;")
+                }
+            }
+        }
+        for (g in struct.getters) {
+            val getter = g as? ContextGetterDecl ?: continue
+            when (getter) {
+                is ContextTokenGetterDecl ->
+                    sb.appendLine("\t\tpublic TerminalNode ${getter.name}() { return getToken($parserName.${getter.name}, 0); }")
+                is ContextTokenListGetterDecl ->
+                    sb.appendLine("\t\tpublic List<TerminalNode> ${getter.name}() { return getTokens($parserName.${getter.name}); }")
+                is ContextTokenListIndexedGetterDecl ->
+                    sb.appendLine("\t\tpublic TerminalNode ${getter.name}(int i) { return getToken($parserName.${getter.name}, i); }")
+                is ContextRuleGetterDecl ->
+                    sb.appendLine("\t\tpublic ${getter.ctxName} ${getter.escapedName}() { return getRuleContext(${getter.ctxName}.class, 0); }")
+                is ContextRuleListGetterDecl ->
+                    sb.appendLine("\t\tpublic List<${getter.ctxName}> ${getter.escapedName}() { return getRuleContexts(${getter.ctxName}.class); }")
+                is ContextRuleListIndexedGetterDecl ->
+                    sb.appendLine("\t\tpublic ${getter.ctxName} ${getter.escapedName}(int i) { return getRuleContext(${getter.ctxName}.class, i); }")
+            }
+        }
+    }
+
     private fun renderRuleSummary(
         sb: StringBuilder,
         rf: RuleFunction,
+        ctxPrefix: String = "",
     ) {
-        sb.appendLine("\tpublic final ${rf.ctxType} ${rf.escapedName}() throws RecognitionException {")
+        val argsSig =
+            rf.args?.joinToString(", ") { a -> "${a.type ?: "Object"} ${a.escapedName}" }.orEmpty()
+        sb.appendLine("\tpublic final $ctxPrefix${rf.ctxType} ${rf.escapedName}($argsSig) throws RecognitionException {")
         rf.namedActions["init"]?.let { sb.appendLine("\t\t${renderChunks(it.chunks)}") }
         collectActions(rf.code.orEmpty()).forEach { act ->
             sb.appendLine("\t\t${renderChunks(act.chunks)}")
@@ -227,6 +364,8 @@ internal object JavaCodegenEmitter {
         sb.appendLine("\tpublic static final String _serializedATN =")
         val joined = atn.segments.flatten().joinToString("")
         sb.appendLine("\t\t\"$joined\";")
+        sb.appendLine("\tpublic static final ATN _ATN =")
+        sb.appendLine("\t\tnew ATNDeserializer().deserialize(_serializedATN.toCharArray());")
     }
 
     fun renderChunks(chunks: List<ActionChunk>): String =
@@ -235,7 +374,7 @@ internal object JavaCodegenEmitter {
     fun renderChunk(chunk: ActionChunk): String {
         val chunkCtx = chunk.ctx
         val ctxRef =
-            if (chunkCtx is AltLabelStructDecl) {
+            if (chunkCtx != null) {
                 "((${chunkCtx.name})_localctx)"
             } else {
                 "_localctx"
@@ -279,9 +418,9 @@ internal object JavaCodegenEmitter {
                 "((${chunk.ruleName.replaceFirstChar { it.uppercaseChar() }}Context)getInvokingContext(${chunk.ruleIndex})).${chunk.escapedName}"
             is SetAttr -> "$ctxRef.${chunk.escapedName} = ${renderChunks(chunk.rhsChunks)};"
             is QRetValueRef -> "$ctxRef.${chunk.dict}.${chunk.escapedName}"
-            is ArgRef -> "$ctxRef.${chunk.escapedName}"
-            is LocalRef -> "$ctxRef.${chunk.escapedName}"
-            is RetValueRef -> "$ctxRef.${chunk.escapedName}"
+            is ArgRef -> "_localctx.${chunk.escapedName}"
+            is LocalRef -> "_localctx.${chunk.escapedName}"
+            is RetValueRef -> "_localctx.${chunk.escapedName}"
             is TokenRef -> "$ctxRef.${chunk.escapedName}"
             is LabelRef -> "$ctxRef.${chunk.escapedName}"
             is ListLabelRef -> "$ctxRef.${chunk.escapedName}"
@@ -292,10 +431,10 @@ internal object JavaCodegenEmitter {
             is TokenPropertyRefChannel -> "($ctxRef.${chunk.label}!=null?$ctxRef.${chunk.label}.getChannel():0)"
             is TokenPropertyRefIndex -> "($ctxRef.${chunk.label}!=null?$ctxRef.${chunk.label}.getTokenIndex():0)"
             is TokenPropertyRefInt -> "($ctxRef.${chunk.label}!=null?Integer.valueOf($ctxRef.${chunk.label}.getText()):0)"
-            is ThisRulePropertyRefStart -> "($ctxRef.start)"
-            is ThisRulePropertyRefStop -> "($ctxRef.stop)"
-            is ThisRulePropertyRefText -> "_input.getText($ctxRef.start, _input.LT(-1))"
-            is ThisRulePropertyRefCtx -> ctxRef
+            is ThisRulePropertyRefStart -> "_localctx.start"
+            is ThisRulePropertyRefStop -> "_localctx.stop"
+            is ThisRulePropertyRefText -> "_input.getText(_localctx.start, _input.LT(-1))"
+            is ThisRulePropertyRefCtx -> "_localctx"
             is ThisRulePropertyRefParser -> "this"
             is RulePropertyRefStart -> "($ctxRef.${chunk.label}!=null?($ctxRef.${chunk.label}.start):null)"
             is RulePropertyRefStop -> "($ctxRef.${chunk.label}!=null?($ctxRef.${chunk.label}.stop):null)"

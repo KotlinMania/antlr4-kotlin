@@ -342,9 +342,9 @@ class ATNConstructionTest {
         ToolTestSupport.checkRuleATN(g, "a", expecting)
         expecting =
             "RuleStart_b_2->s7\n" +
-                "s7-B->s8\n" +
-                "s8->RuleStop_b_3\n" +
-                "RuleStop_b_3->s5\n"
+            "s7-B->s8\n" +
+            "s8->RuleStop_b_3\n" +
+            "RuleStop_b_3->s5\n"
         ToolTestSupport.checkRuleATN(g, "b", expecting)
     }
 

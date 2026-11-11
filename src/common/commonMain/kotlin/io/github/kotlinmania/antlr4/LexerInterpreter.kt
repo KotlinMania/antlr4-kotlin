@@ -11,7 +11,7 @@ import io.github.kotlinmania.antlr4.atn.LexerATNSimulator
 import io.github.kotlinmania.antlr4.atn.PredictionContextCache
 import io.github.kotlinmania.antlr4.dfa.DFA
 
-class LexerInterpreter(
+open class LexerInterpreter(
     grammarFileName: String?,
     vocabulary: Vocabulary,
     ruleNames: List<String>,
@@ -20,13 +20,17 @@ class LexerInterpreter(
     atn: ATN,
     input: CharStream?,
 ) : Lexer(input) {
-    override val grammarFileName: String
-    override val atn: ATN
+    init {
+        require(atn.grammarType === ATNType.LEXER) { "The ATN must be a lexer ATN." }
+    }
 
-    override val tokenNames: List<String>
-    override val ruleNames: List<String>?
-    val interpreterChannelNames: List<String>
-    val interpreterModeNames: List<String>
+    override val grammarFileName: String = requireNotNull(grammarFileName) { "grammarFileName cannot be null" }
+    override val atn: ATN = atn
+
+    override val tokenNames: List<String> = List(atn.maxTokenType) { i -> vocabulary.getDisplayName(i).orEmpty() }
+    override val ruleNames: List<String>? = ruleNames.toList()
+    val interpreterChannelNames: List<String> = channelNames.toList()
+    val interpreterModeNames: List<String> = modeNames.toList()
 
     override val channelNames: List<String>
         get() = interpreterChannelNames
@@ -34,9 +38,10 @@ class LexerInterpreter(
     override val modeNames: List<String>
         get() = interpreterModeNames
 
-    override var vocabulary: Vocabulary = VocabularyImpl.EMPTY_VOCABULARY
+    override val vocabulary: Vocabulary = vocabulary
 
-    protected val decisionToDFA: MutableList<DFA>
+    protected val decisionToDFA: MutableList<DFA> =
+        MutableList(atn.numberOfDecisions) { i -> DFA(atn.getDecisionState(i), i) }
     protected val sharedContextCache: PredictionContextCache = PredictionContextCache()
 
     @Deprecated("")
@@ -68,18 +73,6 @@ class LexerInterpreter(
     ) : this(grammarFileName, vocabulary, ruleNames.toList(), ArrayList<String>(), modeNames.toList(), atn, input)
 
     init {
-        require(atn.grammarType === ATNType.LEXER) { "The ATN must be a lexer ATN." }
-
-        this.grammarFileName = grammarFileName!!
-        this.atn = atn
-        this.tokenNames = List(atn.maxTokenType) { i -> vocabulary.getDisplayName(i).orEmpty() }
-
-        this.ruleNames = ruleNames.toList()
-        this.interpreterChannelNames = channelNames.toList()
-        this.interpreterModeNames = modeNames.toList()
-        this.vocabulary = vocabulary
-
-        this.decisionToDFA = MutableList(atn.numberOfDecisions) { i -> DFA(atn.getDecisionState(i), i) }
         this.interpreter = LexerATNSimulator(this, atn, this.decisionToDFA, sharedContextCache)
     }
 }

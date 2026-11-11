@@ -42,7 +42,7 @@ object MessageRenderer {
             line: Int,
             column: Int,
         ): String {
-            val fileText = file ?: ""
+            val fileText = file.orEmpty()
             val lineText = if (line != -1) line.toString() else ""
             val colText = if (column != -1) column.toString() else ""
             return when (this) {
@@ -67,7 +67,7 @@ object MessageRenderer {
             id: Int,
             messageText: String,
         ): String {
-            val locText = location ?: ""
+            val locText = location.orEmpty()
             return when (this) {
                 ANTLR -> "$severityText($id): $locText $messageText"
                 GNU -> "$locText $severityText: ${formatMessage(id, messageText)}"
@@ -272,9 +272,13 @@ object MessageRenderer {
             if (c == '"') {
                 inQuotes = !inQuotes
             } else if (!inQuotes) {
-                if (c == '<') angleDepth++
-                else if (c == '>') angleDepth--
-                else if (angleDepth == 0 && c == ':' && s[idx + 1] == '{') return idx
+                if (c == '<') {
+                    angleDepth++
+                } else if (c == '>') {
+                    angleDepth--
+                } else if (angleDepth == 0 && c == ':' && s[idx + 1] == '{') {
+                    return idx
+                }
             }
             idx++
         }

@@ -104,7 +104,7 @@ class ActionSplitter(
                 consumeChar()
                 consumeChar()
                 val stopIdx = input.index() - 1
-                val raw = input.getText(Interval.of(startIdx, stopIdx)) ?: ""
+                val raw = input.getText(Interval.of(startIdx, stopIdx)).orEmpty()
                 delegate.text(raw)
                 return makeToken(COMMENT, null, startIdx, stopIdx, startLine, startCol)
             }
@@ -131,7 +131,7 @@ class ActionSplitter(
         }
         consumeChar() // '\n'
         val stopIdx = input.index() - 1
-        val raw = input.getText(Interval.of(startIdx, stopIdx)) ?: ""
+        val raw = input.getText(Interval.of(startIdx, stopIdx)).orEmpty()
         delegate.text(raw)
         return makeToken(LINE_COMMENT, null, startIdx, stopIdx, startLine, startCol)
     }
@@ -160,14 +160,14 @@ class ActionSplitter(
                         if (exprTok != null && input.LA(1) == ';'.code) {
                             consumeChar() // ';'
                             val stopIdx = input.index() - 1
-                            val raw = input.getText(Interval.of(startIdx, stopIdx)) ?: ""
+                            val raw = input.getText(Interval.of(startIdx, stopIdx)).orEmpty()
                             delegate.setNonLocalAttr(raw, xTok, yTok, exprTok)
                             return makeToken(SET_NONLOCAL_ATTR, null, startIdx, stopIdx, startLine, startCol)
                         }
                     }
                     restoreCursor(afterY)
                     val stopIdx = input.index() - 1
-                    val raw = input.getText(Interval.of(startIdx, stopIdx)) ?: ""
+                    val raw = input.getText(Interval.of(startIdx, stopIdx)).orEmpty()
                     delegate.nonLocalAttr(raw, xTok, yTok)
                     return makeToken(NONLOCAL_ATTR, null, startIdx, stopIdx, startLine, startCol)
                 }
@@ -182,7 +182,7 @@ class ActionSplitter(
             val yTok = matchIdentifierToken()
             if (yTok != null && input.LA(1) != '('.code) {
                 val stopIdx = input.index() - 1
-                val raw = input.getText(Interval.of(startIdx, stopIdx)) ?: ""
+                val raw = input.getText(Interval.of(startIdx, stopIdx)).orEmpty()
                 delegate.qualifiedAttr(raw, xTok, yTok)
                 return makeToken(QUALIFIED_ATTR, null, startIdx, stopIdx, startLine, startCol)
             }
@@ -198,7 +198,7 @@ class ActionSplitter(
             if (exprTok != null && input.LA(1) == ';'.code) {
                 consumeChar() // ';'
                 val stopIdx = input.index() - 1
-                val raw = input.getText(Interval.of(startIdx, stopIdx)) ?: ""
+                val raw = input.getText(Interval.of(startIdx, stopIdx)).orEmpty()
                 delegate.setAttr(raw, xTok, exprTok)
                 return makeToken(SET_ATTR, null, startIdx, stopIdx, startLine, startCol)
             }
@@ -207,7 +207,7 @@ class ActionSplitter(
 
         // ATTR: '$' x=ID
         val stopIdx = input.index() - 1
-        val raw = input.getText(Interval.of(startIdx, stopIdx)) ?: ""
+        val raw = input.getText(Interval.of(startIdx, stopIdx)).orEmpty()
         delegate.attr(raw, xTok)
         return makeToken(ATTR, null, startIdx, stopIdx, startLine, startCol)
     }

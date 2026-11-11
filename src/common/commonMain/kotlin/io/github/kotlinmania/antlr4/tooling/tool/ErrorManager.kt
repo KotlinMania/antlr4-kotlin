@@ -14,7 +14,9 @@ import io.github.kotlinmania.io.files.SystemFileSystem
 /**
  * Manages formatting, counting, deduplicating one-off severities, and dispatching ANTLR 4 tool diagnostics.
  */
-class ErrorManager(var tool: ToolErrorContext? = null) {
+class ErrorManager(
+    var tool: ToolErrorContext? = null,
+) {
     var numErrors: Int = 0
     var warnings: Int = 0
 
@@ -251,8 +253,7 @@ class ErrorManager(var tool: ToolErrorContext? = null) {
             panic()
         }
 
-        fun panic() {
+        fun panic(): Nothing =
             throw IllegalStateException("ANTLR ErrorManager panic")
-        }
     }
 }

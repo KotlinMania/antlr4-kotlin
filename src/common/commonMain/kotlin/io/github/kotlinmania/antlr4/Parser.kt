@@ -19,6 +19,8 @@ import io.github.kotlinmania.antlr4.tree.ErrorNodeImpl
 import io.github.kotlinmania.antlr4.tree.ParseTreeListener
 import io.github.kotlinmania.antlr4.tree.TerminalNode
 import io.github.kotlinmania.antlr4.tree.TerminalNodeImpl
+import io.github.kotlinmania.antlr4.tree.pattern.ParseTreePattern
+import io.github.kotlinmania.antlr4.tree.pattern.ParseTreePatternMatcher
 
 /** This is all the parsing support code essentially; most of it is error recovery stuff.  */
 abstract class Parser(
@@ -191,7 +193,7 @@ abstract class Parser(
         protected set
 
     init {
-        setInputStream(input)
+        this.inputField = input
     }
 
     /** reset the parser's state  */
@@ -434,7 +436,36 @@ abstract class Parser(
     }
 
     override fun setInputStream(input: IntStream?) {
-        inputField = input as? TokenStream
+        setTokenStream(input as? TokenStream)
+    }
+
+    fun setTokenStream(input: TokenStream?) {
+        this.inputField = null
+        reset()
+        this.inputField = input
+    }
+
+    fun compileParseTreePattern(
+        pattern: String,
+        patternRuleIndex: Int,
+    ): ParseTreePattern {
+        val currentStream = inputField
+        if (currentStream != null) {
+            val tokenSource = currentStream.tokenSource
+            if (tokenSource is Lexer) {
+                return compileParseTreePattern(pattern, patternRuleIndex, tokenSource)
+            }
+        }
+        throw UnsupportedOperationException("Parser can't discover a lexer to use")
+    }
+
+    fun compileParseTreePattern(
+        pattern: String,
+        patternRuleIndex: Int,
+        lexer: Lexer?,
+    ): ParseTreePattern {
+        val matcher = ParseTreePatternMatcher(lexer, this)
+        return matcher.compile(pattern, patternRuleIndex)
     }
 
     override val inputStream: IntStream?
@@ -638,6 +669,9 @@ abstract class Parser(
         }
         interpreter?.setPredictionMode(saveMode)
     }
+
+    val sourceName: String
+        get() = inputField?.sourceName ?: IntStream.UNKNOWN_SOURCE_NAME
 
     override fun computeParseInfo(): ParseInfo? {
         val interp = interpreter

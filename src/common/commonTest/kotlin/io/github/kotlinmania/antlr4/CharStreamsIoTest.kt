@@ -32,7 +32,9 @@ class CharStreamsIoTest {
         assertTrue(source.closed)
     }
 
-    private class TrackingSource(text: String) : RawSource {
+    private class TrackingSource(
+        text: String,
+    ) : RawSource {
         private val buffer = Buffer().apply { writeString(text) }
         var closed = false
             private set

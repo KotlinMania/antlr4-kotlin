@@ -58,24 +58,36 @@ class ATNPrinter(
 
                     is RuleTransition -> {
                         val ruleName = g.getRule(t.ruleIndex)?.name ?: t.ruleIndex.toString()
-                        buf.append("-").append(ruleName).append("->").append(getStateString(t.target)).append('\n')
+                        buf
+                            .append("-")
+                            .append(ruleName)
+                            .append("->")
+                            .append(getStateString(t.target))
+                            .append('\n')
                     }
 
                     is ActionTransition -> {
-                        buf.append("-").append(t.toString()).append("->").append(getStateString(t.target)).append('\n')
+                        buf
+                            .append("-")
+                            .append(t.toString())
+                            .append("->")
+                            .append(getStateString(t.target))
+                            .append('\n')
                     }
 
                     is SetTransition -> {
                         val not = t is NotSetTransition
                         if (g.isLexer) {
-                            buf.append("-")
+                            buf
+                                .append("-")
                                 .append(if (not) "~" else "")
                                 .append(t.toString())
                                 .append("->")
                                 .append(getStateString(t.target))
                                 .append('\n')
                         } else {
-                            buf.append("-")
+                            buf
+                                .append("-")
                                 .append(if (not) "~" else "")
                                 .append(t.label().toString(g.getVocabulary()))
                                 .append("->")
@@ -86,11 +98,21 @@ class ATNPrinter(
 
                     is AtomTransition -> {
                         val label = g.getTokenDisplayName(t.atomLabel)
-                        buf.append("-").append(label).append("->").append(getStateString(t.target)).append('\n')
+                        buf
+                            .append("-")
+                            .append(label)
+                            .append("->")
+                            .append(getStateString(t.target))
+                            .append('\n')
                     }
 
                     else -> {
-                        buf.append("-").append(t.toString()).append("->").append(getStateString(t.target)).append('\n')
+                        buf
+                            .append("-")
+                            .append(t.toString())
+                            .append("->")
+                            .append(getStateString(t.target))
+                            .append('\n')
                     }
                 }
             }

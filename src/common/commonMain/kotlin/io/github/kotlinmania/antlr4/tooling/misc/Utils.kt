@@ -71,7 +71,11 @@ object Utils {
         val sortedKeys = histo.keys.sorted()
         val buf = StringBuilder("value,count\n")
         for (key in sortedKeys) {
-            buf.append(key).append(',').append(histo[key]).append('\n')
+            buf
+                .append(key)
+                .append(',')
+                .append(histo[key])
+                .append('\n')
         }
         val path = Path(filename)
         val parent = path.parent

@@ -598,7 +598,9 @@ private class CompiledMiniCalcParser(
             set(_) {}
     }
 
-    class AssignStatContext(ctx: StatContext) : StatContext() {
+    class AssignStatContext(
+        ctx: StatContext,
+    ) : StatContext() {
         init {
             copyFrom(ctx)
         }
@@ -623,7 +625,9 @@ private class CompiledMiniCalcParser(
             }
     }
 
-    class ExprStatContext(ctx: StatContext) : StatContext() {
+    class ExprStatContext(
+        ctx: StatContext,
+    ) : StatContext() {
         init {
             copyFrom(ctx)
         }
@@ -659,7 +663,9 @@ private class CompiledMiniCalcParser(
             set(_) {}
     }
 
-    class MulDivExprContext(ctx: ExprContext) : ExprContext() {
+    class MulDivExprContext(
+        ctx: ExprContext,
+    ) : ExprContext() {
         var left: ExprContext? = null
         var op: Token? = null
         var right: ExprContext? = null
@@ -688,7 +694,9 @@ private class CompiledMiniCalcParser(
             }
     }
 
-    class AddSubExprContext(ctx: ExprContext) : ExprContext() {
+    class AddSubExprContext(
+        ctx: ExprContext,
+    ) : ExprContext() {
         var left: ExprContext? = null
         var op: Token? = null
         var right: ExprContext? = null
@@ -717,7 +725,9 @@ private class CompiledMiniCalcParser(
             }
     }
 
-    class IntExprContext(ctx: ExprContext) : ExprContext() {
+    class IntExprContext(
+        ctx: ExprContext,
+    ) : ExprContext() {
         init {
             copyFrom(ctx)
         }
@@ -740,7 +750,9 @@ private class CompiledMiniCalcParser(
             }
     }
 
-    class IdExprContext(ctx: ExprContext) : ExprContext() {
+    class IdExprContext(
+        ctx: ExprContext,
+    ) : ExprContext() {
         init {
             copyFrom(ctx)
         }
@@ -763,7 +775,9 @@ private class CompiledMiniCalcParser(
             }
     }
 
-    class ParenExprContext(ctx: ExprContext) : ExprContext() {
+    class ParenExprContext(
+        ctx: ExprContext,
+    ) : ExprContext() {
         init {
             copyFrom(ctx)
         }

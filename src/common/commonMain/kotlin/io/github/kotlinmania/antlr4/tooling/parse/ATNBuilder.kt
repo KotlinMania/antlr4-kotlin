@@ -152,9 +152,10 @@ class ATNBuilder(
             ANTLRParserTypes.CLOSURE,
             ANTLRParserTypes.POSITIVE_CLOSURE,
             -> {
-                val innerBlock = requireNotNull(node.getChild(0) as? BlockAST) {
-                    "EBNF ${ANTLRParserTypes.tokenName(node.type)} missing BlockAST child"
-                }
+                val innerBlock =
+                    requireNotNull(node.getChild(0) as? BlockAST) {
+                        "EBNF ${ANTLRParserTypes.tokenName(node.type)} missing BlockAST child"
+                    }
                 block(innerBlock, node)
             }
 

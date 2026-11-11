@@ -27,13 +27,13 @@ class ActionSniffer(
     val errMgr: ErrorManager = g.tool.errMgr
 
     fun examineAction() {
-        val stream = CharStreams.fromString(actionToken.text ?: "")
+        val stream = CharStreams.fromString(actionToken.text.orEmpty())
         val splitter = ActionSplitter(stream, this, actionToken.line, actionToken.charPositionInLine)
         node.chunks = splitter.getActionTokens()
     }
 
     fun processNested(nestedToken: Token) {
-        val stream = CharStreams.fromString(nestedToken.text ?: "")
+        val stream = CharStreams.fromString(nestedToken.text.orEmpty())
         val splitter = ActionSplitter(stream, this, nestedToken.line, nestedToken.charPositionInLine)
         splitter.getActionTokens()
     }

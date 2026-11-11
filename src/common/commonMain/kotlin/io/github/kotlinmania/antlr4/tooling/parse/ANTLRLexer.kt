@@ -425,7 +425,7 @@ open class ANTLRLexer : Lexer {
             val stopIdx = stream.index() - 1
             val raw =
                 if (stopIdx >= tokenStartCharIndex) {
-                    stream.getText(Interval.of(tokenStartCharIndex, stopIdx)) ?: ""
+                    stream.getText(Interval.of(tokenStartCharIndex, stopIdx)).orEmpty()
                 } else {
                     ""
                 }
@@ -504,7 +504,7 @@ open class ANTLRLexer : Lexer {
         val innerStop = stream.index() - 2
         val raw =
             if (innerStop >= innerStart) {
-                stream.getText(Interval.of(innerStart, innerStop)) ?: ""
+                stream.getText(Interval.of(innerStart, innerStop)).orEmpty()
             } else {
                 ""
             }
@@ -609,7 +609,7 @@ open class ANTLRLexer : Lexer {
     private fun consumeNestedAction(stream: CharStream) {
         consumeChar(stream) // '{'
         while (true) {
-            when (val la = stream.LA(1)) {
+            when (stream.LA(1)) {
                 IntStream.EOF -> return
                 '}'.code -> {
                     consumeChar(stream)
@@ -743,7 +743,7 @@ open class ANTLRLexer : Lexer {
                     consumeChar(stream) // '}'
                     if (numDigits > 6) {
                         val stopIdx = stream.index() - 1
-                        val bad = stream.getText(Interval.of(escStartIdx, stopIdx)) ?: ""
+                        val bad = stream.getText(Interval.of(escStartIdx, stopIdx)).orEmpty()
                         val errTok =
                             CommonToken(
                                 TokenSourceCharStream(this, stream),
@@ -777,7 +777,7 @@ open class ANTLRLexer : Lexer {
                             } else {
                                 stream.index()
                             }
-                        val bad = stream.getText(Interval.of(escStartIdx, badStop)) ?: ""
+                        val bad = stream.getText(Interval.of(escStartIdx, badStop)).orEmpty()
                         val errTok =
                             CommonToken(
                                 TokenSourceCharStream(this, stream),
@@ -799,7 +799,7 @@ open class ANTLRLexer : Lexer {
             else -> {
                 consumeChar(stream)
                 val stopIdx = stream.index() - 1
-                val bad = stream.getText(Interval.of(escStartIdx, stopIdx)) ?: ""
+                val bad = stream.getText(Interval.of(escStartIdx, stopIdx)).orEmpty()
                 val errTok =
                     CommonToken(
                         TokenSourceCharStream(this, stream),
@@ -833,7 +833,7 @@ open class ANTLRLexer : Lexer {
         while (isNameChar(stream.LA(1))) {
             consumeChar(stream)
         }
-        val ident = stream.getText(Interval.of(tokenStartCharIndex, stream.index() - 1)) ?: ""
+        val ident = stream.getText(Interval.of(tokenStartCharIndex, stream.index() - 1)).orEmpty()
 
         if (ident == "options" || ident == "tokens" || ident == "channels") {
             val afterIdent = savePosition(stream)
@@ -871,7 +871,7 @@ open class ANTLRLexer : Lexer {
     private fun matchErrChar(stream: CharStream) {
         consumeChar(stream)
         val stopIdx = stream.index() - 1
-        val errText = stream.getText(Interval.of(tokenStartCharIndex, stopIdx)) ?: ""
+        val errText = stream.getText(Interval.of(tokenStartCharIndex, stopIdx)).orEmpty()
         val errTok =
             CommonToken(
                 TokenSourceCharStream(this, stream),

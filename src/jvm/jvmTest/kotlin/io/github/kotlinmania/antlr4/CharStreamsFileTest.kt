@@ -18,4 +18,8 @@ class CharStreamsFileTest {
     @Test
     fun testRigAndLogManagerWriteRealArtifactsToDisk() =
         CharStreamsFileAssertions.testRigAndLogManagerWriteRealArtifactsToDisk()
+
+    @Test
+    fun compositeGrammarLibAndOutdirResolutionAndInterpreterDataFile() =
+        CharStreamsFileAssertions.compositeGrammarLibAndOutdirResolutionAndInterpreterDataFile()
 }

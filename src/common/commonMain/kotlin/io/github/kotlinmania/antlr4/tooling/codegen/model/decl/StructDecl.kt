@@ -25,32 +25,32 @@ open class StructDecl protected constructor(
 ) : Decl(factory, resolvedName) {
     var provideCopyFrom: Boolean = r.hasAltSpecificContexts()
 
-    internal var mutableDispatchMethods: MutableList<DispatchMethod>? = null
-    internal var mutableInterfaces: MutableList<OutputModelObject>? = null
-    internal var mutableExtensionMembers: MutableList<OutputModelObject>? = null
+    internal val mutableDispatchMethods: MutableList<DispatchMethod> = ArrayList()
+    internal val mutableInterfaces: MutableList<OutputModelObject> = ArrayList()
+    internal val mutableExtensionMembers: MutableList<OutputModelObject> = ArrayList()
 
     internal val mutableAttrs: OrderedHashSet<Decl> = OrderedHashSet()
     internal val mutableCtorAttrs: OrderedHashSet<Decl> = OrderedHashSet()
     internal val mutableGetters: OrderedHashSet<Decl> = OrderedHashSet()
 
-    internal var mutableTokenDecls: MutableList<Decl>? = null
-    internal var mutableTokenTypeDecls: MutableList<Decl>? = null
-    internal var mutableTokenListDecls: MutableList<Decl>? = null
-    internal var mutableRuleContextDecls: MutableList<Decl>? = null
-    internal var mutableRuleContextListDecls: MutableList<Decl>? = null
-    internal var mutableAttributeDecls: MutableList<Decl>? = null
+    internal val mutableTokenDecls: MutableList<Decl> = ArrayList()
+    internal val mutableTokenTypeDecls: MutableList<Decl> = ArrayList()
+    internal val mutableTokenListDecls: MutableList<Decl> = ArrayList()
+    internal val mutableRuleContextDecls: MutableList<Decl> = ArrayList()
+    internal val mutableRuleContextListDecls: MutableList<Decl> = ArrayList()
+    internal val mutableAttributeDecls: MutableList<Decl> = ArrayList()
 
     @ModelElement
     val dispatchMethods: List<DispatchMethod>?
-        get() = mutableDispatchMethods
+        get() = mutableDispatchMethods.ifEmpty { null }
 
     @ModelElement
     val interfaces: List<OutputModelObject>?
-        get() = mutableInterfaces
+        get() = mutableInterfaces.ifEmpty { null }
 
     @ModelElement
     val extensionMembers: List<OutputModelObject>?
-        get() = mutableExtensionMembers
+        get() = mutableExtensionMembers.ifEmpty { null }
 
     @ModelElement
     val attrs: List<Decl>
@@ -65,22 +65,22 @@ open class StructDecl protected constructor(
         get() = mutableGetters.elements()
 
     val tokenDecls: List<Decl>?
-        get() = mutableTokenDecls
+        get() = mutableTokenDecls.ifEmpty { null }
 
     val tokenTypeDecls: List<Decl>?
-        get() = mutableTokenTypeDecls
+        get() = mutableTokenTypeDecls.ifEmpty { null }
 
     val tokenListDecls: List<Decl>?
-        get() = mutableTokenListDecls
+        get() = mutableTokenListDecls.ifEmpty { null }
 
     val ruleContextDecls: List<Decl>?
-        get() = mutableRuleContextDecls
+        get() = mutableRuleContextDecls.ifEmpty { null }
 
     val ruleContextListDecls: List<Decl>?
-        get() = mutableRuleContextListDecls
+        get() = mutableRuleContextListDecls.ifEmpty { null }
 
     val attributeDecls: List<Decl>?
-        get() = mutableAttributeDecls
+        get() = mutableAttributeDecls.ifEmpty { null }
 
     constructor(
         factory: OutputModelFactory,
@@ -101,15 +101,14 @@ open class StructDecl protected constructor(
     }
 
     internal fun populateDefaultDispatchMethods(ownerFactory: OutputModelFactory) {
-        val methods = ArrayList<DispatchMethod>()
+        mutableDispatchMethods.clear()
         if (ownerFactory.grammar.tool.genListener) {
-            methods.add(ListenerDispatchMethod(ownerFactory, true))
-            methods.add(ListenerDispatchMethod(ownerFactory, false))
+            mutableDispatchMethods.add(ListenerDispatchMethod(ownerFactory, true))
+            mutableDispatchMethods.add(ListenerDispatchMethod(ownerFactory, false))
         }
         if (ownerFactory.grammar.tool.genVisitor) {
-            methods.add(VisitorDispatchMethod(ownerFactory))
+            mutableDispatchMethods.add(VisitorDispatchMethod(ownerFactory))
         }
-        mutableDispatchMethods = methods
     }
 
     fun addDecl(d: Decl) {
@@ -120,59 +119,12 @@ open class StructDecl protected constructor(
             mutableAttrs.add(d)
         }
         when (d) {
-            is TokenTypeDecl -> {
-                var list = mutableTokenTypeDecls
-                if (list == null) {
-                    list = ArrayList()
-                    mutableTokenTypeDecls = list
-                }
-                list.add(d)
-            }
-
-            is TokenListDecl -> {
-                var list = mutableTokenListDecls
-                if (list == null) {
-                    list = ArrayList()
-                    mutableTokenListDecls = list
-                }
-                list.add(d)
-            }
-
-            is TokenDecl -> {
-                var list = mutableTokenDecls
-                if (list == null) {
-                    list = ArrayList()
-                    mutableTokenDecls = list
-                }
-                list.add(d)
-            }
-
-            is RuleContextListDecl -> {
-                var list = mutableRuleContextListDecls
-                if (list == null) {
-                    list = ArrayList()
-                    mutableRuleContextListDecls = list
-                }
-                list.add(d)
-            }
-
-            is RuleContextDecl -> {
-                var list = mutableRuleContextDecls
-                if (list == null) {
-                    list = ArrayList()
-                    mutableRuleContextDecls = list
-                }
-                list.add(d)
-            }
-
-            is AttributeDecl -> {
-                var list = mutableAttributeDecls
-                if (list == null) {
-                    list = ArrayList()
-                    mutableAttributeDecls = list
-                }
-                list.add(d)
-            }
+            is TokenTypeDecl -> mutableTokenTypeDecls.add(d)
+            is TokenListDecl -> mutableTokenListDecls.add(d)
+            is TokenDecl -> mutableTokenDecls.add(d)
+            is RuleContextListDecl -> mutableRuleContextListDecls.add(d)
+            is RuleContextDecl -> mutableRuleContextDecls.add(d)
+            is AttributeDecl -> mutableAttributeDecls.add(d)
         }
     }
 
@@ -187,21 +139,11 @@ open class StructDecl protected constructor(
     }
 
     fun implementInterface(value: OutputModelObject) {
-        var list = mutableInterfaces
-        if (list == null) {
-            list = ArrayList()
-            mutableInterfaces = list
-        }
-        list.add(value)
+        mutableInterfaces.add(value)
     }
 
     fun addExtensionMember(member: OutputModelObject) {
-        var list = mutableExtensionMembers
-        if (list == null) {
-            list = ArrayList()
-            mutableExtensionMembers = list
-        }
-        list.add(member)
+        mutableExtensionMembers.add(member)
     }
 
     fun isEmpty(): Boolean = mutableAttrs.isEmpty()

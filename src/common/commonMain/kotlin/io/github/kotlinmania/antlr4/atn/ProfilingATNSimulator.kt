@@ -19,9 +19,9 @@ class ProfilingATNSimulator(
     parser: Parser,
 ) : ParserATNSimulator(
         parser,
-        parser.interpreter!!.atn,
-        parser.interpreter!!.decisionToDFA,
-        parser.interpreter!!.sharedContextCache,
+        requireNotNull(parser.interpreter).atn,
+        requireNotNull(parser.interpreter).decisionToDFA,
+        requireNotNull(parser.interpreter).sharedContextCache,
     ) {
     protected val decisions: Array<DecisionInfo>
     protected var numDecisions: Int

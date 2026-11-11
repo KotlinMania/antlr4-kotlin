@@ -5,8 +5,8 @@
  */
 package io.github.kotlinmania.antlr4.misc
 
-import io.github.kotlinmania.antlr4.tooling.gui.TestRig as ToolTestRig
 import io.github.kotlinmania.antlr4.tooling.gui.TestRigRunResult
+import io.github.kotlinmania.antlr4.tooling.gui.TestRig as ToolTestRig
 
 /**
  * Runtime entry point delegating to [io.github.kotlinmania.antlr4.tooling.gui.TestRig].

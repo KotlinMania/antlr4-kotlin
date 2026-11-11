@@ -797,9 +797,8 @@ class Tool(
         lastExitCode = code
     }
 
-    fun panic(): Nothing {
+    fun panic(): Nothing =
         throw IllegalStateException("ANTLR panic")
-    }
 
     private fun isAbsolutePath(path: String): Boolean =
         path.startsWith("/") || (path.length >= 2 && path[1] == ':')

@@ -72,9 +72,15 @@ class OutputModelController(
     fun popCurrentBlock(): CodeBlock? =
         if (blockStack.isEmpty()) null else blockStack.removeLast()
 
-    fun buildParserOutputModel(header: Boolean): OutputModelObject {
+    fun buildParserOutputModel(header: Boolean): OutputModelObject =
+        buildParserOutputModel(if (header) SourceType.HEADER else SourceType.SOURCE)
+
+    fun buildParserOutputModel(sourceType: SourceType): OutputModelObject {
         val gen = delegate.generator
-        val file = parserFile(gen.target.getRecognizerFileName(header))
+        val file = parserFile(gen.target.getRecognizerFileName(sourceType))
+        file.genLean = sourceType == SourceType.SOURCE_LEAN
+        file.genContexts = sourceType == SourceType.SOURCE_CONTEXTS
+        file.genDFA = sourceType == SourceType.SOURCE_DFA
         root = file
         val p = parser(file)
         file.parser = p
@@ -266,22 +272,24 @@ class OutputModelController(
             }
 
             val opLoop = outerAlt.ops?.lastOrNull { it is Loop } as? Loop
-            val opAltsList = r.recOpAlts?.values?.toList().orEmpty()
+            val opAltsList =
+                r.recOpAlts
+                    ?.values
+                    ?.toList()
+                    .orEmpty()
             if (opLoop != null && opAltsList.isNotEmpty()) {
                 // Ensure prevCtx reflects the matched primary context right before entering the operator loop.
                 val outerOps = outerAlt.mutableOps
-                if (outerOps != null) {
-                    val loopIdx = outerOps.indexOf(opLoop)
-                    if (loopIdx >= 0) {
-                        outerOps.add(
-                            loopIdx,
-                            Action(
-                                delegate,
-                                rf.ruleCtx,
-                                LeftRecursiveActionSpec(kind = LeftRecursiveActionKind.SET_PREV_CTX),
-                            ),
-                        )
-                    }
+                val loopIdx = outerOps.indexOf(opLoop)
+                if (loopIdx >= 0) {
+                    outerOps.add(
+                        loopIdx,
+                        Action(
+                            delegate,
+                            rf.ruleCtx,
+                            LeftRecursiveActionSpec(kind = LeftRecursiveActionKind.SET_PREV_CTX),
+                        ),
+                    )
                 }
 
                 val limit = minOf(opLoop.alts.size, opAltsList.size)

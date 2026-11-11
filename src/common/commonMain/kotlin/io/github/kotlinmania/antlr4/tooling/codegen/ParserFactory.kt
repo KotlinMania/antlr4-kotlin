@@ -87,7 +87,8 @@ open class ParserFactory(
         blk: CodeBlockForAlt,
         ops: List<SrcOp>,
     ): CodeBlockForAlt {
-        blk.mutableOps = ArrayList(ops)
+        blk.mutableOps.clear()
+        blk.mutableOps.addAll(ops)
         return blk
     }
 

@@ -34,5 +34,9 @@ object UnicodeEscapes {
     }
 
     private fun hex(value: Int, width: Int): String =
-        value.toUInt().toString(16).uppercase().padStart(width, '0')
+        value
+            .toUInt()
+            .toString(16)
+            .uppercase()
+            .padStart(width, '0')
 }

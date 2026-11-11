@@ -143,7 +143,7 @@ class BlockSetTransformer(
         if (blockNode.childCount < 2) {
             return null
         }
-        val inLexer = ANTLRParserTypes.isTokenName(currentRuleName ?: "")
+        val inLexer = ANTLRParserTypes.isTokenName(currentRuleName.orEmpty())
         val collectedElements = ArrayList<GrammarAST>(blockNode.childCount)
 
         for (i in 0 until blockNode.childCount) {

@@ -259,8 +259,7 @@ class BasicSemanticChecks(
         if (nameToken == null) return
         val fullyQualifiedName = nameToken.inputStream?.sourceName
         if (
-            fullyQualifiedName == null ||
-            fullyQualifiedName.isEmpty() ||
+            fullyQualifiedName.isNullOrEmpty() ||
             fullyQualifiedName == IntStream.UNKNOWN_SOURCE_NAME
         ) {
             return
@@ -620,7 +619,7 @@ class BasicSemanticChecks(
                 delegate,
             )
         }
-        val grammarName = g.name ?: ""
+        val grammarName = g.name.orEmpty()
         if (
             g.isCombined &&
             (
@@ -640,7 +639,7 @@ class BasicSemanticChecks(
 
     private fun sourceFileNameOrGrammarFile(token: Token?): String? {
         val src = token?.inputStream?.sourceName
-        if (src == null || src.isEmpty() || src == IntStream.UNKNOWN_SOURCE_NAME) {
+        if (src.isNullOrEmpty() || src == IntStream.UNKNOWN_SOURCE_NAME) {
             return g.fileName
         }
         return src

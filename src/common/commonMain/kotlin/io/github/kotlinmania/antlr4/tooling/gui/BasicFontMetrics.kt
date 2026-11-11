@@ -62,7 +62,7 @@ class StandardFontMetrics(
                 }
             }
 
-            key.contains("times") || key.contains("serif") && !key.contains("sans") -> {
+            key.contains("times") || (key.contains("serif") && !key.contains("sans")) -> {
                 psFontName = PostScriptDocument.POSTSCRIPT_FONT_NAMES[raw] ?: "TimesNewRomanPSMT"
                 maxCharHeight = 891
                 populateTimesWidths(widths)

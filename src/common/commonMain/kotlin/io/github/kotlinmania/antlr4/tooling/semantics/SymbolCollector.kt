@@ -156,19 +156,30 @@ class SymbolCollector(
     ) {
         val rule = currentRule ?: return
         val lp = LabelElementPair(g, id, element, op.type)
-        rule.alt.getOrNull(currentOuterAltNumber)?.mutableLabelDefs?.map(id.text, lp)
+        rule.alt
+            .getOrNull(currentOuterAltNumber)
+            ?.mutableLabelDefs
+            ?.map(id.text, lp)
     }
 
     override fun stringRef(ref: TerminalAST) {
         mutableTerminals.add(ref)
         mutableStrings.add(ref.text)
-        currentRule?.alt?.getOrNull(currentOuterAltNumber)?.mutableTokenRefs?.map(ref.text, ref)
+        currentRule
+            ?.alt
+            ?.getOrNull(currentOuterAltNumber)
+            ?.mutableTokenRefs
+            ?.map(ref.text, ref)
     }
 
     override fun tokenRef(ref: TerminalAST) {
         mutableTerminals.add(ref)
         mutableTokenIDRefs.add(ref)
-        currentRule?.alt?.getOrNull(currentOuterAltNumber)?.mutableTokenRefs?.map(ref.text, ref)
+        currentRule
+            ?.alt
+            ?.getOrNull(currentOuterAltNumber)
+            ?.mutableTokenRefs
+            ?.map(ref.text, ref)
     }
 
     override fun ruleRef(
@@ -176,7 +187,11 @@ class SymbolCollector(
         arg: ActionAST?,
     ) {
         mutableRulerefs.add(ref)
-        currentRule?.alt?.getOrNull(currentOuterAltNumber)?.mutableRuleRefs?.map(ref.text, ref)
+        currentRule
+            ?.alt
+            ?.getOrNull(currentOuterAltNumber)
+            ?.mutableRuleRefs
+            ?.map(ref.text, ref)
     }
 
     override fun grammarOption(

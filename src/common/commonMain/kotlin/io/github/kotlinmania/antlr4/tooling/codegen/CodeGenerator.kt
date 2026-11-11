@@ -68,7 +68,10 @@ class CodeGenerator(
         walk(createController().buildLexerOutputModel(header), header)
 
     fun generateParser(header: Boolean = false): GeneratedOutput =
-        walk(createController().buildParserOutputModel(header), header)
+        generateParser(if (header) SourceType.HEADER else SourceType.SOURCE)
+
+    fun generateParser(sourceType: SourceType): GeneratedOutput =
+        walk(createController().buildParserOutputModel(sourceType), sourceType == SourceType.HEADER)
 
     fun generateListener(header: Boolean = false): GeneratedOutput =
         walk(createController().buildListenerOutputModel(header), header)
@@ -95,6 +98,13 @@ class CodeGenerator(
         header: Boolean = false,
     ) {
         write(outputFileST, getRecognizerFileName(header))
+    }
+
+    fun writeRecognizer(
+        outputFileST: GeneratedOutput,
+        sourceType: SourceType,
+    ) {
+        write(outputFileST, target.getRecognizerFileName(sourceType))
     }
 
     fun writeListener(
@@ -134,12 +144,20 @@ class CodeGenerator(
         val sb = StringBuilder()
         for ((tokenName, tokenType) in grammar.tokenNameToTypeMap) {
             if (tokenType >= Token.MIN_USER_TOKEN_TYPE) {
-                sb.append(tokenName).append('=').append(tokenType).append('\n')
+                sb
+                    .append(tokenName)
+                    .append('=')
+                    .append(tokenType)
+                    .append('\n')
             }
         }
         for ((lit, tokenType) in grammar.stringLiteralToTypeMap) {
             if (tokenType >= Token.MIN_USER_TOKEN_TYPE) {
-                sb.append(lit).append('=').append(tokenType).append('\n')
+                sb
+                    .append(lit)
+                    .append('=')
+                    .append(tokenType)
+                    .append('\n')
             }
         }
         return sb.toString()

@@ -32,7 +32,7 @@ class AttributeChecks(
 
     fun examineAction() {
         val tok = actionToken ?: return
-        val stream = CharStreams.fromString(tok.text ?: "")
+        val stream = CharStreams.fromString(tok.text.orEmpty())
         val splitter = ActionSplitter(stream, this, tok.line, tok.charPositionInLine)
         node.chunks = splitter.getActionTokens()
     }
@@ -42,8 +42,8 @@ class AttributeChecks(
         x: Token,
         y: Token,
     ) {
-        val xText = x.text ?: ""
-        val yText = y.text ?: ""
+        val xText = x.text.orEmpty()
+        val yText = y.text.orEmpty()
         if (g.isLexer) {
             errMgr.grammarError(
                 ErrorType.ATTRIBUTE_IN_LEXER_ACTION,
@@ -108,7 +108,7 @@ class AttributeChecks(
         x: Token,
         rhs: Token,
     ) {
-        val xText = x.text ?: ""
+        val xText = x.text.orEmpty()
         if (g.isLexer) {
             errMgr.grammarError(
                 ErrorType.ATTRIBUTE_IN_LEXER_ACTION,
@@ -142,7 +142,7 @@ class AttributeChecks(
         expr: String,
         x: Token,
     ) {
-        val xText = x.text ?: ""
+        val xText = x.text.orEmpty()
         if (g.isLexer) {
             errMgr.grammarError(
                 ErrorType.ATTRIBUTE_IN_LEXER_ACTION,
@@ -186,8 +186,8 @@ class AttributeChecks(
         x: Token,
         y: Token,
     ) {
-        val xText = x.text ?: ""
-        val yText = y.text ?: ""
+        val xText = x.text.orEmpty()
+        val yText = y.text.orEmpty()
         val targetRule = g.getRule(xText)
         if (targetRule == null) {
             errMgr.grammarError(
@@ -216,8 +216,8 @@ class AttributeChecks(
         y: Token,
         rhs: Token,
     ) {
-        val xText = x.text ?: ""
-        val yText = y.text ?: ""
+        val xText = x.text.orEmpty()
+        val yText = y.text.orEmpty()
         val targetRule = g.getRule(xText)
         if (targetRule == null) {
             errMgr.grammarError(
