@@ -75,6 +75,20 @@ struct Antlr4ExportTests {
         #expect(rig.sll == true)
         #expect(rig.inputFiles == ["Sample.kt"])
     }
+
+    @Test("Tooling UnicodeData, CharSupport, and EscapeSequenceParsing")
+    func testToolingUnicodeAndEscapeParsing() throws {
+        let lu = io.github.kotlinmania.antlr4.tooling.unicode.UnicodeData.shared.getPropertyCodePoints(propertyCodeOrAlias: "Lu")
+        #expect(lu?.contains(el: 88) == true) // 'X'
+        #expect(lu?.contains(el: 120) == false) // 'x'
+
+        let lit = io.github.kotlinmania.antlr4.tooling.misc.CharSupport.shared.getANTLRCharLiteralForChar(c: 0x10FFFF)
+        #expect(lit == "'\\u{10FFFF}'")
+
+        let parsed = io.github.kotlinmania.antlr4.tooling.misc.EscapeSequenceParsing.shared.parseEscape(s: "\\p{Deseret}", startOff: 0)
+        #expect(parsed.parseLength == 11)
+        #expect(parsed.propertyIntervalSet.contains(el: 66560) == true)
+    }
 }
 #elseif canImport(XCTest)
 import XCTest
@@ -146,6 +160,19 @@ final class Antlr4ExportTests: XCTestCase {
         XCTAssertTrue(rig.printTree)
         XCTAssertTrue(rig.sll)
         XCTAssertEqual(rig.inputFiles, ["Sample.kt"])
+    }
+
+    func testToolingUnicodeAndEscapeParsing() throws {
+        let lu = io.github.kotlinmania.antlr4.tooling.unicode.UnicodeData.shared.getPropertyCodePoints(propertyCodeOrAlias: "Lu")
+        XCTAssertEqual(lu?.contains(el: 88), true)
+        XCTAssertEqual(lu?.contains(el: 120), false)
+
+        let lit = io.github.kotlinmania.antlr4.tooling.misc.CharSupport.shared.getANTLRCharLiteralForChar(c: 0x10FFFF)
+        XCTAssertEqual(lit, "'\\u{10FFFF}'")
+
+        let parsed = io.github.kotlinmania.antlr4.tooling.misc.EscapeSequenceParsing.shared.parseEscape(s: "\\p{Deseret}", startOff: 0)
+        XCTAssertEqual(parsed.parseLength, 11)
+        XCTAssertTrue(parsed.propertyIntervalSet.contains(el: 66560))
     }
 }
 #endif
