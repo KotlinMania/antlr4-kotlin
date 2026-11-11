@@ -55,7 +55,7 @@ class AttributeChecks(
             return
         }
         val resolver = node.resolver ?: return
-        if (resolver.resolveToAttribute(xText, node) != null) {
+        if (resolver.resolveToAttribute(xText, node) != null || resolver.resolvesToListLabel(xText, node)) {
             attr(expr, x)
             return
         }

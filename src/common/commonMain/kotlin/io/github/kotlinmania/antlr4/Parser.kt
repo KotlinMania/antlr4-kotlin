@@ -138,7 +138,7 @@ abstract class Parser(
      * The [ParserRuleContext] object for the currently executing rule.
      * This is always non-null during the parsing process.
      */
-    internal var ctx: ParserRuleContext? = null
+    var ctx: ParserRuleContext? = null
 
     /**
      * Track the [ParserRuleContext] objects during the parse and hook
@@ -299,6 +299,44 @@ abstract class Parser(
 
     val parseListeners: List<ParseTreeListener>
         get() = _parseListeners.toList()
+
+    protected val hasParseListeners: Boolean
+        get() = _parseListeners.isNotEmpty()
+
+    fun getInvokingContext(ruleIndex: Int): ParserRuleContext? {
+        var current: ParserRuleContext? = ctx
+        while (current != null) {
+            if (current.ruleIndex == ruleIndex) return current
+            current = current.parent as? ParserRuleContext
+        }
+        return null
+    }
+
+    protected fun throwNoViableAlt(): Nothing =
+        throw NoViableAltException(this).asControlException()
+
+    protected fun throwFailedPredicate(
+        predicate: String?,
+        message: String? = null,
+    ): Nothing = throw FailedPredicateException(this, predicate, message).asControlException()
+
+    protected fun throwRecognitionException(exception: RecognitionException): Nothing =
+        throw exception.asControlException()
+
+    protected fun executeRuleGuarded(
+        localctx: ParserRuleContext,
+        body: () -> Unit,
+    ) {
+        try {
+            body()
+        } catch (control: RecognitionControlException) {
+            val re = control.recognitionException
+            ctx?.exception = re
+            localctx.exception = re
+            errorHandler.reportError(this, re)
+            errorHandler.recover(this, re)
+        }
+    }
 
     /**
      * Registers `listener` to receive events during the parsing process.

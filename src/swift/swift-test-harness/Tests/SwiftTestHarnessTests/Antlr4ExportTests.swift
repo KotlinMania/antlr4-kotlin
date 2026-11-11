@@ -208,6 +208,40 @@ struct Antlr4ExportTests {
         #expect(info != nil)
         #expect(guiInterp.lastRenderedTree == "(s:1 (expr:1 (expr:2 10) + 20) <EOF>)")
     }
+
+    @Test("Tooling CodeGenerator and CodeGenPipeline end-to-end")
+    func testToolingCodeGeneratorAndCodeGenPipeline() throws {
+        let tool = io.github.kotlinmania.antlr4.tooling.tool.Tool(
+            args: ["-visitor", "-listener", "-package", "sample.swiftcalc", "SwiftCalc.g4"]
+        )
+        tool.writeFilesToDisk = false
+        tool.removeListeners()
+        tool.registerVirtualGrammar(
+            fileName: "SwiftCalc.g4",
+            content: """
+            grammar SwiftCalc;
+            s : expr EOF ;
+            expr : left=expr op=('*'|'+') right=expr #BinOp
+                 | INT                               #Num
+                 ;
+            INT : [0-9]+ ;
+            WS  : [ \\t\\r\\n]+ -> skip ;
+            """
+        )
+        tool.processGrammarsOnCommandLine()
+        #expect(tool.numErrors == 0)
+
+        let outputs = tool.virtualOutputs
+        let parserCode = try #require(outputs["SwiftCalcParser.kt"])
+        let lexerCode = try #require(outputs["SwiftCalcLexer.kt"])
+        let visitorCode = try #require(outputs["SwiftCalcVisitor.kt"])
+        let listenerCode = try #require(outputs["SwiftCalcListener.kt"])
+        #expect(parserCode.contains("package sample.swiftcalc"))
+        #expect(parserCode.contains("class BinOpContext(ctx: ExprContext) : ExprContext()"))
+        #expect(lexerCode.contains("open class SwiftCalcLexer(input: CharStream?) : Lexer(input)"))
+        #expect(visitorCode.contains("fun visitBinOp(ctx: SwiftCalcParser.BinOpContext): T?"))
+        #expect(listenerCode.contains("fun enterBinOp(ctx: SwiftCalcParser.BinOpContext)"))
+    }
 }
 #elseif canImport(XCTest)
 import XCTest
@@ -408,6 +442,39 @@ final class Antlr4ExportTests: XCTestCase {
         )
         XCTAssertNotNil(info)
         XCTAssertEqual(guiInterp.lastRenderedTree, "(s:1 (expr:1 (expr:2 10) + 20) <EOF>)")
+    }
+
+    func testToolingCodeGeneratorAndCodeGenPipeline() throws {
+        let tool = io.github.kotlinmania.antlr4.tooling.tool.Tool(
+            args: ["-visitor", "-listener", "-package", "sample.swiftcalc", "SwiftCalc.g4"]
+        )
+        tool.writeFilesToDisk = false
+        tool.removeListeners()
+        tool.registerVirtualGrammar(
+            fileName: "SwiftCalc.g4",
+            content: """
+            grammar SwiftCalc;
+            s : expr EOF ;
+            expr : left=expr op=('*'|'+') right=expr #BinOp
+                 | INT                               #Num
+                 ;
+            INT : [0-9]+ ;
+            WS  : [ \\t\\r\\n]+ -> skip ;
+            """
+        )
+        tool.processGrammarsOnCommandLine()
+        XCTAssertEqual(tool.numErrors, 0)
+
+        let outputs = tool.virtualOutputs
+        let parserCode = try XCTUnwrap(outputs["SwiftCalcParser.kt"])
+        let lexerCode = try XCTUnwrap(outputs["SwiftCalcLexer.kt"])
+        let visitorCode = try XCTUnwrap(outputs["SwiftCalcVisitor.kt"])
+        let listenerCode = try XCTUnwrap(outputs["SwiftCalcListener.kt"])
+        XCTAssertTrue(parserCode.contains("package sample.swiftcalc"))
+        XCTAssertTrue(parserCode.contains("class BinOpContext(ctx: ExprContext) : ExprContext()"))
+        XCTAssertTrue(lexerCode.contains("open class SwiftCalcLexer(input: CharStream?) : Lexer(input)"))
+        XCTAssertTrue(visitorCode.contains("fun visitBinOp(ctx: SwiftCalcParser.BinOpContext): T?"))
+        XCTAssertTrue(listenerCode.contains("fun enterBinOp(ctx: SwiftCalcParser.BinOpContext)"))
     }
 }
 #endif

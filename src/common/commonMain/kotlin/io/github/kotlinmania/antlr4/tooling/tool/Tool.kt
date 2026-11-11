@@ -20,6 +20,7 @@ import io.github.kotlinmania.antlr4.tooling.ast.TerminalAST
 import io.github.kotlinmania.antlr4.tooling.automata.ATNFactory
 import io.github.kotlinmania.antlr4.tooling.automata.LexerATNFactory
 import io.github.kotlinmania.antlr4.tooling.automata.ParserATNFactory
+import io.github.kotlinmania.antlr4.tooling.codegen.CodeGenPipeline
 import io.github.kotlinmania.antlr4.tooling.misc.Graph
 import io.github.kotlinmania.antlr4.tooling.misc.LogManager
 import io.github.kotlinmania.antlr4.tooling.parse.ANTLRParserTypes
@@ -348,7 +349,7 @@ class Tool(
 
         if (gencode && g.tool.numErrors == 0) {
             val interpFile = generateInterpreterData(g)
-            val interpName = "${g.recognizerName ?: g.name ?: "Grammar"}.interp"
+            val interpName = "${g.name ?: "Grammar"}.interp"
             writeOutputFile(g, interpName, interpFile)
         }
 
@@ -358,10 +359,8 @@ class Tool(
         if (g.tool.numErrors > prevErrors) return
 
         if (gencode) {
-            val hook = codeGenPipelineHook
-            if (hook != null) {
-                hook(g)
-            }
+            val gen = CodeGenPipeline(g)
+            gen.process()
         }
     }
 
@@ -839,8 +838,6 @@ class Tool(
                 "PHP",
                 "Dart",
             )
-
-        internal var codeGenPipelineHook: ((Grammar) -> Unit)? = null
 
         fun isSupportedTargetLanguage(language: String): Boolean =
             SUPPORTED_LANGUAGES.contains(language)

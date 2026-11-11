@@ -372,6 +372,7 @@ class LeftRecursiveRuleAnalyzer(
             prec: Int,
         ): String =
             when (language) {
+                "Kotlin", null -> "precpred(ctx, $prec)"
                 "Python2", "Python3" -> "self.precpred(self._ctx, $prec)"
                 "CSharp" -> "Precpred(Context, $prec)"
                 "Dart" -> "precpred(context, $prec)"

@@ -76,6 +76,7 @@ enum class ErrorType(
     UNKNOWN_RULE_ATTRIBUTE(65, "unknown attribute <arg> for rule <arg2> in <arg3>", ErrorSeverity.ERROR),
     UNKNOWN_ATTRIBUTE_IN_SCOPE(66, "attribute <arg> isn't a valid property in <arg2>", ErrorSeverity.ERROR),
     ISOLATED_RULE_REF(67, "missing attribute access on rule reference <arg> in <arg2>", ErrorSeverity.ERROR),
+    WRITING_TO_READONLY_ATTR(68, "cannot write to read-only attribute <arg> in <arg2>", ErrorSeverity.ERROR),
     LABEL_CONFLICTS_WITH_RULE(69, "label <arg> conflicts with rule with same name", ErrorSeverity.ERROR),
     LABEL_CONFLICTS_WITH_TOKEN(70, "label <arg> conflicts with token with same name", ErrorSeverity.ERROR),
     LABEL_CONFLICTS_WITH_ARG(72, "label <arg> conflicts with parameter with same name", ErrorSeverity.ERROR),

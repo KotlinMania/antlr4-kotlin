@@ -13,7 +13,7 @@ package io.github.kotlinmania.antlr4.tree
  * @param <T> The return type of the visit operation. Use [Void] for
  * operations with no return type.
 </T> */
-interface ParseTreeVisitor<T> {
+interface ParseTreeVisitor<out T> {
     /**
      * Visit a parse tree, and return a user-defined result of the operation.
      *

@@ -132,7 +132,7 @@ abstract class Recognizer<Symbol, ATNInterpreter : ATNSimulator> {
         get() = ProxyErrorListener(this.errorListeners)
 
     open fun sempred(
-        _localctx: RuleContext?,
+        localctx: RuleContext?,
         ruleIndex: Int,
         actionIndex: Int,
     ): Boolean = true
@@ -142,8 +142,8 @@ abstract class Recognizer<Symbol, ATNInterpreter : ATNSimulator> {
         precedence: Int,
     ): Boolean = true
 
-    fun action(
-        _localctx: RuleContext?,
+    open fun action(
+        localctx: RuleContext?,
         ruleIndex: Int,
         actionIndex: Int,
     ) {}

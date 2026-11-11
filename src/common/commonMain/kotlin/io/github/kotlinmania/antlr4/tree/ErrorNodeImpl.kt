@@ -6,5 +6,5 @@ class ErrorNodeImpl(
     symbol: Token?,
 ) : TerminalNodeImpl(symbol),
     ErrorNode {
-    override fun <T> accept(visitor: ParseTreeVisitor<out T>?): T? = visitor?.visitErrorNode(this)
+    override fun <T> accept(visitor: ParseTreeVisitor<T>?): T? = visitor?.visitErrorNode(this)
 }
