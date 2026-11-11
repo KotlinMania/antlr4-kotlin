@@ -73,14 +73,14 @@ abstract class PredictionContext protected constructor(
     fun toStrings(
         recognizer: Recognizer<*, *>?,
         currentState: Int,
-    ): Array<String> = toStrings(recognizer, EmptyPredictionContext.Instance, currentState)
+    ): List<String> = toStrings(recognizer, EmptyPredictionContext.Instance, currentState)
 
     // FROM SAM
     fun toStrings(
         recognizer: Recognizer<*, *>?,
         stop: PredictionContext?,
         currentState: Int,
-    ): Array<String> {
+    ): List<String> {
         val result: MutableList<String> = ArrayList()
 
         var perm = 0
@@ -140,7 +140,7 @@ abstract class PredictionContext protected constructor(
             }
             perm++
         }
-        return result.toList().toTypedArray()
+        return result.toList()
     }
 
     companion object {

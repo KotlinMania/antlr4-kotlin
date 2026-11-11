@@ -24,18 +24,20 @@ abstract class Parser(
     override val grammarFileName: String
         get() = "unknown"
 
-    open inner class TraceListener : ParseTreeListener {
+    open class TraceListener(
+        private val parser: Parser,
+    ) : ParseTreeListener {
         override fun enterEveryRule(ctx: ParserRuleContext?) {
             println(
-                "enter   " + ruleNames?.get(ctx?.ruleIndex ?: 0) +
-                    ", LT(1)=" + inputField?.LT(1)?.text,
+                "enter   " + parser.ruleNames?.get(ctx?.ruleIndex ?: 0) +
+                    ", LT(1)=" + parser.inputField?.LT(1)?.text,
             )
         }
 
         override fun visitTerminal(node: TerminalNode?) {
             println(
                 "consume " + node?.symbol + " rule " +
-                    ruleNames?.get(ctx?.ruleIndex ?: 0),
+                    parser.ruleNames?.get(parser.ctx?.ruleIndex ?: 0),
             )
         }
 
@@ -43,8 +45,8 @@ abstract class Parser(
 
         override fun exitEveryRule(ctx: ParserRuleContext?) {
             println(
-                "exit    " + ruleNames?.get(ctx?.ruleIndex ?: 0) +
-                    ", LT(1)=" + inputField?.LT(1)?.text,
+                "exit    " + parser.ruleNames?.get(ctx?.ruleIndex ?: 0) +
+                    ", LT(1)=" + parser.inputField?.LT(1)?.text,
             )
         }
     }
@@ -544,7 +546,7 @@ abstract class Parser(
             tracer = null
         } else {
             tracer?.let { removeParseListener(it) }
-            if (tracer == null) tracer = TraceListener()
+            if (tracer == null) tracer = TraceListener(this)
             tracer?.let { addParseListener(it) }
         }
     }

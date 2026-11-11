@@ -18,11 +18,11 @@ open class XPathLexer(
 ) : Lexer(input) {
     override val grammarFileName: String = "XPathLexer.g4"
 
-    override val ruleNames: Array<String>
+    override val ruleNames: List<String>
         get() = Companion.ruleNames
 
-    override val tokenNames: Array<String>
-        get() = Array(Companion.tokenNames.size) { Companion.tokenNames[it] }
+    override val tokenNames: List<String>
+        get() = Companion.tokenNames
 
     override val vocabulary: Vocabulary
         get() = Companion.VOCABULARY
@@ -126,10 +126,10 @@ open class XPathLexer(
         const val ID: Int = 7
         const val STRING: Int = 8
 
-        val modeNames: Array<String> = arrayOf("DEFAULT_MODE")
+        val modeNames: List<String> = listOf("DEFAULT_MODE")
 
-        val ruleNames: Array<String> =
-            arrayOf(
+        val ruleNames: List<String> =
+            listOf(
                 "ANYWHERE",
                 "ROOT",
                 "WILDCARD",
@@ -140,14 +140,14 @@ open class XPathLexer(
                 "STRING",
             )
 
-        private val LITERAL_NAMES: Array<String> = arrayOf("", "", "", "'//'", "'/'", "'*'", "'!'")
-        private val SYMBOLIC_NAMES: Array<String> =
-            arrayOf("", "TOKEN_REF", "RULE_REF", "ANYWHERE", "ROOT", "WILDCARD", "BANG", "ID", "STRING")
+        private val LITERAL_NAMES: List<String> = listOf("", "", "", "'//'", "'/'", "'*'", "'!'")
+        private val SYMBOLIC_NAMES: List<String> =
+            listOf("", "TOKEN_REF", "RULE_REF", "ANYWHERE", "ROOT", "WILDCARD", "BANG", "ID", "STRING")
 
         val VOCABULARY: Vocabulary = VocabularyImpl(LITERAL_NAMES, SYMBOLIC_NAMES, null)
 
-        val tokenNames: Array<String> =
-            Array(SYMBOLIC_NAMES.size) { i ->
+        val tokenNames: List<String> =
+            List(SYMBOLIC_NAMES.size) { i ->
                 VOCABULARY.getLiteralName(i) ?: VOCABULARY.getSymbolicName(i) ?: "<INVALID>"
             }
     }

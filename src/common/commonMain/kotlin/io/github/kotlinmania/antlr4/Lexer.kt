@@ -86,7 +86,7 @@ abstract class Lexer :
         mode = io.github.kotlinmania.antlr4.Lexer.Companion.DEFAULT_MODE
         modeStack.clear()
 
-        interpreter!!.reset()
+        interpreter?.reset()
     }
 
     /** Return a token from this source; i.e., match a token on the char
@@ -288,18 +288,18 @@ abstract class Lexer :
         this._token = token
     }
 
-    val channelNames: Array<String>
-        get() = emptyArray()
+    open val channelNames: List<String>
+        get() = emptyList()
 
-    val modeNames: Array<String>
-        get() = emptyArray()
+    open val modeNames: List<String>
+        get() = emptyList()
 
-    override val tokenNames: Array<String>
+    override val tokenNames: List<String>
         /** Used to print out token names like ID during debugging and
          * error reporting.  The generated parsers implement a method
-         * that overrides this to point to their String[] tokenNames.
+         * that overrides this to point to their tokenNames list.
          */
-        get() = emptyArray()
+        get() = emptyList()
 
     val allTokens: List<Token>
         /** Return a list of all Token objects in input char stream.

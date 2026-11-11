@@ -94,26 +94,26 @@ class ATNDeserializer
                 atn.ruleToTokenType = IntArray(nrules)
             }
 
-            atn.ruleToStartState = arrayOfNulls<RuleStartState>(nrules)
+            atn.mutableRuleToStartState = MutableList(nrules) { null }
             for (i in 0..<nrules) {
                 val s = data[p++]
                 val startState: RuleStartState? = atn.states.get(s) as RuleStartState?
-                atn.ruleToStartState[i] = startState
+                atn.mutableRuleToStartState[i] = startState
                 if (atn.grammarType === ATNType.LEXER) {
                     val tokenType = data[p++]
                     atn.ruleToTokenType[i] = tokenType
                 }
             }
 
-            atn.ruleToStopState = arrayOfNulls<RuleStopState>(nrules)
+            atn.mutableRuleToStopState = MutableList(nrules) { null }
             for (state in atn.states) {
                 if (state !is RuleStopState) {
                     continue
                 }
 
                 val stopState: RuleStopState? = state as RuleStopState?
-                atn.ruleToStopState[state.ruleIndex] = stopState
-                atn.ruleToStartState[state.ruleIndex]!!.stopState = stopState
+                atn.mutableRuleToStopState[state.ruleIndex] = stopState
+                atn.mutableRuleToStartState[state.ruleIndex]!!.stopState = stopState
             }
 
             //
@@ -219,15 +219,16 @@ class ATNDeserializer
             // LEXER ACTIONS
             //
             if (atn.grammarType === ATNType.LEXER) {
-                atn.lexerActions = arrayOfNulls<LexerAction>(data[p++])
-                for (i in 0..<atn.lexerActions.size) {
+                val nactions = data[p++]
+                atn.mutableLexerActions = MutableList(nactions) { null }
+                for (i in 0..<nactions) {
                     val actionType: LexerActionType = LexerActionType.values()[data[p++]]
                     val data1 = data[p++]
                     val data2 = data[p++]
 
                     val lexerAction: LexerAction? = lexerActionFactory(actionType, data1, data2)
 
-                    atn.lexerActions[i] = lexerAction
+                    atn.mutableLexerActions[i] = lexerAction
                 }
             }
 

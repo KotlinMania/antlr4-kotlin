@@ -8,11 +8,14 @@ package io.github.kotlinmania.antlr4.tooling.misc
 /** A generic graph used to topologically sort grammar dependencies. */
 class Graph<T> {
     class Node<T>(var payload: T) {
-        val edges: MutableList<Node<T>> = mutableListOf()
+        private val mutableEdges: MutableList<Node<T>> = mutableListOf()
+
+        val edges: List<Node<T>>
+            get() = mutableEdges
 
         fun addEdge(node: Node<T>) {
-            if (node !in edges) {
-                edges.add(node)
+            if (node !in mutableEdges) {
+                mutableEdges.add(node)
             }
         }
 
@@ -45,7 +48,11 @@ class Graph<T> {
         return sorted
     }
 
-    fun dfs(node: Node<T>, visited: MutableSet<Node<T>>, sorted: MutableList<T>) {
+    internal fun dfs(
+        node: Node<T>,
+        visited: MutableSet<Node<T>>,
+        sorted: MutableList<T>,
+    ) {
         if (node in visited) return
         visited.add(node)
         for (target in node.edges) {

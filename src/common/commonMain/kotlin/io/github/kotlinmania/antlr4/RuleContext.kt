@@ -187,9 +187,8 @@ open class RuleContext : RuleNode {
         recog: Recognizer<*, *>?,
         stop: RuleContext?,
     ): String {
-        val ruleNames: Array<String>? = if (recog != null) recog.ruleNames else null
-        val ruleNamesList: List<String>? = ruleNames?.toList()
-        return toString(ruleNamesList, stop)
+        val ruleNames: List<String>? = recog?.ruleNames
+        return toString(ruleNames, stop)
     }
 
     fun toString(

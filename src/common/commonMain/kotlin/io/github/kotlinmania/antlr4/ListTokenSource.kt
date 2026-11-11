@@ -15,13 +15,13 @@ package io.github.kotlinmania.antlr4
  * list is reached. Otherwise, an EOF token will be created.
  */
 class ListTokenSource(
-    tokens: List<Token?>,
+    tokens: List<Token>,
     _sourceName: String?,
 ) : TokenSource {
     /**
      * The wrapped collection of [Token] objects to return.
      */
-    protected val tokens: List<Token?>
+    protected val tokens: List<Token>
 
     /**
      * The name of the input source. If this value is `null`, the source name
@@ -63,7 +63,7 @@ class ListTokenSource(
      * [TokenSource].
      * @exception NullPointerException if `tokens` is `null`
      */
-    constructor(tokens: List<Token?>) : this(tokens, null)
+    constructor(tokens: List<Token>) : this(tokens, null)
 
     /**
      * Constructs a new [ListTokenSource] instance from the specified
@@ -90,13 +90,13 @@ class ListTokenSource(
         get() {
             val eof = eofToken
             if (i < tokens.size) {
-                return tokens.get(i)!!.charPositionInLine
+                return tokens[i].charPositionInLine
             } else if (eof != null) {
                 return eof.charPositionInLine
             } else if (tokens.size > 0) {
                 // have to calculate the result from the line/column of the previous
                 // token, along with the text of the token.
-                val lastToken: Token = tokens.get(tokens.size - 1)!!
+                val lastToken: Token = tokens[tokens.size - 1]
                 val tokenText: String? = lastToken.text
                 if (tokenText != null) {
                     val lastNewLine: Int = tokenText.lastIndexOf('\n')
@@ -121,7 +121,7 @@ class ListTokenSource(
             if (eofToken == null) {
                 var start = -1
                 if (tokens.size > 0) {
-                    val previousStop: Int = tokens.get(tokens.size - 1)!!.stopIndex
+                    val previousStop: Int = tokens[tokens.size - 1].stopIndex
                     if (previousStop != -1) {
                         start = previousStop + 1
                     }
@@ -144,7 +144,7 @@ class ListTokenSource(
             return eofToken
         }
 
-        val t: Token = tokens.get(i)!!
+        val t: Token = tokens[i]
         if (i == tokens.size - 1 && t.type == Token.EOF) {
             eofToken = t
         }
@@ -160,13 +160,13 @@ class ListTokenSource(
         get() {
             val eof = eofToken
             if (i < tokens.size) {
-                return tokens.get(i)!!.line
+                return tokens[i].line
             } else if (eof != null) {
                 return eof.line
             } else if (tokens.size > 0) {
                 // have to calculate the result from the line/column of the previous
                 // token, along with the text of the token.
-                val lastToken: Token = tokens.get(tokens.size - 1)!!
+                val lastToken: Token = tokens[tokens.size - 1]
                 var line: Int = lastToken.line
 
                 val tokenText: String? = lastToken.text
@@ -193,11 +193,11 @@ class ListTokenSource(
         get() {
             val eof = eofToken
             if (i < tokens.size) {
-                return tokens.get(i)!!.inputStream
+                return tokens[i].inputStream
             } else if (eof != null) {
                 return eof.inputStream
             } else if (tokens.size > 0) {
-                return tokens.get(tokens.size - 1)!!.inputStream
+                return tokens[tokens.size - 1].inputStream
             }
 
             // no input stream information is available

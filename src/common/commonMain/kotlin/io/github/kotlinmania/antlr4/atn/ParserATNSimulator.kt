@@ -283,15 +283,19 @@ import io.github.kotlinmania.antlr4.internal.synchronized as antlrSynchronized
  * both SLL and LL parsing. Erroneous input will therefore require 2 passes over
  * the input.
  */
-open class ParserATNSimulator internal constructor(
+open class ParserATNSimulator(
     parser: Parser?,
     atn: ATN,
-    decisionToDFA: Array<DFA>,
+    decisionToDFA: List<DFA>,
     sharedContextCache: PredictionContextCache?,
 ) : ATNSimulator(atn, sharedContextCache) {
     protected val parser: Parser?
 
-    val decisionToDFA: Array<DFA>
+    internal val mutableDecisionToDFA: MutableList<DFA> =
+        if (decisionToDFA is MutableList<DFA>) decisionToDFA else decisionToDFA.toMutableList()
+
+    val decisionToDFA: List<DFA>
+        get() = mutableDecisionToDFA
 
     /** SLL, LL, or LL + exact ambig detection?  */
     private var mode: PredictionMode? = PredictionMode.LL
@@ -315,24 +319,20 @@ open class ParserATNSimulator internal constructor(
     /** Testing only!  */
     internal constructor(
         atn: ATN,
-        decisionToDFA: Array<DFA>,
+        decisionToDFA: List<DFA>,
         sharedContextCache: PredictionContextCache?,
     ) : this(null, atn, decisionToDFA, sharedContextCache)
 
     init {
         this.parser = parser
-        this.decisionToDFA = decisionToDFA
-        // 		DOTGenerator dot = new DOTGenerator(null);
-        // 		println(dot.getDOT(atn.rules.get(0), parser.ruleNames));
-        // 		println(dot.getDOT(atn.rules.get(1), parser.ruleNames));
     }
 
     override fun reset() {
     }
 
     override fun clearDFA() {
-        for (d in decisionToDFA.indices) {
-            decisionToDFA[d] = DFA(atn.getDecisionState(d), d)
+        for (d in mutableDecisionToDFA.indices) {
+            mutableDecisionToDFA[d] = DFA(atn.getDecisionState(d), d)
         }
     }
 
@@ -504,7 +504,7 @@ open class ParserATNSimulator internal constructor(
                     }
 
                     val D_predicates = D.predicates!!
-                    conflictingAlts = evalSemanticContext(D_predicates, outerContext, true)
+                    conflictingAlts = evalSemanticContext(D_predicates.asList(), outerContext, true)
                     if (conflictingAlts.cardinality() == 1) {
                         if (io.github.kotlinmania.antlr4.atn.ParserATNSimulator.Companion.debug) println("Full LL avoided")
                         return conflictingAlts.nextSetBit(0)
@@ -550,7 +550,7 @@ open class ParserATNSimulator internal constructor(
                 val stopIndex: Int = input.index()
                 input.seek(startIndex)
                 val D_predicates = D.predicates!!
-                val alts: BitSet = evalSemanticContext(D_predicates, outerContext, true)
+                val alts: BitSet = evalSemanticContext(D_predicates.asList(), outerContext, true)
                 when (alts.cardinality()) {
                     0 -> {
                         throw noViableAlt(input, outerContext, D.configs, startIndex).asControlException()
@@ -1318,8 +1318,8 @@ open class ParserATNSimulator internal constructor(
     protected fun getPredicatePredictions(
         ambigAlts: BitSet?,
         altToPred: Array<SemanticContext?>?,
-    ): Array<DFAState.PredPrediction?>? {
-        val pairs: MutableList<DFAState.PredPrediction?> = mutableListOf()
+    ): Array<DFAState.PredPrediction>? {
+        val pairs: MutableList<DFAState.PredPrediction> = mutableListOf()
         var containsPredicate = false
         for (i in 1..<altToPred!!.size) {
             val pred: SemanticContext = altToPred[i] as SemanticContext
@@ -1335,7 +1335,7 @@ open class ParserATNSimulator internal constructor(
         }
 
         // 		println(altToPred.contentToString()+"->"+pairs);
-        return pairs.toList().toTypedArray()
+        return pairs.toTypedArray()
     }
 
     /**
@@ -1457,13 +1457,13 @@ open class ParserATNSimulator internal constructor(
      * includes pairs with null predicates.
      */
     open fun evalSemanticContext(
-        predPredictions: Array<DFAState.PredPrediction?>,
+        predPredictions: List<DFAState.PredPrediction>,
         outerContext: ParserRuleContext?,
         complete: Boolean,
     ): BitSet {
         val predictions: BitSet = BitSet()
         for (pair in predPredictions) {
-            if (pair!!.pred === SemanticContext.Empty.Instance) {
+            if (pair.pred === SemanticContext.Empty.Instance) {
                 predictions.set(pair.alt)
                 if (!complete) {
                     break

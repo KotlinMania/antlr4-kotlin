@@ -74,7 +74,7 @@ class DFA(
         }
     }
 
-    @Deprecated("This method no longer performs any action.")
+    /** Retained for compatibility; this method no longer performs any action. */
     fun setPrecedenceDfa(precedenceDfa: Boolean) {
         if (precedenceDfa != isPrecedenceDfa()) {
             throw UnsupportedOperationException("The precedenceDfa field cannot change after a DFA is constructed.")
@@ -89,8 +89,8 @@ class DFA(
 
     override fun toString(): String = toString(VocabularyImpl.EMPTY_VOCABULARY)
 
-    @Deprecated("Use toString(Vocabulary) instead.")
-    fun toString(tokenNames: Array<String>?): String {
+    /** Prefer [toString] accepting a [Vocabulary] instead. */
+    fun toString(tokenNames: List<String>?): String {
         if (s0 == null) return ""
         return toString(VocabularyImpl.fromTokenNames(tokenNames))
     }

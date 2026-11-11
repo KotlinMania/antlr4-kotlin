@@ -55,7 +55,7 @@ enum class PredictionMode {
         }
 
         fun evalSemanticContext(
-            predPredictions: Array<DFAState.PredPrediction>,
+            predPredictions: List<DFAState.PredPrediction>,
             parser: Recognizer<*, *>,
             outerContext: RuleContext?,
             complete: Boolean,

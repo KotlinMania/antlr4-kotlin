@@ -9,8 +9,20 @@ import io.github.kotlinmania.antlr4.Vocabulary
 import io.github.kotlinmania.antlr4.VocabularyImpl
 import io.github.kotlinmania.antlr4.atn.ATN
 import io.github.kotlinmania.antlr4.atn.ATNDeserializer
+import io.github.kotlinmania.io.buffered
+import io.github.kotlinmania.io.files.Path
+import io.github.kotlinmania.io.files.SystemFileSystem
+import io.github.kotlinmania.io.readString
 
 object InterpreterDataReader {
+    fun parseFile(fileName: String): InterpreterData {
+        val text =
+            SystemFileSystem.source(Path(fileName)).buffered().use { source ->
+                source.readString()
+            }
+        return parse(text)
+    }
+
     fun parse(data: String): InterpreterData = parse(StringLineReader(data))
 
     fun parse(reader: LineReader): InterpreterData {
@@ -37,8 +49,8 @@ object InterpreterDataReader {
 
         result.vocabulary =
             VocabularyImpl(
-                literalNames.toTypedArray(),
-                symbolicNames.toTypedArray(),
+                literalNames,
+                symbolicNames,
             )
 
         reader.expect("rule names:")

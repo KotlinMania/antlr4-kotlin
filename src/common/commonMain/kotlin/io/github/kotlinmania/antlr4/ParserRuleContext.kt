@@ -152,7 +152,6 @@ open class ParserRuleContext : RuleContext {
      * [Parser.createTerminalNode]. I'm leaving this
      * in for compatibility but the parser doesn't use this anymore.
      */
-    @Deprecated("")
     fun addChild(matchedToken: Token?): TerminalNode {
         val t: TerminalNodeImpl = TerminalNodeImpl(matchedToken)
         addAnyChild(t)
@@ -165,7 +164,6 @@ open class ParserRuleContext : RuleContext {
      * [Parser.createErrorNode]. I'm leaving this
      * in for compatibility but the parser doesn't use this anymore.
      */
-    @Deprecated("")
     fun addErrorNode(badToken: Token?): ErrorNode {
         val t: ErrorNodeImpl = ErrorNodeImpl(badToken)
         addAnyChild(t)

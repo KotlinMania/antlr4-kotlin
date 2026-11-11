@@ -81,7 +81,6 @@ open class BufferedTokenStream(
      *
      * @see .setTokenSource
      */
-    @Deprecated("Use seek(0) instead.")
     fun reset() {
         seek(0)
     }

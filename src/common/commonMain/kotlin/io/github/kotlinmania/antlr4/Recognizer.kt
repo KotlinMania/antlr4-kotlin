@@ -28,9 +28,9 @@ abstract class Recognizer<Symbol, ATNInterpreter : ATNSimulator> {
     // abstract member every recognizer implements and is the backing source for
     // the vocabulary view below; keeping it non-deprecated avoids an illegal
     // @Suppress("DEPRECATION") under the workspace's allWarningsAsErrors policy.
-    abstract val tokenNames: Array<String>
+    abstract val tokenNames: List<String>
 
-    abstract val ruleNames: Array<String>?
+    abstract val ruleNames: List<String>?
 
     open val vocabulary: Vocabulary
         get() = VocabularyImpl.fromTokenNames(this.tokenNames)
@@ -100,7 +100,7 @@ abstract class Recognizer<Symbol, ATNInterpreter : ATNSimulator> {
         return "line $line:$charPositionInLine"
     }
 
-    @Deprecated("Use DefaultErrorStrategy.getTokenErrorDisplay instead.")
+    /** Prefer [DefaultErrorStrategy.getTokenErrorDisplay] instead. */
     fun getTokenErrorDisplay(t: Token?): String {
         if (t == null) return "<no token>"
         var s: String = t.text ?: if (t.type == Token.EOF) "<EOF>" else "<${t.type}>"
@@ -157,6 +157,6 @@ abstract class Recognizer<Symbol, ATNInterpreter : ATNSimulator> {
     companion object {
         val EOF: Int = -1
         private val tokenTypeMapCache: MutableMap<Vocabulary, Map<String, Int>> = HashMap()
-        private val ruleIndexMapCache: MutableMap<Array<String>, Map<String, Int>> = HashMap()
+        private val ruleIndexMapCache: MutableMap<List<String>, Map<String, Int>> = HashMap()
     }
 }

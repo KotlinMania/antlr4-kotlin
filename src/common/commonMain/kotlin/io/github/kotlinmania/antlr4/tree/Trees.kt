@@ -18,7 +18,7 @@ object Trees {
         t: Tree,
         recog: Parser?,
     ): String? {
-        val ruleNamesList: List<String>? = recog?.ruleNames?.toList()
+        val ruleNamesList: List<String>? = recog?.ruleNames
         return toStringTree(t, ruleNamesList)
     }
 
@@ -46,7 +46,7 @@ object Trees {
         t: Tree,
         recog: Parser?,
     ): String? {
-        val ruleNamesList: List<String>? = recog?.ruleNames?.toList()
+        val ruleNamesList: List<String>? = recog?.ruleNames
         return getNodeText(t, ruleNamesList)
     }
 
@@ -165,7 +165,7 @@ object Trees {
         return nodes
     }
 
-    @Deprecated("")
+    /** Returns all descendants of [t]. */
     fun descendants(t: ParseTree): List<ParseTree> = getDescendants(t)
 
     fun getRootOfSubtreeEnclosingRegion(

@@ -14,4 +14,8 @@ class CharStreamsFileTest {
     @Test
     fun missingFileRaisesTheActualIoError() =
         CharStreamsFileAssertions.missingFileRaisesTheActualIoError()
+
+    @Test
+    fun testRigAndLogManagerWriteRealArtifactsToDisk() =
+        CharStreamsFileAssertions.testRigAndLogManagerWriteRealArtifactsToDisk()
 }

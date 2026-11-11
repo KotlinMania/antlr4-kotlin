@@ -41,6 +41,40 @@ struct Antlr4ExportTests {
         let eof = _ExportedKotlinPackages_io_github_kotlinmania_antlr4_IntStream_Companion.shared.EOF
         #expect(eof == -1)
     }
+
+    @Test("VocabularyImpl and ListTokenSource bridging")
+    func testVocabularyAndListTokenSource() throws {
+        let vocab = VocabularyImpl(literalNames: ["", "'fun'", "'val'"], symbolicNames: ["", "FUN", "VAL"])
+        #expect(vocab.maxTokenType == 2)
+        #expect(vocab.getLiteralName(tokenType: 1) == "'fun'")
+        #expect(vocab.getSymbolicName(tokenType: 2) == "VAL")
+        #expect(vocab.getLiteralName(tokenType: 0) == nil)
+
+        let t1 = CommonToken(type: 1, text: "fun")
+        let t2 = CommonToken(type: 2, text: "val")
+        let source = ListTokenSource(tokens: [t1, t2])
+        #expect(source.nextToken()?.text == "fun")
+        #expect(source.nextToken()?.text == "val")
+        #expect(source.nextToken()?.type == -1)
+    }
+
+    @Test("Tooling PostScriptDocument and TestRig option parsing")
+    func testToolingPostScriptAndTestRig() throws {
+        let doc = io.github.kotlinmania.antlr4.tooling.gui.PostScriptDocument(fontName: "CourierNew", fontSize: 11)
+        doc.boundingBox(w: 120, h: 60)
+        doc.text(s: "expr(1)", x: 10.0, y: 20.0)
+        let ps = doc.ps
+        #expect(ps.contains("%!PS-Adobe-3.0 EPSF-3.0"))
+        #expect(ps.contains("(expr\\(1\\)) show"))
+
+        let rig = io.github.kotlinmania.antlr4.tooling.gui.TestRig(args: ["Kotlin", "kotlinFile", "-tokens", "-tree", "-SLL", "Sample.kt"])
+        #expect(rig.grammarName == "Kotlin")
+        #expect(rig.startRuleName == "kotlinFile")
+        #expect(rig.showTokens == true)
+        #expect(rig.printTree == true)
+        #expect(rig.sll == true)
+        #expect(rig.inputFiles == ["Sample.kt"])
+    }
 }
 #elseif canImport(XCTest)
 import XCTest
@@ -80,6 +114,38 @@ final class Antlr4ExportTests: XCTestCase {
     func testIntStreamConstants() throws {
         let eof = _ExportedKotlinPackages_io_github_kotlinmania_antlr4_IntStream_Companion.shared.EOF
         XCTAssertEqual(eof, -1)
+    }
+
+    func testVocabularyAndListTokenSource() throws {
+        let vocab = VocabularyImpl(literalNames: ["", "'fun'", "'val'"], symbolicNames: ["", "FUN", "VAL"])
+        XCTAssertEqual(vocab.maxTokenType, 2)
+        XCTAssertEqual(vocab.getLiteralName(tokenType: 1), "'fun'")
+        XCTAssertEqual(vocab.getSymbolicName(tokenType: 2), "VAL")
+        XCTAssertNil(vocab.getLiteralName(tokenType: 0))
+
+        let t1 = CommonToken(type: 1, text: "fun")
+        let t2 = CommonToken(type: 2, text: "val")
+        let source = ListTokenSource(tokens: [t1, t2])
+        XCTAssertEqual(source.nextToken()?.text, "fun")
+        XCTAssertEqual(source.nextToken()?.text, "val")
+        XCTAssertEqual(source.nextToken()?.type, -1)
+    }
+
+    func testToolingPostScriptAndTestRig() throws {
+        let doc = io.github.kotlinmania.antlr4.tooling.gui.PostScriptDocument(fontName: "CourierNew", fontSize: 11)
+        doc.boundingBox(w: 120, h: 60)
+        doc.text(s: "expr(1)", x: 10.0, y: 20.0)
+        let ps = doc.ps
+        XCTAssertTrue(ps.contains("%!PS-Adobe-3.0 EPSF-3.0"))
+        XCTAssertTrue(ps.contains("(expr\\(1\\)) show"))
+
+        let rig = io.github.kotlinmania.antlr4.tooling.gui.TestRig(args: ["Kotlin", "kotlinFile", "-tokens", "-tree", "-SLL", "Sample.kt"])
+        XCTAssertEqual(rig.grammarName, "Kotlin")
+        XCTAssertEqual(rig.startRuleName, "kotlinFile")
+        XCTAssertTrue(rig.showTokens)
+        XCTAssertTrue(rig.printTree)
+        XCTAssertTrue(rig.sll)
+        XCTAssertEqual(rig.inputFiles, ["Sample.kt"])
     }
 }
 #endif

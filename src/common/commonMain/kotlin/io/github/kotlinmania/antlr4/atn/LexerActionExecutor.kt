@@ -26,6 +26,8 @@ class LexerActionExecutor internal constructor(
 ) {
     private val lexerActions: Array<LexerAction>
 
+    constructor(lexerActions: List<LexerAction>) : this(lexerActions.toTypedArray())
+
     /**
      * Caches the result of [.hashCode] since the hash code is an element
      * of the performance-critical [LexerATNConfig.hashCode] operation.
@@ -102,7 +104,7 @@ class LexerActionExecutor internal constructor(
      * Gets the lexer actions to be executed by this executor.
      * @return The lexer actions to be executed by this executor.
      */
-    fun getLexerActions(): Array<LexerAction> = lexerActions
+    fun getLexerActions(): List<LexerAction> = lexerActions.asList()
 
     /**
      * Execute the actions encapsulated by this executor within the context of a

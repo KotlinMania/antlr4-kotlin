@@ -13,11 +13,14 @@ class ArrayPredictionContext internal constructor(
     parents: Array<PredictionContext?>,
     returnStates: IntArray,
 ) : PredictionContext(calculateHashCode(parents, returnStates)) {
+    internal val internalParents: Array<PredictionContext?>
+
     /** Parent can be null only if full ctx mode and we make an array
      * from [.EMPTY] and non-empty. We merge [.EMPTY] by using null parent and
      * returnState == [.EMPTY_RETURN_STATE].
      */
-    val parents: Array<PredictionContext?>
+    val parents: List<PredictionContext?>
+        get() = internalParents.asList()
 
     /** Sorted for merge, no duplicates; if present,
      * [.EMPTY_RETURN_STATE] is always last.
@@ -29,7 +32,7 @@ class ArrayPredictionContext internal constructor(
     init {
         assert(parents.size > 0)
         assert(returnStates.size > 0)
-        this.parents = parents
+        this.internalParents = parents
         this.returnStates = returnStates
     }
 
@@ -40,7 +43,7 @@ class ArrayPredictionContext internal constructor(
 
     override fun size(): Int = returnStates.size
 
-    override fun getParent(index: Int): PredictionContext? = parents[index]
+    override fun getParent(index: Int): PredictionContext? = internalParents[index]
 
     override fun getReturnState(index: Int): Int = returnStates[index]
 
@@ -56,7 +59,7 @@ class ArrayPredictionContext internal constructor(
         }
 
         return returnStates.contentEquals(other.returnStates) &&
-            parents.contentEquals(other.parents)
+            internalParents.contentEquals(other.internalParents)
     }
 
     override fun toString(): String {
@@ -70,9 +73,9 @@ class ArrayPredictionContext internal constructor(
                 continue
             }
             buf.append(returnStates[i])
-            if (parents[i] != null) {
+            if (internalParents[i] != null) {
                 buf.append(' ')
-                buf.append(parents[i].toString())
+                buf.append(internalParents[i].toString())
             } else {
                 buf.append("null")
             }

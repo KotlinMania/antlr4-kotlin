@@ -51,7 +51,19 @@ object MurmurHash {
         return h
     }
 
-    fun <T> hashCode(
+    fun hashCode(
+        data: List<Any>,
+        seed: Int,
+    ): Int {
+        var hash = initialize(seed)
+        for (value in data) {
+            hash = update(hash, value)
+        }
+        hash = finish(hash, data.size)
+        return hash
+    }
+
+    internal fun <T> hashCode(
         data: Array<T>,
         seed: Int,
     ): Int {

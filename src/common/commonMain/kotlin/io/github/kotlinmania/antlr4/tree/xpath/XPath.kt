@@ -14,7 +14,7 @@ open class XPath(
     protected var parser: Parser,
     path: String,
 ) {
-    protected var elements: Array<XPathElement>
+    protected var elements: List<XPathElement>
 
     companion object {
         const val WILDCARD: String = "*"
@@ -35,7 +35,7 @@ open class XPath(
         elements = split(path)
     }
 
-    fun split(path: String): Array<XPathElement> {
+    fun split(path: String): List<XPathElement> {
         val `in` = ANTLRInputStream(path)
         val lexer: XPathLexer =
             object : XPathLexer(`in`) {
@@ -91,7 +91,7 @@ open class XPath(
                 }
             }
         }
-        return elements.toTypedArray()
+        return elements
     }
 
     protected fun getXPathElement(

@@ -254,7 +254,7 @@ class ProfilingATNSimulator(
         super.reportAmbiguity(dfa, D, startIndex, stopIndex, exact, ambigAlts, configs)
     }
 
-    val decisionInfo: Array<DecisionInfo>
+    val decisionInfo: List<DecisionInfo>
         // ---------------------------------------------------------------------
-        get() = decisions
+        get() = decisions.asList()
 }

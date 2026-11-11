@@ -25,7 +25,7 @@ class DFAState {
 
     var requiresFullContext: Boolean = false
 
-    internal var predicates: Array<PredPrediction?>? = null
+    internal var predicates: Array<PredPrediction>? = null
 
     class PredPrediction(
         val pred: SemanticContext,

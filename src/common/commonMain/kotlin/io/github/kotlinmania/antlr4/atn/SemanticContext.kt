@@ -111,18 +111,21 @@ abstract class SemanticContext {
     }
 
     abstract class Operator : SemanticContext() {
-        abstract val operands: Array<SemanticContext>
+        abstract val operands: List<SemanticContext>
 
         abstract fun getOperands(): Collection<SemanticContext>
     }
 
     class AND : Operator {
-        override val operands: Array<SemanticContext>
+        private val internalOperands: Array<SemanticContext>
+
+        override val operands: List<SemanticContext>
+            get() = internalOperands.asList()
 
         constructor(a: SemanticContext, b: SemanticContext) {
             val operands = mutableListOf<SemanticContext>()
-            if (a is AND) operands.addAll(a.operands.toList()) else operands.add(a)
-            if (b is AND) operands.addAll(b.operands.toList()) else operands.add(b)
+            if (a is AND) operands.addAll(a.operands) else operands.add(a)
+            if (b is AND) operands.addAll(b.operands) else operands.add(b)
 
             val precedencePredicates = filterPrecedencePredicates(operands)
             if (precedencePredicates.isNotEmpty()) {
@@ -131,24 +134,24 @@ abstract class SemanticContext {
                 operands.add(0, reduced)
             }
 
-            this.operands = operands.toTypedArray()
+            this.internalOperands = operands.toTypedArray()
         }
 
-        override fun getOperands(): Collection<SemanticContext> = operands.toList()
+        override fun getOperands(): Collection<SemanticContext> = operands
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is AND) return false
-            return operands.contentEquals(other.operands)
+            return internalOperands.contentEquals(other.internalOperands)
         }
 
-        override fun hashCode(): Int = MurmurHash.hashCode(operands, AND::class.hashCode())
+        override fun hashCode(): Int = MurmurHash.hashCode(internalOperands, AND::class.hashCode())
 
         override fun eval(
             parser: Recognizer<*, *>?,
             parserCallStack: RuleContext?,
         ): Boolean {
-            for (opnd in operands) {
+            for (opnd in internalOperands) {
                 if (!opnd.eval(parser, parserCallStack)) return false
             }
             return true
@@ -160,7 +163,7 @@ abstract class SemanticContext {
         ): SemanticContext? {
             var differs = false
             val operands = mutableListOf<SemanticContext>()
-            for (context in this.operands) {
+            for (context in this.internalOperands) {
                 val evaluated = context.evalPrecedence(parser, parserCallStack)
                 differs = differs or (evaluated != context)
                 if (evaluated == null) return null
@@ -178,16 +181,19 @@ abstract class SemanticContext {
             return result
         }
 
-        override fun toString(): String = CommonUtils.join(operands.toList().iterator(), "&&")
+        override fun toString(): String = CommonUtils.join(operands.iterator(), "&&")
     }
 
     class OR : Operator {
-        override val operands: Array<SemanticContext>
+        private val internalOperands: Array<SemanticContext>
+
+        override val operands: List<SemanticContext>
+            get() = internalOperands.asList()
 
         constructor(a: SemanticContext, b: SemanticContext) {
             val operands = mutableListOf<SemanticContext>()
-            if (a is OR) operands.addAll(a.operands.toList()) else operands.add(a)
-            if (b is OR) operands.addAll(b.operands.toList()) else operands.add(b)
+            if (a is OR) operands.addAll(a.operands) else operands.add(a)
+            if (b is OR) operands.addAll(b.operands) else operands.add(b)
 
             val precedencePredicates = filterPrecedencePredicates(operands)
             if (precedencePredicates.isNotEmpty()) {
@@ -196,24 +202,24 @@ abstract class SemanticContext {
                 operands.add(reduced)
             }
 
-            this.operands = operands.toTypedArray()
+            this.internalOperands = operands.toTypedArray()
         }
 
-        override fun getOperands(): Collection<SemanticContext> = operands.toList()
+        override fun getOperands(): Collection<SemanticContext> = operands
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is OR) return false
-            return operands.contentEquals(other.operands)
+            return internalOperands.contentEquals(other.internalOperands)
         }
 
-        override fun hashCode(): Int = MurmurHash.hashCode(operands, OR::class.hashCode())
+        override fun hashCode(): Int = MurmurHash.hashCode(internalOperands, OR::class.hashCode())
 
         override fun eval(
             parser: Recognizer<*, *>?,
             parserCallStack: RuleContext?,
         ): Boolean {
-            for (opnd in operands) {
+            for (opnd in internalOperands) {
                 if (opnd.eval(parser, parserCallStack)) return true
             }
             return false

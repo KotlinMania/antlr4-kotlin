@@ -21,10 +21,13 @@ class ATN(
     val decisionToState: List<DecisionState>
         get() = mutableDecisionToState
 
-    var ruleToStartState: Array<RuleStartState?> = arrayOf()
-        internal set
-    var ruleToStopState: Array<RuleStopState?> = arrayOf()
-        internal set
+    internal var mutableRuleToStartState: MutableList<RuleStartState?> = ArrayList()
+    val ruleToStartState: List<RuleStartState?>
+        get() = mutableRuleToStartState
+
+    internal var mutableRuleToStopState: MutableList<RuleStopState?> = ArrayList()
+    val ruleToStopState: List<RuleStopState?>
+        get() = mutableRuleToStopState
 
     internal val mutableModeNameToStartState: MutableMap<String, TokensStartState> = LinkedHashMap()
     val modeNameToStartState: Map<String, TokensStartState>
@@ -32,8 +35,10 @@ class ATN(
 
     var ruleToTokenType: IntArray = IntArray(0)
         internal set
-    var lexerActions: Array<LexerAction?> = arrayOf()
-        internal set
+
+    internal var mutableLexerActions: MutableList<LexerAction?> = ArrayList()
+    val lexerActions: List<LexerAction?>
+        get() = mutableLexerActions
 
     internal val mutableModeToStartState: MutableList<TokensStartState> = ArrayList()
     val modeToStartState: List<TokensStartState>

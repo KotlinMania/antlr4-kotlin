@@ -21,10 +21,10 @@ import kotlinx.coroutines.InternalCoroutinesApi
 import io.github.kotlinmania.antlr4.internal.synchronized as antlrSynchronized
 
 /** "dup" of ParserInterpreter  */
-class LexerATNSimulator internal constructor(
+open class LexerATNSimulator(
     recog: Lexer?,
     atn: ATN?,
-    decisionToDFA: Array<DFA>,
+    decisionToDFA: List<DFA>,
     sharedContextCache: PredictionContextCache?,
 ) : ATNSimulator(atn, sharedContextCache) {
     /** When we hit an accept state in either the DFA or the ATN, we
@@ -72,7 +72,11 @@ class LexerATNSimulator internal constructor(
     /** The index of the character relative to the beginning of the line 0..n-1  */
     var charPositionInLine: Int = 0
 
-    val decisionToDFA: Array<DFA>
+    internal val mutableDecisionToDFA: MutableList<DFA> =
+        if (decisionToDFA is MutableList<DFA>) decisionToDFA else decisionToDFA.toMutableList()
+
+    val decisionToDFA: List<DFA>
+        get() = mutableDecisionToDFA
     protected var mode: Int = Lexer.DEFAULT_MODE
 
     /** Used during DFA/ATN exec to record the most recent accept configuration info  */
@@ -82,12 +86,11 @@ class LexerATNSimulator internal constructor(
 
     internal constructor(
         atn: ATN?,
-        decisionToDFA: Array<DFA>,
+        decisionToDFA: List<DFA>,
         sharedContextCache: PredictionContextCache?,
     ) : this(null, atn, decisionToDFA, sharedContextCache)
 
     init {
-        this.decisionToDFA = decisionToDFA
         this.recog = recog
     }
 
@@ -127,8 +130,8 @@ class LexerATNSimulator internal constructor(
     }
 
     override fun clearDFA() {
-        for (d in decisionToDFA.indices) {
-            decisionToDFA[d] = DFA(atn.getDecisionState(d), d)
+        for (d in mutableDecisionToDFA.indices) {
+            mutableDecisionToDFA[d] = DFA(atn.getDecisionState(d), d)
         }
     }
 

@@ -111,7 +111,7 @@ class DiagnosticErrorListener
             val decision: Int = dfa.decision
             val ruleIndex: Int = dfa.atnStartState.ruleIndex
 
-            val ruleNames: Array<String>? = recognizer.ruleNames
+            val ruleNames: List<String>? = recognizer.ruleNames
             if (ruleNames == null || ruleIndex < 0 || ruleIndex >= ruleNames.size) {
                 return decision.toString()
             }

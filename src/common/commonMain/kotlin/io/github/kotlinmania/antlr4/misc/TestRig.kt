@@ -5,9 +5,21 @@
  */
 package io.github.kotlinmania.antlr4.misc
 
-@Deprecated("Use the ANTLR tool package test rig.")
+import io.github.kotlinmania.antlr4.tooling.gui.TestRig as ToolTestRig
+import io.github.kotlinmania.antlr4.tooling.gui.TestRigRunResult
+
+/**
+ * Runtime entry point delegating to [io.github.kotlinmania.antlr4.tooling.gui.TestRig].
+ * Prefer [io.github.kotlinmania.antlr4.tooling.gui.TestRig] directly when configuring
+ * grammar registrations or programmatic parse-tree / PostScript execution.
+ */
 object TestRig {
-    fun main(args: Array<String>) {
-        println("Use of TestRig requires the ANTLR tool package.")
+    fun run(args: List<String>): List<TestRigRunResult> {
+        val rig = ToolTestRig(args)
+        return if (args.size >= 2) rig.process() else emptyList()
+    }
+
+    fun main(args: List<String>) {
+        ToolTestRig.main(args)
     }
 }

@@ -278,8 +278,8 @@ class IntervalSet internal constructor(
         return buf.toString()
     }
 
-    @Deprecated("Use {@link #toString(Vocabulary)} instead.")
-    fun toString(tokenNames: Array<String>?): String? = toString(VocabularyImpl.fromTokenNames(tokenNames))
+    /** Prefer [toString] accepting a [Vocabulary] instead. */
+    fun toString(tokenNames: List<String>?): String? = toString(VocabularyImpl.fromTokenNames(tokenNames))
 
     fun toString(vocabulary: Vocabulary): String? {
         val buf: StringBuilder = StringBuilder()
@@ -314,7 +314,7 @@ class IntervalSet internal constructor(
 
     @Deprecated("Use {@link #elementName(Vocabulary, int)} instead.")
     protected fun elementName(
-        tokenNames: Array<String>?,
+        tokenNames: List<String>?,
         a: Int,
     ): String? = elementName(VocabularyImpl.fromTokenNames(tokenNames), a)
 
@@ -474,7 +474,7 @@ class IntervalSet internal constructor(
             return s
         }
 
-        fun or(sets: Array<IntervalSet?>): IntervalSet {
+        fun or(sets: List<IntervalSet>): IntervalSet {
             val r: IntervalSet = IntervalSet()
             for (s in sets) r.addAll(s)
             return r

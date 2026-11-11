@@ -35,19 +35,19 @@ import io.github.kotlinmania.antlr4.misc.Pair
  *
  * See TestParserInterpreter for examples.
  */
-class ParserInterpreter internal constructor(
+open class ParserInterpreter(
     override val grammarFileName: String,
     override val vocabulary: Vocabulary,
-    ruleNames: Collection<String?>,
+    ruleNames: List<String>,
     override val atn: ATN,
     input: TokenStream?,
 ) : Parser(input) {
-    protected var decisionToDFA: Array<DFA?> // not shared like it is for generated parsers
+    protected var decisionToDFA: MutableList<DFA> // not shared like it is for generated parsers
     protected val sharedContextCache: PredictionContextCache = PredictionContextCache()
 
-    override var tokenNames: Array<String> = emptyArray()
+    override var tokenNames: List<String> = emptyList()
         internal set
-    override var ruleNames: Array<String>? = null
+    override var ruleNames: List<String>? = null
         internal set
 
     /** This stack corresponds to the _parentctx, _parentState pair of locals
@@ -92,24 +92,21 @@ class ParserInterpreter internal constructor(
         input: TokenStream?,
     ) : this(
         grammarFileName,
-        VocabularyImpl.fromTokenNames(tokenNames.toTypedArray().map { it }.toTypedArray()),
-        ruleNames,
+        VocabularyImpl.fromTokenNames(tokenNames.toList()),
+        ruleNames.toList(),
         atn,
         input,
     )
 
     init {
-        this.tokenNames = Array(atn.maxTokenType) { "" }
-        for (i in 0..<atn.maxTokenType) {
-            tokenNames[i] = vocabulary.getDisplayName(i).orEmpty()
-        }
+        this.tokenNames = List(atn.maxTokenType) { i -> vocabulary.getDisplayName(i).orEmpty() }
 
-        this.ruleNames = ruleNames.map { it.orEmpty() }.toTypedArray()
+        this.ruleNames = ruleNames.toList()
 
         // init decision DFA
         val numberOfDecisions: Int = atn.numberOfDecisions
         decisionToDFA =
-            Array(numberOfDecisions) { i ->
+            MutableList(numberOfDecisions) { i ->
                 DFA(atn.getDecisionState(i), i)
             }
 
@@ -118,7 +115,7 @@ class ParserInterpreter internal constructor(
             ParserATNSimulator(
                 this,
                 atn,
-                decisionToDFA.filterNotNull().toTypedArray(),
+                decisionToDFA,
                 sharedContextCache,
             )
     }

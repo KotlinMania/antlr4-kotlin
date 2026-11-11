@@ -18,7 +18,7 @@ open class DFASerializer(
     private val vocabulary: Vocabulary
 
     @Deprecated("Use {@link #DFASerializer(DFA, Vocabulary)} instead.")
-    internal constructor(dfa: DFA?, tokenNames: Array<String>?) : this(dfa!!, VocabularyImpl.fromTokenNames(tokenNames))
+    internal constructor(dfa: DFA?, tokenNames: List<String>?) : this(dfa!!, VocabularyImpl.fromTokenNames(tokenNames))
 
     init {
         this.dfa = dfa

@@ -44,7 +44,7 @@ abstract class ATNState {
 
     override fun toString(): String = stateNumber.toString()
 
-    fun getTransitions(): Array<Transition> = transitions.toTypedArray()
+    fun getTransitions(): List<Transition> = transitions.toList()
 
     val numberOfTransitions: Int
         get() = transitions.size

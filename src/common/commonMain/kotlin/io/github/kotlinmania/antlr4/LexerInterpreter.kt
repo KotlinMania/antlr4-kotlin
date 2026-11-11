@@ -11,42 +11,48 @@ import io.github.kotlinmania.antlr4.atn.LexerATNSimulator
 import io.github.kotlinmania.antlr4.atn.PredictionContextCache
 import io.github.kotlinmania.antlr4.dfa.DFA
 
-class LexerInterpreter internal constructor(
+class LexerInterpreter(
     grammarFileName: String?,
     vocabulary: Vocabulary,
-    ruleNames: Collection<String?>,
-    channelNames: Collection<String?>,
-    modeNames: Collection<String?>,
+    ruleNames: List<String>,
+    channelNames: List<String>,
+    modeNames: List<String>,
     atn: ATN,
     input: CharStream?,
 ) : Lexer(input) {
     override val grammarFileName: String
     override val atn: ATN
 
-    override val tokenNames: Array<String>
-    override val ruleNames: Array<String>?
-    val interpreterChannelNames: Array<String>
-    val interpreterModeNames: Array<String>
+    override val tokenNames: List<String>
+    override val ruleNames: List<String>?
+    val interpreterChannelNames: List<String>
+    val interpreterModeNames: List<String>
 
-    override var vocabulary: Vocabulary = VocabularyImpl.fromTokenNames(emptyArray())
+    override val channelNames: List<String>
+        get() = interpreterChannelNames
 
-    protected val decisionToDFA: Array<DFA?>
+    override val modeNames: List<String>
+        get() = interpreterModeNames
+
+    override var vocabulary: Vocabulary = VocabularyImpl.EMPTY_VOCABULARY
+
+    protected val decisionToDFA: MutableList<DFA>
     protected val sharedContextCache: PredictionContextCache = PredictionContextCache()
 
     @Deprecated("")
     internal constructor(
         grammarFileName: String?,
-        tokenNames: Collection<String?>,
-        ruleNames: Collection<String?>,
-        modeNames: Collection<String?>,
+        tokenNames: Collection<String>,
+        ruleNames: Collection<String>,
+        modeNames: Collection<String>,
         atn: ATN,
         input: CharStream?,
     ) : this(
         grammarFileName,
-        VocabularyImpl.fromTokenNames(tokenNames.map { it.orEmpty() }.toTypedArray()),
-        ruleNames,
-        ArrayList<String?>(),
-        modeNames,
+        VocabularyImpl.fromTokenNames(tokenNames.toList()),
+        ruleNames.toList(),
+        ArrayList<String>(),
+        modeNames.toList(),
         atn,
         input,
     )
@@ -55,33 +61,25 @@ class LexerInterpreter internal constructor(
     internal constructor(
         grammarFileName: String?,
         vocabulary: Vocabulary,
-        ruleNames: Collection<String?>,
-        modeNames: Collection<String?>,
+        ruleNames: Collection<String>,
+        modeNames: Collection<String>,
         atn: ATN,
         input: CharStream?,
-    ) : this(grammarFileName, vocabulary, ruleNames, ArrayList<String?>(), modeNames, atn, input)
+    ) : this(grammarFileName, vocabulary, ruleNames.toList(), ArrayList<String>(), modeNames.toList(), atn, input)
 
     init {
         require(atn.grammarType === ATNType.LEXER) { "The ATN must be a lexer ATN." }
 
         this.grammarFileName = grammarFileName!!
         this.atn = atn
-        val tokenNamesArr = Array(atn.maxTokenType) { "" }
-        for (i in tokenNamesArr.indices) {
-            tokenNamesArr[i] = vocabulary.getDisplayName(i).orEmpty()
-        }
-        this.tokenNames = tokenNamesArr
+        this.tokenNames = List(atn.maxTokenType) { i -> vocabulary.getDisplayName(i).orEmpty() }
 
-        this.ruleNames = ruleNames.map { it.orEmpty() }.toTypedArray()
-        this.interpreterChannelNames = channelNames.map { it.orEmpty() }.toTypedArray()
-        this.interpreterModeNames = modeNames.map { it.orEmpty() }.toTypedArray()
+        this.ruleNames = ruleNames.toList()
+        this.interpreterChannelNames = channelNames.toList()
+        this.interpreterModeNames = modeNames.toList()
         this.vocabulary = vocabulary
 
-        val decisions = Array(atn.numberOfDecisions) { i -> DFA(atn.getDecisionState(i), i) }
-        this.decisionToDFA = arrayOfNulls(atn.numberOfDecisions)
-        for (i in decisions.indices) {
-            this.decisionToDFA[i] = decisions[i]
-        }
-        this.interpreter = LexerATNSimulator(this, atn, decisions, sharedContextCache)
+        this.decisionToDFA = MutableList(atn.numberOfDecisions) { i -> DFA(atn.getDecisionState(i), i) }
+        this.interpreter = LexerATNSimulator(this, atn, this.decisionToDFA, sharedContextCache)
     }
 }

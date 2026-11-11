@@ -22,12 +22,12 @@ class ParseInfo(
         this.atnSimulator = atnSimulator
     }
 
-    val decisionInfo: Array<DecisionInfo>
+    val decisionInfo: List<DecisionInfo>
         /**
-         * Gets an array of [DecisionInfo] instances containing the profiling
+         * Gets a list of [DecisionInfo] instances containing the profiling
          * information gathered for each decision in the ATN.
          *
-         * @return An array of [DecisionInfo] instances, indexed by decision
+         * @return A list of [DecisionInfo] instances, indexed by decision
          * number.
          */
         get() = atnSimulator.decisionInfo
@@ -42,7 +42,7 @@ class ParseInfo(
          * full-context predictions during parsing.
          */
         get() {
-            val decisions: Array<DecisionInfo> = atnSimulator.decisionInfo
+            val decisions: List<DecisionInfo> = atnSimulator.decisionInfo
             val LL: MutableList<Int> = mutableListOf<Int>()
             for (i in decisions.indices) {
                 val fallBack: Long = decisions[i].LL_Fallback
@@ -58,7 +58,7 @@ class ParseInfo(
          * [DecisionInfo.timeInPrediction] for all decisions.
          */
         get() {
-            val decisions: Array<DecisionInfo> = atnSimulator.decisionInfo
+            val decisions: List<DecisionInfo> = atnSimulator.decisionInfo
             var t: Long = 0
             for (i in decisions.indices) {
                 t += decisions[i].timeInPrediction
@@ -73,7 +73,7 @@ class ParseInfo(
          * [DecisionInfo.SLL_TotalLook] for all decisions.
          */
         get() {
-            val decisions: Array<DecisionInfo> = atnSimulator.decisionInfo
+            val decisions: List<DecisionInfo> = atnSimulator.decisionInfo
             var k: Long = 0
             for (i in decisions.indices) {
                 k += decisions[i].SLL_TotalLook
@@ -88,7 +88,7 @@ class ParseInfo(
          * [DecisionInfo.LL_TotalLook] for all decisions.
          */
         get() {
-            val decisions: Array<DecisionInfo> = atnSimulator.decisionInfo
+            val decisions: List<DecisionInfo> = atnSimulator.decisionInfo
             var k: Long = 0
             for (i in decisions.indices) {
                 k += decisions[i].LL_TotalLook
@@ -102,7 +102,7 @@ class ParseInfo(
          * across all decisions made during parsing.
          */
         get() {
-            val decisions: Array<DecisionInfo> = atnSimulator.decisionInfo
+            val decisions: List<DecisionInfo> = atnSimulator.decisionInfo
             var k: Long = 0
             for (i in decisions.indices) {
                 k += decisions[i].SLL_ATNTransitions
@@ -116,7 +116,7 @@ class ParseInfo(
          * across all decisions made during parsing.
          */
         get() {
-            val decisions: Array<DecisionInfo> = atnSimulator.decisionInfo
+            val decisions: List<DecisionInfo> = atnSimulator.decisionInfo
             var k: Long = 0
             for (i in decisions.indices) {
                 k += decisions[i].LL_ATNTransitions
@@ -135,7 +135,7 @@ class ParseInfo(
          * [.getTotalLLATNLookaheadOps].
          */
         get() {
-            val decisions: Array<DecisionInfo> = atnSimulator.decisionInfo
+            val decisions: List<DecisionInfo> = atnSimulator.decisionInfo
             var k: Long = 0
             for (i in decisions.indices) {
                 k += decisions[i].SLL_ATNTransitions
@@ -151,7 +151,7 @@ class ParseInfo(
          */
         get() {
             var n = 0
-            val decisionToDFA: Array<DFA> = atnSimulator.decisionToDFA
+            val decisionToDFA: List<DFA> = atnSimulator.decisionToDFA
             for (i in decisionToDFA.indices) {
                 n += getDFASize(i)
             }
@@ -163,7 +163,7 @@ class ParseInfo(
      * particular decision.
      */
     fun getDFASize(decision: Int): Int {
-        val decisionToDFA: Array<DFA> = atnSimulator.decisionToDFA
+        val decisionToDFA: List<DFA> = atnSimulator.decisionToDFA
         val dfa = if (decision < decisionToDFA.size) decisionToDFA[decision] else null
         return dfa?.states?.size ?: 0
     }
