@@ -9,6 +9,7 @@ import io.github.kotlinmania.antlr4.CharStreams
 import io.github.kotlinmania.antlr4.CommonTokenStream
 import io.github.kotlinmania.antlr4.Token
 import io.github.kotlinmania.antlr4.internal.withHostFileSystemOrNull
+import io.github.kotlinmania.antlr4.tooling.gui.Trees
 import io.github.kotlinmania.antlr4.tooling.tool.Grammar
 import io.github.kotlinmania.antlr4.tooling.tool.LexerGrammar
 import io.github.kotlinmania.antlr4.tooling.tool.Tool
@@ -21,7 +22,6 @@ import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import io.github.kotlinmania.antlr4.tooling.gui.Trees as GuiTrees
 
 /**
  * Verifies end-to-end compilation, Kotlin code generation, lexical mode transitions, and parser
@@ -100,15 +100,19 @@ class KotlinSpecGrammarParityTest {
         val lexerInterp = lexerGrammar.createLexerInterpreter(CharStreams.fromString(sampleKotlin))
         val tokenStream = CommonTokenStream(lexerInterp)
         tokenStream.fill()
-        val defaultChannelTokens = tokenStream.tokens.filter { it.channel == Token.DEFAULT_CHANNEL && it.type != Token.EOF }
+        val defaultChannelTokens =
+            tokenStream.allTokens().filter { it.channel == Token.DEFAULT_CHANNEL && it.type != Token.EOF }
         assertTrue(defaultChannelTokens.isNotEmpty(), "Expected default-channel Kotlin tokens")
 
-        val parserInterp = parserGrammar.createGrammarParserInterpreter(CommonTokenStream(lexerGrammar.createLexerInterpreter(CharStreams.fromString(sampleKotlin))))
+        val parserInterp =
+            parserGrammar.createGrammarParserInterpreter(
+                CommonTokenStream(lexerGrammar.createLexerInterpreter(CharStreams.fromString(sampleKotlin))),
+            )
         val startRule = assertNotNull(parserGrammar.getRule("kotlinFile"))
         val parseTree = parserInterp.parse(startRule.index)
         assertEquals(0, parserInterp.numberOfSyntaxErrors, "Expected zero syntax errors parsing sample Kotlin file")
 
-        val renderedTree = GuiTrees.toStringTree(parseTree, InterpreterTreeTextProvider(parserGrammar.ruleNames))
+        val renderedTree = Trees.toStringTree(parseTree, InterpreterTreeTextProvider(parserGrammar.ruleNames))
         assertContains(renderedTree, "packageHeader")
         assertContains(renderedTree, "importHeader")
         assertContains(renderedTree, "classDeclaration")
