@@ -77,7 +77,7 @@ open class ATNConfigSet
             if (config.semanticContext != SemanticContext.Empty.Instance) {
                 hasSemanticContext = true
             }
-            if (config.reachesIntoOuterContext > 0) {
+            if (config.outerContextDepth > 0) {
                 dipsIntoOuterContext = true
             }
 
@@ -88,25 +88,26 @@ open class ATNConfigSet
                 return true
             }
 
+            val rootIsWildcard = !fullCtx
             val merged =
                 PredictionContext.merge(
                     existing.context,
                     config.context,
-                    fullCtx,
+                    rootIsWildcard,
                     mergeCache,
                 )
 
-            if (existing.context == merged && existing.semanticContext == config.semanticContext) {
-                return false
-            }
-
-            existing.context = merged
             existing.reachesIntoOuterContext =
                 maxOf(
                     existing.reachesIntoOuterContext,
                     config.reachesIntoOuterContext,
                 )
 
+            if (config.isPrecedenceFilterSuppressed) {
+                existing.isPrecedenceFilterSuppressed = true
+            }
+
+            existing.context = merged
             cachedHashCode = -1
             return true
         }

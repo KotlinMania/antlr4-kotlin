@@ -1719,7 +1719,7 @@ open class ParserATNSimulator(
 
                     c.reachesIntoOuterContext++
 
-                    if (!closureBusy.add(c)) {
+                    if (!closureBusy.add(ATNConfig(c))) {
                         // avoid infinite recursion for right-recursive rules
                         continue
                     }
@@ -1730,7 +1730,7 @@ open class ParserATNSimulator(
                     newDepth--
                     if (io.github.kotlinmania.antlr4.atn.ParserATNSimulator.Companion.debug) println("dips into outer ctx: " + c)
                 } else {
-                    if (!t.isEpsilon && !closureBusy.add(c)) {
+                    if (!t.isEpsilon && !closureBusy.add(ATNConfig(c))) {
                         // avoid infinite recursion for EOF* and EOF+
                         continue
                     }
