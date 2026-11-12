@@ -24,9 +24,16 @@ import io.github.kotlinmania.antlr4.atn.PredictionContextCache
 import io.github.kotlinmania.antlr4.dfa.DFA
 import io.github.kotlinmania.antlr4.misc.IntegerList
 import io.github.kotlinmania.antlr4.tooling.ToolTestSupport
+import io.github.kotlinmania.antlr4.tooling.codegen.model.AltBlock
+import io.github.kotlinmania.antlr4.tooling.codegen.model.LL1OptionalBlock
+import io.github.kotlinmania.antlr4.tooling.codegen.model.LL1StarBlockSingleAlt
+import io.github.kotlinmania.antlr4.tooling.codegen.model.OptionalBlock
 import io.github.kotlinmania.antlr4.tooling.codegen.model.OutputModelObject
 import io.github.kotlinmania.antlr4.tooling.codegen.model.ParserFile
+import io.github.kotlinmania.antlr4.tooling.codegen.model.PlusBlock
 import io.github.kotlinmania.antlr4.tooling.codegen.model.SerializedJavaATN
+import io.github.kotlinmania.antlr4.tooling.codegen.model.StarBlock
+import io.github.kotlinmania.antlr4.tooling.codegen.model.ThrowNoViableAlt
 import io.github.kotlinmania.antlr4.tooling.tool.ErrorType
 import io.github.kotlinmania.antlr4.tooling.tool.Grammar
 import io.github.kotlinmania.antlr4.tooling.tool.Tool
@@ -117,7 +124,11 @@ class CodeGenPipelineTest {
         assertTrue(parserSource.contains("var op: Token? = null"))
         assertTrue(parserSource.contains("precpred(ctx, 5)"))
         assertTrue(parserSource.contains("precpred(ctx, 4)"))
+        assertTrue(parserSource.contains("val nextAltCtx = MulDivContext(ExprContext(parentCtx, parentState))"))
+        assertTrue(parserSource.contains("val nextAltCtx = AddSubContext(ExprContext(parentCtx, parentState))"))
+        assertTrue(parserSource.contains("val SERIALIZED_ATN: String by lazy {"))
         assertTrue(parserSource.contains("ATNDeserializer().deserialize(SERIALIZED_ATN_INTS)"))
+        assertFalse(parserSource.contains("EarlyExitException"))
 
         assertTrue(lexerSource.contains("open class CalcLexer(input: CharStream?) : Lexer(input)"))
         assertTrue(listenerSource.contains("fun enterMulDiv(ctx: CalcParser.MulDivContext)"))
@@ -337,6 +348,127 @@ class CodeGenPipelineTest {
         assertEquals(1, recoveredTree.stat().size)
         val firstStat = recoveredTree.stat(0) as CompiledMiniCalcParser.AssignStatContext
         assertNotNull(firstStat.expr()?.exception)
+    }
+
+    @Test
+    fun testEbnfMultiAltClosuresOptionalBlocksAndAtnChunking() {
+        val ebnfGrammarText =
+            """
+            grammar EbnfSuite;
+            optLl1       : ('a' ID | 'b' INT)? EOF ;
+            optNonGreedy : ('a' ID | 'b' INT)?? ('a' ID | 'b' INT)? EOF ;
+            starLl1      : ('a' ID | 'b' INT)* EOF ;
+            plusLl1      : ('a' ID | 'b' INT)+ EOF ;
+            starHybrid   : (ID '=' INT ';' | ID ':' INT ';')* EOF ;
+            starAtn      : (ID '=' INT ';' | ID ':' INT ';')* ID EOF ;
+            plusAtn      : (ID '=' INT ';' | ID ':' INT ';')+ ID EOF ;
+            ID           : [a-zA-Z]+ ;
+            INT          : [0-9]+ ;
+            WS           : [ \t\r\n]+ -> skip ;
+            """.trimIndent()
+
+        val g = Grammar(ebnfGrammarText)
+        assertEquals(0, g.tool.numErrors)
+        val gen = CodeGenerator.create(g.tool, g, "Kotlin")
+        val factory = ParserFactory(gen)
+        val controller = OutputModelController(factory)
+        factory.controller = controller
+        val model = controller.buildParserOutputModel(header = false) as ParserFile
+        val parserModel = assertNotNull(model.parser)
+
+        val optLl1Func = assertNotNull(parserModel.funcs.firstOrNull { it.name == "optLl1" })
+        val optLl1Outer = assertNotNull(optLl1Func.code?.firstOrNull() as? io.github.kotlinmania.antlr4.tooling.codegen.model.decl.CodeBlock)
+        assertNotNull(optLl1Outer.ops?.filterIsInstance<LL1OptionalBlock>()?.firstOrNull())
+
+        val optNgFunc = assertNotNull(parserModel.funcs.firstOrNull { it.name == "optNonGreedy" })
+        val optNgOuter = assertNotNull(optNgFunc.code?.firstOrNull() as? io.github.kotlinmania.antlr4.tooling.codegen.model.decl.CodeBlock)
+        assertNotNull(optNgOuter.ops?.filterIsInstance<OptionalBlock>()?.firstOrNull())
+
+        val starHybridFunc = assertNotNull(parserModel.funcs.firstOrNull { it.name == "starHybrid" })
+        assertTrue(starHybridFunc.hasLookaheadBlock)
+        val starHybridOuter = assertNotNull(starHybridFunc.code?.firstOrNull() as? io.github.kotlinmania.antlr4.tooling.codegen.model.decl.CodeBlock)
+        val starHybridOp = assertNotNull(starHybridOuter.ops?.filterIsInstance<LL1StarBlockSingleAlt>()?.firstOrNull())
+        assertEquals(1, starHybridOp.alts.size)
+        val innerHybridChoice =
+            assertNotNull(
+                starHybridOp.alts[0]
+                    .ops
+                    ?.filterIsInstance<AltBlock>()
+                    ?.firstOrNull(),
+            )
+        assertEquals(2, innerHybridChoice.alts.size)
+
+        val starAtnFunc = assertNotNull(parserModel.funcs.firstOrNull { it.name == "starAtn" })
+        val starAtnOuter = assertNotNull(starAtnFunc.code?.firstOrNull() as? io.github.kotlinmania.antlr4.tooling.codegen.model.decl.CodeBlock)
+        val starOp = assertNotNull(starAtnOuter.ops?.filterIsInstance<StarBlock>()?.firstOrNull())
+        assertEquals(1, starOp.alts.size, "Multi-alt closure must wrap inner Choice in single outer loop alt")
+        val innerStarChoice =
+            assertNotNull(
+                starOp.alts[0]
+                    .ops
+                    ?.filterIsInstance<AltBlock>()
+                    ?.firstOrNull(),
+            )
+        assertEquals(2, innerStarChoice.alts.size)
+
+        val plusAtnFunc = assertNotNull(parserModel.funcs.firstOrNull { it.name == "plusAtn" })
+        val plusAtnOuter = assertNotNull(plusAtnFunc.code?.firstOrNull() as? io.github.kotlinmania.antlr4.tooling.codegen.model.decl.CodeBlock)
+        val plusOp = assertNotNull(plusAtnOuter.ops?.filterIsInstance<PlusBlock>()?.firstOrNull())
+        assertEquals(1, plusOp.alts.size, "Multi-alt positive closure must wrap inner Choice in single outer loop alt")
+        val errOp: ThrowNoViableAlt = plusOp.error
+        assertNotNull(errOp)
+        val innerPlusChoice =
+            assertNotNull(
+                plusOp.alts[0]
+                    .ops
+                    ?.filterIsInstance<AltBlock>()
+                    ?.firstOrNull(),
+            )
+        assertEquals(2, innerPlusChoice.alts.size)
+
+        val rendered = KotlinCodegenEmitter.render(model)
+        assertFalse(rendered.contains("EarlyExitException"))
+        assertFalse(rendered.contains("-> {}"))
+
+        val optLl1Slice = rendered.substringAfter("fun optLl1(): OptLl1Context {").substringBefore("fun optNonGreedy(")
+        assertTrue(optLl1Slice.contains("else -> Unit"))
+        assertFalse(optLl1Slice.contains("else -> throwNoViableAlt()"))
+
+        val optNgSlice = rendered.substringAfter("fun optNonGreedy(): OptNonGreedyContext {").substringBefore("fun starLl1(")
+        assertTrue(optNgSlice.contains("2 -> {"))
+        assertTrue(optNgSlice.contains("3 -> {"))
+
+        val plusAtnSlice = rendered.substringAfter("fun plusAtn(): PlusAtnContext {").substringBefore("private fun adaptivePredict(")
+        assertTrue(plusAtnSlice.contains("altChoice = 1"))
+        assertTrue(plusAtnSlice.contains("do {"))
+        assertTrue(plusAtnSlice.contains("else -> {"))
+        assertTrue(plusAtnSlice.contains("throwNoViableAlt()"))
+        assertTrue(plusAtnSlice.contains("} while (altChoice != 2 && altChoice != ATN.INVALID_ALT_NUMBER)"))
+
+        // Verify ATN chunking above 2000 serialized ints
+        val largeGrammarSb = StringBuilder("grammar LargeAtn;\nroot : ")
+        val branchCount = 260
+        for (i in 0 until branchCount) {
+            if (i > 0) largeGrammarSb.append(" | ")
+            largeGrammarSb.append("r$i")
+        }
+        largeGrammarSb.append(" ;\n")
+        for (i in 0 until branchCount) {
+            largeGrammarSb.append("r$i : 't$i' ID INT ;\n")
+        }
+        largeGrammarSb.append("ID : [a-z]+ ;\nINT : [0-9]+ ;\n")
+
+        val largeTool = Tool(listOf("LargeAtn.g4"))
+        largeTool.writeFilesToDisk = false
+        largeTool.removeListeners()
+        largeTool.registerVirtualGrammar("LargeAtn.g4", largeGrammarSb.toString())
+        largeTool.processGrammarsOnCommandLine()
+        assertEquals(0, largeTool.numErrors)
+        val largeParserKt = assertNotNull(largeTool.virtualOutputs["LargeAtnParser.kt"])
+        assertTrue(largeParserKt.contains("private fun concatIntArrays(chunks: List<IntArray>): IntArray {"))
+        assertTrue(largeParserKt.contains("private fun serializedAtnChunk0(): IntArray ="))
+        assertTrue(largeParserKt.contains("private fun serializedAtnChunk1(): IntArray ="))
+        assertTrue(largeParserKt.contains("val SERIALIZED_ATN: String by lazy {"))
     }
 
     private fun hasUnpairedSurrogate(s: String): Boolean {

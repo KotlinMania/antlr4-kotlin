@@ -189,17 +189,28 @@ class SourceGenTriggers(
         controller.treeLevel++
         return try {
             val innerBlock = t.getChild(0) as? BlockAST ?: return emptyList()
-            val alts = ArrayList<CodeBlockForAlt>()
-            for (child in innerBlock.children) {
-                if (child.type == ANTLRParserTypes.OPTIONS) continue
-                val altNode = child as? AltAST ?: continue
-                alts.add(alternative(altNode, outerMost = false))
-            }
-            val ebnf = controller.getEBNFBlock(t, alts)
+            val ebnf =
+                if (t.type == ANTLRParserTypes.CLOSURE || t.type == ANTLRParserTypes.POSITIVE_CLOSURE) {
+                    val innerOps = block(innerBlock, label, outerMost = false)
+                    val innerOp = innerOps.firstOrNull() ?: return emptyList()
+                    val singleAlt =
+                        innerOp as? CodeBlockForAlt
+                            ?: CodeBlockForAlt(controller.delegate).apply { addOp(innerOp) }
+                    controller.getEBNFBlock(t, listOf(singleAlt))
+                } else {
+                    val alts = ArrayList<CodeBlockForAlt>()
+                    for (child in innerBlock.children) {
+                        if (child.type == ANTLRParserTypes.OPTIONS) continue
+                        val altNode = child as? AltAST ?: continue
+                        alts.add(alternative(altNode, outerMost = false))
+                    }
+                    val opt = controller.getEBNFBlock(t, alts)
+                    if (label != null) {
+                        opt.label = (controller.delegate as? ParserFactory)?.getTokenLabelDecl(label.text)
+                    }
+                    opt
+                }
             hasLookaheadBlock = hasLookaheadBlock || (ebnf !is LL1Choice && ebnf !is LL1Loop)
-            if (label != null) {
-                ebnf.label = (controller.delegate as? ParserFactory)?.getTokenLabelDecl(label.text)
-            }
             listOf(ebnf)
         } finally {
             controller.treeLevel--

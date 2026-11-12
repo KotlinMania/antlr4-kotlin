@@ -292,9 +292,13 @@ class OutputModelController(
                     )
                 }
 
-                val limit = minOf(opLoop.alts.size, opAltsList.size)
+                val altForOpAltBlock = opLoop.alts.firstOrNull()
+                val opAltsCode =
+                    (altForOpAltBlock?.ops?.firstOrNull() as? Choice)?.alts
+                        ?: listOfNotNull(altForOpAltBlock)
+                val limit = minOf(opAltsCode.size, opAltsList.size)
                 for (i in 0 until limit) {
-                    val opCodeForAlt = opLoop.alts[i]
+                    val opCodeForAlt = opAltsCode[i]
                     val altInfo = opAltsList[i]
                     val altLabel = altInfo.altLabel
                     val rawLabel = altInfo.leftRecursiveRuleRefLabel

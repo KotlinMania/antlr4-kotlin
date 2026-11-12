@@ -42,7 +42,6 @@ import io.github.kotlinmania.antlr4.tooling.codegen.model.SemPred
 import io.github.kotlinmania.antlr4.tooling.codegen.model.SrcOp
 import io.github.kotlinmania.antlr4.tooling.codegen.model.StarBlock
 import io.github.kotlinmania.antlr4.tooling.codegen.model.TestSetInline
-import io.github.kotlinmania.antlr4.tooling.codegen.model.ThrowEarlyExitException
 import io.github.kotlinmania.antlr4.tooling.codegen.model.ThrowNoViableAlt
 import io.github.kotlinmania.antlr4.tooling.codegen.model.Wildcard
 import io.github.kotlinmania.antlr4.tooling.codegen.model.decl.Decl
@@ -353,7 +352,7 @@ open class ParserFactory(
             ANTLRParserTypes.OPTIONAL -> OptionalBlock(this, ebnfRoot, alts)
             ANTLRParserTypes.CLOSURE -> StarBlock(this, ebnfRoot, alts)
             ANTLRParserTypes.POSITIVE_CLOSURE -> {
-                val error = ThrowEarlyExitException(this, ebnfRoot, IntervalSet())
+                val error = ThrowNoViableAlt(this, ebnfRoot, IntervalSet())
                 PlusBlock(this, ebnfRoot, alts, error)
             }
             else -> AltBlock(this, ebnfRoot, alts)

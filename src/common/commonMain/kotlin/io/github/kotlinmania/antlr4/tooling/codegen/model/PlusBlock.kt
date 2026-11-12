@@ -15,7 +15,7 @@ class PlusBlock(
     factory: OutputModelFactory,
     plusRoot: GrammarAST,
     alts: List<CodeBlockForAlt>,
-    @ModelElement var error: ThrowEarlyExitException,
+    @ModelElement var error: ThrowNoViableAlt,
 ) : Loop(factory, plusRoot, alts) {
     val loopLabelName: String = factory.generator.target.getLoopLabel(plusRoot)
 

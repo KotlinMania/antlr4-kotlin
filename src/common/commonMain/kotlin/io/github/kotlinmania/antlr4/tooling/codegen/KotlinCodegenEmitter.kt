@@ -5,6 +5,7 @@
  */
 package io.github.kotlinmania.antlr4.tooling.codegen
 
+import io.github.kotlinmania.antlr4.tooling.ast.QuantifierAST
 import io.github.kotlinmania.antlr4.tooling.codegen.model.Action
 import io.github.kotlinmania.antlr4.tooling.codegen.model.AddToLabelList
 import io.github.kotlinmania.antlr4.tooling.codegen.model.AltBlock
@@ -821,7 +822,7 @@ internal object KotlinCodegenEmitter {
                 is TokenTypeDecl -> sb.appendLine("${indent}var ${d.escapedName}: Int")
                 is TokenDecl -> sb.appendLine("${indent}var ${d.escapedName}: Token? = null")
                 is RuleContextDecl -> sb.appendLine("${indent}var ${d.escapedName}: ${d.ctxName}? = null")
-                else -> {}
+                else -> Unit
             }
         }
     }
@@ -987,7 +988,7 @@ internal object KotlinCodegenEmitter {
             }
 
             is ThrowEarlyExitException -> {
-                sb.appendLine("${indent}throwRecognitionException(EarlyExitException(this))")
+                sb.appendLine("${indent}throwNoViableAlt()")
             }
 
             is LL1OptionalBlockSingleAlt -> {
@@ -1021,11 +1022,7 @@ internal object KotlinCodegenEmitter {
                     renderOp(sb, op.alts[i], "$indent        ", localCtxExpr, rf)
                     sb.appendLine("$indent    }")
                 }
-                val exitTokens = op.altLook.getOrNull(op.alts.size).orEmpty()
-                if (exitTokens.isNotEmpty()) {
-                    sb.appendLine("$indent    ${exitTokens.joinToString(", ") { it.name.orEmpty() }} -> {}")
-                }
-                sb.appendLine("$indent    else -> throwNoViableAlt()")
+                sb.appendLine("$indent    else -> Unit")
                 sb.appendLine("$indent}")
             }
 
@@ -1085,11 +1082,11 @@ internal object KotlinCodegenEmitter {
                     sb.appendLine("${indent}state = ${op.stateNumber}")
                 }
                 renderOps(sb, op.preamble, indent, localCtxExpr, rf)
+                val nonGreedyOffset = if ((op.ast as? QuantifierAST)?.isGreedy == false) 1 else 0
                 sb.appendLine("${indent}altChoice = adaptivePredict(${op.decision})")
                 sb.appendLine("${indent}when (altChoice) {")
                 for (i in op.alts.indices) {
-                    val altIdx = i + 1
-                    if (altIdx == op.alts.size + 1) continue
+                    val altIdx = i + 1 + nonGreedyOffset
                     sb.appendLine("$indent    $altIdx -> {")
                     op.label?.let { lbl ->
                         sb.appendLine("$indent        ${qualifyDeclRef(lbl, localCtxExpr, rf)} = tokenStream.LT(1)")
@@ -1127,17 +1124,18 @@ internal object KotlinCodegenEmitter {
                     sb.appendLine("${indent}state = ${op.stateNumber}")
                 }
                 renderOps(sb, op.preamble, indent, localCtxExpr, rf)
+                val nonGreedyOffset = if (op.exitAlt == 1) 1 else 0
                 sb.appendLine("${indent}altChoice = adaptivePredict(${op.decision})")
                 sb.appendLine("${indent}while (altChoice != ${op.exitAlt} && altChoice != ATN.INVALID_ALT_NUMBER) {")
                 if (op.alts.size == 1) {
-                    val singleAltNum = if (op.exitAlt == 1) 2 else 1
+                    val singleAltNum = 1 + nonGreedyOffset
                     sb.appendLine("$indent    if (altChoice == $singleAltNum) {")
                     renderOp(sb, op.alts[0], "$indent        ", localCtxExpr, rf)
                     sb.appendLine("$indent    }")
                 } else {
                     sb.appendLine("$indent    when (altChoice) {")
                     for (i in op.alts.indices) {
-                        val altNum = i + 1
+                        val altNum = i + 1 + nonGreedyOffset
                         if (altNum == op.exitAlt) continue
                         sb.appendLine("$indent        $altNum -> {")
                         renderOp(sb, op.alts[i], "$indent            ", localCtxExpr, rf)
@@ -1154,33 +1152,31 @@ internal object KotlinCodegenEmitter {
             }
 
             is PlusBlock -> {
-                val cntName = "cnt${op.uniqueID}"
                 if (op.blockStartStateNumber >= 0) {
                     sb.appendLine("${indent}state = ${op.blockStartStateNumber}")
                 }
                 renderOps(sb, op.preamble, indent, localCtxExpr, rf)
-                sb.appendLine("${indent}var $cntName = 0")
-                sb.appendLine("$indent${op.loopLabelName}@ while (true) {")
-                sb.appendLine("$indent    altChoice = adaptivePredict(${op.decision})")
+                val nonGreedyOffset = if (op.exitAlt == 1) 1 else 0
+                sb.appendLine("${indent}altChoice = ${1 + nonGreedyOffset}")
+                sb.appendLine("${indent}do {")
                 sb.appendLine("$indent    when (altChoice) {")
                 for (i in op.alts.indices) {
-                    val altNum = i + 1
+                    val altNum = i + 1 + nonGreedyOffset
                     if (altNum == op.exitAlt) continue
                     sb.appendLine("$indent        $altNum -> {")
                     renderOp(sb, op.alts[i], "$indent            ", localCtxExpr, rf)
                     sb.appendLine("$indent        }")
                 }
                 sb.appendLine("$indent        else -> {")
-                sb.appendLine("$indent            if ($cntName >= 1) break@${op.loopLabelName}")
                 renderOp(sb, op.error, "$indent            ", localCtxExpr, rf)
                 sb.appendLine("$indent        }")
                 sb.appendLine("$indent    }")
-                sb.appendLine("$indent    $cntName++")
                 if (op.loopBackStateNumber >= 0) {
                     sb.appendLine("$indent    state = ${op.loopBackStateNumber}")
                 }
                 renderOps(sb, op.iteration, "$indent    ", localCtxExpr, rf)
-                sb.appendLine("$indent}")
+                sb.appendLine("$indent    altChoice = adaptivePredict(${op.decision})")
+                sb.appendLine("$indent} while (altChoice != ${op.exitAlt} && altChoice != ATN.INVALID_ALT_NUMBER)")
             }
         }
     }
@@ -1520,18 +1516,56 @@ internal object KotlinCodegenEmitter {
 
         val atnModel: SerializedATN? = rec.atn
         val ints = atnModel?.serializedInts ?: IntArray(0)
-        sb.appendLine("${indent}private val SERIALIZED_ATN_INTS: IntArray = intArrayOf(")
-        val chunkSize = 16
-        var idx = 0
-        while (idx < ints.size) {
-            val end = minOf(ints.size, idx + chunkSize)
-            val slice = (idx until end).joinToString(", ") { i -> ints[i].toString() }
-            sb.appendLine("$indent    $slice,")
-            idx = end
+        val atnChunkMaxInts = 2000
+        if (ints.size <= atnChunkMaxInts) {
+            if (ints.isEmpty()) {
+                sb.appendLine("${indent}private val SERIALIZED_ATN_INTS: IntArray = intArrayOf()")
+            } else {
+                sb.appendLine("${indent}private val SERIALIZED_ATN_INTS: IntArray =")
+                sb.appendLine("$indent    intArrayOf(")
+                for (value in ints) {
+                    sb.appendLine("$indent        $value,")
+                }
+                sb.appendLine("$indent    )")
+            }
+        } else {
+            sb.appendLine("${indent}private fun concatIntArrays(chunks: List<IntArray>): IntArray {")
+            sb.appendLine("$indent    var total = 0")
+            sb.appendLine("$indent    for (chunk in chunks) {")
+            sb.appendLine("$indent        total += chunk.size")
+            sb.appendLine("$indent    }")
+            sb.appendLine("$indent    val result = IntArray(total)")
+            sb.appendLine("$indent    var offset = 0")
+            sb.appendLine("$indent    for (chunk in chunks) {")
+            sb.appendLine("$indent        chunk.copyInto(result, destinationOffset = offset)")
+            sb.appendLine("$indent        offset += chunk.size")
+            sb.appendLine("$indent    }")
+            sb.appendLine("$indent    return result")
+            sb.appendLine("$indent}")
+            sb.appendLine()
+            val numChunks = (ints.size + atnChunkMaxInts - 1) / atnChunkMaxInts
+            for (chunkIdx in 0 until numChunks) {
+                val chunkStart = chunkIdx * atnChunkMaxInts
+                val chunkEnd = minOf(ints.size, chunkStart + atnChunkMaxInts)
+                sb.appendLine("${indent}private fun serializedAtnChunk$chunkIdx(): IntArray =")
+                sb.appendLine("$indent    intArrayOf(")
+                for (idx in chunkStart until chunkEnd) {
+                    sb.appendLine("$indent        ${ints[idx]},")
+                }
+                sb.appendLine("$indent    )")
+                sb.appendLine()
+            }
+            sb.appendLine("${indent}private val SERIALIZED_ATN_INTS: IntArray =")
+            sb.appendLine("$indent    concatIntArrays(")
+            sb.appendLine("$indent        listOf(")
+            for (chunkIdx in 0 until numChunks) {
+                sb.appendLine("$indent            serializedAtnChunk$chunkIdx(),")
+            }
+            sb.appendLine("$indent        ),")
+            sb.appendLine("$indent    )")
         }
-        sb.appendLine("$indent)")
         sb.appendLine(
-            "${indent}val SERIALIZED_ATN: String = run {\n" +
+            "${indent}val SERIALIZED_ATN: String by lazy {\n" +
                 "$indent    val list = IntegerList(SERIALIZED_ATN_INTS.size)\n" +
                 "$indent    list.addAll(SERIALIZED_ATN_INTS)\n" +
                 "$indent    val words16 = ATNDeserializer.encodeIntsWith16BitWords(list)\n" +
@@ -1576,7 +1610,6 @@ internal object KotlinCodegenEmitter {
         if (containsWord(body, "ParserRuleContext")) imports.add("io.github.kotlinmania.antlr4.ParserRuleContext")
         if (containsWord(body, "RuleContext")) imports.add("io.github.kotlinmania.antlr4.RuleContext")
         if (containsWord(body, "Token")) imports.add("io.github.kotlinmania.antlr4.Token")
-        if (containsWord(body, "EarlyExitException")) imports.add("io.github.kotlinmania.antlr4.EarlyExitException")
         if (containsWord(body, "RecognitionException")) imports.add("io.github.kotlinmania.antlr4.RecognitionException")
         if (containsWord(body, "ParseTreeListener")) imports.add("io.github.kotlinmania.antlr4.tree.ParseTreeListener")
         if (containsWord(body, "ParseTreeVisitor")) imports.add("io.github.kotlinmania.antlr4.tree.ParseTreeVisitor")

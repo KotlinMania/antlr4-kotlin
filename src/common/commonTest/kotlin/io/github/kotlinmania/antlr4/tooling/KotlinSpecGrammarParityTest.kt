@@ -20,6 +20,7 @@ import io.github.kotlinmania.io.readString
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -58,6 +59,9 @@ class KotlinSpecGrammarParityTest {
         assertContains(generatedParserKt, "fun kotlinFile(")
         assertContains(generatedParserKt, "fun classDeclaration(")
         assertContains(generatedParserKt, "fun functionDeclaration(")
+        assertContains(generatedParserKt, "val SERIALIZED_ATN: String by lazy {")
+        assertFalse(generatedParserKt.contains("EarlyExitException"))
+        assertFalse(generatedParserKt.contains("-> {}"))
 
         // Build live LexerGrammar + Parser Grammar interpreters and parse representative Kotlin source
         val interpTool = Tool()
@@ -158,9 +162,17 @@ class KotlinSpecGrammarParityTest {
 
         tool.processGrammarsOnCommandLine()
         assertEquals(0, equeue.errors.size, "Expected zero errors on full Kotlin spec grammars: $equeue")
-        assertTrue(tool.virtualOutputs.containsKey("KotlinLexer.kt"))
-        assertTrue(tool.virtualOutputs.containsKey("KotlinParser.kt"))
+        val fullLexerKt = assertNotNull(tool.virtualOutputs["KotlinLexer.kt"])
+        val fullParserKt = assertNotNull(tool.virtualOutputs["KotlinParser.kt"])
         assertTrue(tool.virtualOutputs.containsKey("KotlinParser.tokens"))
+        assertContains(fullLexerKt, "private fun concatIntArrays(chunks: List<IntArray>): IntArray {")
+        assertContains(fullLexerKt, "private fun serializedAtnChunk0(): IntArray =")
+        assertContains(fullLexerKt, "val SERIALIZED_ATN: String by lazy {")
+        assertContains(fullParserKt, "private fun concatIntArrays(chunks: List<IntArray>): IntArray {")
+        assertContains(fullParserKt, "private fun serializedAtnChunk0(): IntArray =")
+        assertContains(fullParserKt, "val SERIALIZED_ATN: String by lazy {")
+        assertFalse(fullParserKt.contains("EarlyExitException"))
+        assertFalse(fullParserKt.contains("-> {}"))
     }
 
     companion object {
