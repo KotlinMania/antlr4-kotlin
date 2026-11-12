@@ -61,13 +61,13 @@ abstract class ATNSimulator(
     fun getSharedContextCache(): PredictionContextCache? = sharedContextCache
 
     fun getCachedContext(context: PredictionContext?): PredictionContext? {
-        if (sharedContextCache == null) return context
+        if (sharedContextCache == null || context == null) return context
 
         antlrSynchronized(sharedContextCache) {
             val visited: MutableMap<PredictionContext?, PredictionContext?> =
                 HashMap<PredictionContext?, PredictionContext?>()
             return PredictionContext.getCachedContext(
-                context!!,
+                context,
                 sharedContextCache,
                 visited,
             )

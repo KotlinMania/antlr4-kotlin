@@ -684,11 +684,11 @@ abstract class PredictionContext protected constructor(
 
         // From Sam
         internal fun getCachedContext(
-            context: PredictionContext,
+            context: PredictionContext?,
             contextCache: PredictionContextCache,
             visited: MutableMap<PredictionContext?, PredictionContext?>,
         ): PredictionContext? {
-            if (context.isEmpty) {
+            if (context == null || context.isEmpty) {
                 return context
             }
 
@@ -709,7 +709,7 @@ abstract class PredictionContext protected constructor(
             while (i < parents.size) {
                 val parent: PredictionContext? =
                     getCachedContext(
-                        context.getParent(i) as PredictionContext,
+                        context.getParent(i),
                         contextCache,
                         visited,
                     )

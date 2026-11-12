@@ -137,6 +137,8 @@ open class Grammar :
 
     internal val mutableModes: MultiMap<String, Rule> = MultiMap()
 
+    private val importedVocabGrammarNames: MutableSet<String> = HashSet()
+
     private var indexToPredMapCache: Map<Int, PredAST>? = null
 
     override val errorManager: ErrorManager
@@ -606,7 +608,7 @@ open class Grammar :
 
     internal open fun doImportTokensFromTokensFile() {
         val vocab = getOptionString("tokenVocab")
-        if (vocab != null) {
+        if (vocab != null && !importedVocabGrammarNames.contains(vocab)) {
             val vparser = TokenVocabParser(this)
             val tokens = vparser.load()
             tool.log("grammar", "tokens=$tokens")
@@ -621,6 +623,10 @@ open class Grammar :
     }
 
     fun importVocab(importG: Grammar) {
+        val importedName = importG.name
+        if (importedName != null) {
+            importedVocabGrammarNames.add(importedName)
+        }
         for ((tokenName, ttype) in importG.mutableTokenNameToTypeMap) {
             defineTokenName(tokenName, ttype)
         }
