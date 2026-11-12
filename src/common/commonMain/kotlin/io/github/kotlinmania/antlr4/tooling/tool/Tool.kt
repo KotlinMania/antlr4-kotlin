@@ -625,6 +625,9 @@ class Tool(
         val fullPath = if (outDir == "." || outDir.isEmpty()) fileName else joinPath(outDir, fileName)
         mutableVirtualOutputs[fileName] = content
         mutableVirtualOutputs[fullPath] = content
+        if (fileName.endsWith(".tokens")) {
+            registerVirtualTokenVocab(fileName.substringAfterLast('/').substringAfterLast('\\'), content)
+        }
 
         if (writeFilesToDisk && outputDirectory != null) {
             withHostFileSystemOrNull {
