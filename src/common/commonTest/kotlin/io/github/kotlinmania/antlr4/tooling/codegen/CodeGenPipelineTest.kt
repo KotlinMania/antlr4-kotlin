@@ -115,10 +115,10 @@ class CodeGenPipelineTest {
             assertFalse(hasUnpairedSurrogate(src))
         }
 
-        assertTrue(parserSource.contains("open class CalcParser(input: TokenStream?) : Parser(input)"))
-        assertTrue(parserSource.contains("class MulDivContext(ctx: ExprContext) : ExprContext()"))
-        assertTrue(parserSource.contains("class AddSubContext(ctx: ExprContext) : ExprContext()"))
-        assertTrue(parserSource.contains("class AssignContext(ctx: StatContext) : StatContext()"))
+        assertTrue(parserSource.contains("open class CalcParser(\n    input: TokenStream?,\n) : Parser(input)"))
+        assertTrue(parserSource.contains("    class MulDivContext(\n        ctx: ExprContext,\n    ) : ExprContext()"))
+        assertTrue(parserSource.contains("    class AddSubContext(\n        ctx: ExprContext,\n    ) : ExprContext()"))
+        assertTrue(parserSource.contains("    class AssignContext(\n        ctx: StatContext,\n    ) : StatContext()"))
         assertTrue(parserSource.contains("var left: ExprContext? = null"))
         assertTrue(parserSource.contains("var right: ExprContext? = null"))
         assertTrue(parserSource.contains("var op: Token? = null"))
@@ -130,7 +130,7 @@ class CodeGenPipelineTest {
         assertTrue(parserSource.contains("ATNDeserializer().deserialize(SERIALIZED_ATN_INTS)"))
         assertFalse(parserSource.contains("EarlyExitException"))
 
-        assertTrue(lexerSource.contains("open class CalcLexer(input: CharStream?) : Lexer(input)"))
+        assertTrue(lexerSource.contains("open class CalcLexer(\n    input: CharStream?,\n) : Lexer(input)"))
         assertTrue(listenerSource.contains("fun enterMulDiv(ctx: CalcParser.MulDivContext)"))
         assertTrue(baseListenerSource.contains("override fun enterEveryRule(ctx: ParserRuleContext?) {}"))
         assertTrue(visitorSource.contains("fun visitMulDiv(ctx: CalcParser.MulDivContext): T?"))
@@ -266,8 +266,8 @@ class CodeGenPipelineTest {
         val g = Grammar(miniCalcGrammar)
         val gen = CodeGenerator.create(g.tool, g, "Kotlin")
         val generatedParserCode = gen.generateParser().render()
-        assertTrue(generatedParserCode.contains("class MulDivExprContext(ctx: ExprContext) : ExprContext()"))
-        assertTrue(generatedParserCode.contains("class AddSubExprContext(ctx: ExprContext) : ExprContext()"))
+        assertTrue(generatedParserCode.contains("    class MulDivExprContext(\n        ctx: ExprContext,\n    ) : ExprContext()"))
+        assertTrue(generatedParserCode.contains("    class AddSubExprContext(\n        ctx: ExprContext,\n    ) : ExprContext()"))
         assertTrue(generatedParserCode.contains("executeRuleGuarded(localCtx)"))
 
         val program = "x = 2 + 3 * (4 + 5); y = x * 10 - 5; y / 5;"

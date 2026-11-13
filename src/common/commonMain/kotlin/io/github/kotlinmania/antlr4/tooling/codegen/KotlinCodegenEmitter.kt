@@ -347,7 +347,9 @@ internal object KotlinCodegenEmitter {
             return
         }
         val superCls = p.superClass?.let { renderChunk(it, "localCtx") } ?: "Parser"
-        sb.appendLine("${vis}open class ${p.name}(input: TokenStream?) : $superCls(input) {")
+        sb.appendLine("${vis}open class ${p.name}(")
+        sb.appendLine("    input: TokenStream?,")
+        sb.appendLine(") : $superCls(input) {")
         val dfaRef = if (file.genLean) "${p.name}DFA." else ""
         sb.appendLine("    init {")
         sb.appendLine("        interpreter = ParserATNSimulator(this, ${dfaRef}ATN_DATA, ${dfaRef}decisionToDFA, ${dfaRef}sharedContextCache)")
@@ -427,7 +429,9 @@ internal object KotlinCodegenEmitter {
     ) {
         val vis = visibilityPrefix(l.accessLevel)
         val superCls = l.superClass?.let { renderChunk(it, "ctx") } ?: "Lexer"
-        sb.appendLine("${vis}open class ${l.name}(input: CharStream?) : $superCls(input) {")
+        sb.appendLine("${vis}open class ${l.name}(")
+        sb.appendLine("    input: CharStream?,")
+        sb.appendLine(") : $superCls(input) {")
         sb.appendLine("    init {")
         sb.appendLine("        interpreter = LexerATNSimulator(this, ATN_DATA, decisionToDFA, sharedContextCache)")
         sb.appendLine("    }")
@@ -584,15 +588,22 @@ internal object KotlinCodegenEmitter {
         val hasMembers =
             struct.attrs.isNotEmpty() || struct.getters.isNotEmpty() || !struct.dispatchMethods.isNullOrEmpty()
         if (!hasMembers) {
-            sb.appendLine("    class ${struct.name}(ctx: $parentCtxName) : $parentCtxName() {")
+            sb.appendLine("    class ${struct.name}(")
+            sb.appendLine("        ctx: $parentCtxName,")
+            sb.appendLine("    ) : $parentCtxName() {")
             sb.appendLine("        init {")
             sb.appendLine("            copyFrom(ctx)")
             sb.appendLine("        }")
             sb.appendLine("    }")
             return
         }
-        sb.appendLine("    class ${struct.name}(ctx: $parentCtxName) : $parentCtxName() {")
+        sb.appendLine("    class ${struct.name}(")
+        sb.appendLine("        ctx: $parentCtxName,")
+        sb.appendLine("    ) : $parentCtxName() {")
         renderStructFields(sb, struct, "        ")
+        if (struct.attrs.isNotEmpty()) {
+            sb.appendLine()
+        }
         sb.appendLine("        init {")
         sb.appendLine("            copyFrom(ctx)")
         sb.appendLine("        }")

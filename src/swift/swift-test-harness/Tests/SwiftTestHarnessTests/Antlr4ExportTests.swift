@@ -237,8 +237,8 @@ struct Antlr4ExportTests {
         let visitorCode = try #require(outputs["SwiftCalcVisitor.kt"])
         let listenerCode = try #require(outputs["SwiftCalcListener.kt"])
         #expect(parserCode.contains("package sample.swiftcalc"))
-        #expect(parserCode.contains("class BinOpContext(ctx: ExprContext) : ExprContext()"))
-        #expect(lexerCode.contains("open class SwiftCalcLexer(input: CharStream?) : Lexer(input)"))
+        #expect(parserCode.contains("    class BinOpContext(\n        ctx: ExprContext,\n    ) : ExprContext()"))
+        #expect(lexerCode.contains("open class SwiftCalcLexer(\n    input: CharStream?,\n) : Lexer(input)"))
         #expect(visitorCode.contains("fun visitBinOp(ctx: SwiftCalcParser.BinOpContext): T?"))
         #expect(listenerCode.contains("fun enterBinOp(ctx: SwiftCalcParser.BinOpContext)"))
     }
@@ -539,8 +539,8 @@ final class Antlr4ExportTests: XCTestCase {
         let visitorCode = try XCTUnwrap(outputs["SwiftCalcVisitor.kt"])
         let listenerCode = try XCTUnwrap(outputs["SwiftCalcListener.kt"])
         XCTAssertTrue(parserCode.contains("package sample.swiftcalc"))
-        XCTAssertTrue(parserCode.contains("class BinOpContext(ctx: ExprContext) : ExprContext()"))
-        XCTAssertTrue(lexerCode.contains("open class SwiftCalcLexer(input: CharStream?) : Lexer(input)"))
+        XCTAssertTrue(parserCode.contains("    class BinOpContext(\n        ctx: ExprContext,\n    ) : ExprContext()"))
+        XCTAssertTrue(lexerCode.contains("open class SwiftCalcLexer(\n    input: CharStream?,\n) : Lexer(input)"))
         XCTAssertTrue(visitorCode.contains("fun visitBinOp(ctx: SwiftCalcParser.BinOpContext): T?"))
         XCTAssertTrue(listenerCode.contains("fun enterBinOp(ctx: SwiftCalcParser.BinOpContext)"))
     }
