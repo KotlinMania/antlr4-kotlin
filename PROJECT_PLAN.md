@@ -229,8 +229,8 @@ applicable license notice in the copied file.
 Useful comparison paths:
 
 ```text
-tmp/antlr-kotlin/antlr-kotlin-runtime/src/commonMain/kotlin/org/antlr/v4/kotlinruntime
-tmp/antlr-kotlin/antlr-kotlin-runtime/src/commonMain/kotlin/org/antlr/v4/kotlinruntime/misc
+tmp/antlr-kotlin/antlr-kotlin-runtime/src/common/commonMain/kotlin/org/antlr/v4/kotlinruntime
+tmp/antlr-kotlin/antlr-kotlin-runtime/src/common/commonMain/kotlin/org/antlr/v4/kotlinruntime/misc
 ```
 
 That runtime records its own thread-safety limitations. Treat it as a source
@@ -250,7 +250,7 @@ suite shape in this checkout:
 The toport Kotlin tests are already translated mechanically. The work is to
 compare each Kotlin file against its upstream Java source, repair Java and
 JUnit idioms into Kotlin Multiplatform code, and move accepted tests into
-`src/commonTest`. Tests must not be split across `jvmTest`, `jsTest`,
+`src/common/commonTest`. Tests must not be split across `jvmTest`, `jsTest`,
 `androidTest`, or other target-specific source sets. If a test needs native
 data, common code defines the bridge contract and the platform source set only
 supplies the native value.
@@ -376,7 +376,7 @@ Rust source: `proc-macro-kotlin/tmp/proc-macro/src/lib.rs`.
 - `Span` carries byte range, line, column, file, source text, and hygiene
 - the real implementation talks to rustc through `bridge::client::Methods`
 
-Kotlin source: `proc-macro-kotlin/src/commonMain/.../procmacro`.
+Kotlin source: `proc-macro-kotlin/src/common/commonMain/.../procmacro`.
 
 The Kotlin port already provides the Rust-shaped surface and a
 `TokenStream.fromString` parser backed by JetBrains Kotlin lexer tokens. The
@@ -520,7 +520,7 @@ derive_deserialize(input: proc_macro::TokenStream)
 ```
 
 The translated Kotlin serde derive code already exists under
-`serde-kotlin/src/commonMain/kotlin/io/github/kotlinmania/serde/serdederive`.
+`serde-kotlin/src/common/commonMain/kotlin/io/github/kotlinmania/serde/serdederive`.
 It uses:
 
 - `io.github.kotlinmania.procmacro2.TokenStream`
@@ -642,7 +642,7 @@ The runtime does not need platform-specific hardware calls for its current
 platform binding. Keep the binding in `commonMain`:
 
 ```text
-src/commonMain/.../Platform.kt
+src/common/commonMain/.../Platform.kt
   class Platform
   currentPlatformName()
 ```
@@ -679,7 +679,7 @@ code that common Kotlin can express directly.
 Current source-set cleanup status:
 
 ```text
-src/commonMain
+src/common/commonMain
   ANTLR runtime logic, CharStreams string factories, CodePointBuffer,
   CodePointCharStream, UnbufferedCharStream, UnbufferedTokenStream,
   InterpreterDataReader, LogManager, TestRig, utility helpers.
@@ -1019,10 +1019,10 @@ failures are not mixed together.
 
 Committed tests live in `commonTest`:
 
-- `src/commonTest/.../misc/IntegerListTest.kt`
-- `src/commonTest/.../ANTLRInputStreamTest.kt`
-- `src/commonTest/.../CodePointCharStreamTest.kt`
-- `src/commonTest/.../PlatformTest.kt`
+- `src/common/commonTest/.../misc/IntegerListTest.kt`
+- `src/common/commonTest/.../ANTLRInputStreamTest.kt`
+- `src/common/commonTest/.../CodePointCharStreamTest.kt`
+- `src/common/commonTest/.../PlatformTest.kt`
 
 Mechanically translated runtime tests exist under:
 
@@ -1109,7 +1109,7 @@ Test migration code shape:
 ../toport/antlr4/.../SomeTest.kt
   compare with tmp/antlr4/.../SomeTest.java
   repair package/imports/assertions/generated fixture references
-  admit common-compatible coverage to src/commonTest
+  admit common-compatible coverage to src/common/commonTest
   run across real KotlinMania targets
 ```
 

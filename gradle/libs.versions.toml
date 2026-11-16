@@ -1,9 +1,12 @@
 [versions]
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 coroutines = "1.11.0"
 serialization = "1.11.0"
 datetime = "0.8.0"
 collectionsImmutable = "0.5.2"
+kmIo = "0.4.0"
+encodingRs = "0.1.2"
+regexSyntax = "0.1.3"
 androidKmp = "9.4.1"
 detekt = "2.0.0-alpha.6"
 ktlint = "14.2.0"
@@ -11,6 +14,7 @@ ktlintEngine = "1.8.0"
 kotlinxBenchmark = "0.5.0"
 
 [plugins]
+android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "androidKmp" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 android-kmp = { id = "com.android.kotlin.multiplatform.library", version.ref = "androidKmp" }
@@ -25,13 +29,17 @@ kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "collectionsImmutable" }
+km-io = { module = "io.github.kotlinmania:km-io", version.ref = "kmIo" }
+encoding-rs = { module = "io.github.kotlinmania:encoding-rs-kotlin", version.ref = "encodingRs" }
+regex-syntax = { module = "io.github.kotlinmania:regex-syntax-kotlin", version.ref = "regexSyntax" }
 kotlinx-benchmark-runtime = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-runtime", version.ref = "kotlinxBenchmark" }
 
 [bundles]
+antlr4-commonMainApi = ["km-io"]
 antlr4-commonMain = [
   "kotlinx-coroutines-core",
-  "kotlinx-serialization-core",
-  "kotlinx-serialization-json",
   "kotlinx-datetime",
   "collections-immutable",
+  "encoding-rs",
+  "regex-syntax",
 ]
